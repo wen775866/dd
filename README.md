@@ -73,17 +73,23 @@ npm run build
 ### 第四步：启动网页游戏服务
 
 ```bash
-# 以生产预览模式启动（绑定 0.0.0.0，开放局域网访问，监听 3000 端口）
+# 默认使用 8080 端口启动（完美适配 Cloudflare Tunnel 8080 端口配置）：
 npm run preview
+
+# 或者如果你想指定 3000 端口：
+npm run preview:3000
+
+# 或者使用一键脚本（自动使用 8080 端口）：
+./start.sh
 ```
 
 终端会输出：
 ```text
-  ➜  Local:   http://localhost:3000/
-  ➜  Network: http://192.168.x.x:3000/
+  ➜  Local:   http://localhost:8080/
+  ➜  Network: http://192.168.x.x:8080/
 ```
 
-此时，在手机自带浏览器中输入 **`http://localhost:3000`** 即可立即畅玩！
+此时，在手机自带浏览器中输入 **`http://localhost:8080`** 即可立即畅玩！
 
 ---
 
@@ -100,30 +106,32 @@ npm run preview
 
 2. 在同一 WiFi 下的任何设备（如苹果手机、朋友的安卓手机、电脑浏览器）上输入：
    ```text
-   http://你的手机IP:3000
-   例如：http://192.168.1.105:3000
+   http://你的手机IP:8080
+   例如：http://192.168.1.105:8080
    ```
    打开就是横屏手机 QQ 斗地主游戏大厅！
 
 ---
 
-## ☁️ Cloudflare Tunnel 公网免端口穿透（打开域名就是游戏）
+## ☁️ Cloudflare Tunnel 公网免端口穿透（8080 端口适配）
 
-如果你想在 **外网任何地方（流量环境、异地好友）** 打开一个网址/域名就能直接玩，推荐使用 **Cloudflare Tunnel**（免费且无需公网 IP 与路由器端口映射）：
+当你在 Cloudflare Tunnel 中配置的本地转发端口是 **`8080`** 时：
 
-### 1. 在 Termux 中安装 Cloudflared
-
+### 1. 确保斗地主服务正运行在 8080 端口
 ```bash
-pkg install -y cloudflared
+npm run preview
+# 此时服务监听在 http://localhost:8080
 ```
 
-### 2. 启动临时快速隧道（免登录一键获取全球域名）
-
-确保后台已经运行了 `npm run preview`（端口 3000），然后执行：
-
-```bash
-cloudflared tunnel --url http://localhost:3000
-```
+### 2. 启动 Cloudflare Tunnel
+- 如果使用固定配置文件（如已在 Cloudflare 控制台添加了 public hostname `localhost:8080`）：
+  ```bash
+  cloudflared tunnel run <你的隧道名称>
+  ```
+- 如果使用一键临时快速穿透：
+  ```bash
+  cloudflared tunnel --url http://localhost:8080
+  ```
 
 终端中会出现类似下方的一行链接：
 ```text

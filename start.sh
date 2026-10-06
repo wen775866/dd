@@ -24,18 +24,19 @@ if [ ! -d "dist" ]; then
     npm run build
 fi
 
+PORT=${PORT:-8080}
 IP_ADDR=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1 || echo "localhost")
 
 echo ""
 echo -e "\033[32;1m==============================================================\033[0m"
 echo -e "\033[32;1m🎮 手机 QQ 斗地主 (全局 90° 横屏版) 服务启动成功！\033[0m"
-echo -e "\033[36;1m👉 本机浏览器访问: http://localhost:3000\033[0m"
+echo -e "\033[36;1m👉 本机浏览器访问: http://localhost:${PORT}\033[0m"
 if [ "$IP_ADDR" != "localhost" ]; then
-    echo -e "\033[36;1m👉 同 WiFi 局域网访问: http://${IP_ADDR}:3000\033[0m"
+    echo -e "\033[36;1m👉 同 WiFi 局域网访问: http://${IP_ADDR}:${PORT}\033[0m"
 fi
-echo -e "\033[33;1m💡 提示: 若需外网穿透，可另开 Termux 窗口运行:\033[0m"
-echo -e "\033[33;1m   cloudflared tunnel --url http://localhost:3000\033[0m"
+echo -e "\033[33;1m💡 Cloudflare Tunnel 隧道已支持 8080 端口直接穿透:\033[0m"
+echo -e "\033[33;1m   cloudflared tunnel --url http://localhost:${PORT}\033[0m"
 echo -e "\033[32;1m==============================================================\033[0m"
 echo ""
 
-npm run preview
+npm run preview -- --port=$PORT --host=0.0.0.0
