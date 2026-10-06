@@ -15,6 +15,7 @@ import { sounds } from './utils/audio';
 import { QQLobby, QQ_ROOM_PRESETS } from './components/QQLobby';
 import { TabletopGameView } from './components/TabletopGameView';
 import { LandscapeWrapper } from './components/LandscapeWrapper';
+import { OfflineIndicator } from './components/OfflineIndicator';
 
 const PROFILE_STORAGE_KEY = 'qq_ddz_user_profile_v2';
 
@@ -257,6 +258,7 @@ export default function App() {
           onToggleSound={handleToggleSound}
         />
       )}
+      <OfflineIndicator />
     </LandscapeWrapper>
   );
 }

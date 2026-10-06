@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "手机 QQ 斗地主",
+  "short_name": "QQ斗地主",
+  "description": "经典手机 QQ 斗地主 Web 横屏版，支持不洗牌模式、智能 AI 托管对战与离线畅玩。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#050b14",
+  "theme_color": "#050b14",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

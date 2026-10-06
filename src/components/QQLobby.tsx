@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { RoomConfig, UserProfile } from '../types/game';
 import { sounds } from '../utils/audio';
+import { PWAInstallButton } from './PWAInstallButton';
 import {
   Flame,
   Trophy,
@@ -244,6 +245,9 @@ export const QQLobby: React.FC<QQLobbyProps> = ({
 
         {/* Right: Feature Buttons */}
         <div className="flex items-center gap-1 sm:gap-2">
+          {/* PWA App Install Button */}
+          <PWAInstallButton />
+
           {/* Daily Gift Button */}
           <button
             onClick={handleDailyCheckin}
@@ -594,6 +598,11 @@ export const QQLobby: React.FC<QQLobbyProps> = ({
               <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
                 <span>屏幕横屏显示</span>
                 <span className="text-amber-400 font-bold">手机QQ经典横屏 (已启用)</span>
+              </div>
+
+              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+                <span>PWA 独立应用</span>
+                <PWAInstallButton variant="compact" />
               </div>
             </div>
 
