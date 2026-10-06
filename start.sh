@@ -13,14 +13,14 @@ if ! command -v node &> /dev/null; then
 fi
 
 echo -e "\033[33;1m[2/3] 检查项目依赖...\033[0m"
-if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/vite" ]; then
-    echo "正在安装前端依赖 (npm install --legacy-peer-deps)..."
+if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/vite" ] || [ ! -d "node_modules/vite-plugin-pwa" ]; then
+    echo "检测到依赖更新，正在安装依赖 (npm install --legacy-peer-deps)..."
     npm install --legacy-peer-deps
 fi
 
 echo -e "\033[33;1m[3/3] 检查项目构建...\033[0m"
-if [ ! -d "dist" ]; then
-    echo "正在构建静态资源 (npm run build)..."
+if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ]; then
+    echo "正在构建 PWA 静态资源 (npm run build)..."
     npm run build
 fi
 

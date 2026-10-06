@@ -201,9 +201,9 @@ pm2 save
 ```bash
 cd ~/dd
 git pull
-npm install
+npm install --legacy-peer-deps
 npm run build
-pm2 restart ddz  # 如果使用了 pm2
+pm2 restart ddz  # 如果使用了 pm2，或者执行 ./start.sh
 ```
 
 ---
