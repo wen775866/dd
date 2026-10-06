@@ -3,6 +3,7 @@ import { GameState, Card, CardHand, Player } from '../types/game';
 import { SUIT_SYMBOLS, analyzeHand, canBeat, getHandDescription, sortCards } from '../utils/doudizhuRules';
 import { aiChoosePlay, calculateBid } from '../utils/doudizhuAI';
 import { sounds } from '../utils/audio';
+import { SvgCard } from './SvgCard';
 import { Play, RotateCcw, Lightbulb, CornerDownLeft, Sparkles, Terminal as TermIcon, ShieldAlert, Cpu } from 'lucide-react';
 
 interface TermuxTerminalViewProps {
@@ -582,28 +583,15 @@ export const TermuxTerminalView: React.FC<TermuxTerminalViewProps> = ({
               const cardNum = idx + 1;
               const isSelected = selectedIndices.includes(cardNum);
               return (
-                <button
+                <SvgCard
                   key={card.id}
+                  card={card}
+                  isSelected={isSelected}
                   onClick={() => toggleSelectCard(cardNum)}
-                  className={`flex flex-col items-center justify-between p-1.5 rounded-lg border transition-all cursor-pointer select-none min-w-[44px] h-[72px] shrink-0 ${
-                    isSelected
-                      ? 'bg-slate-100 text-slate-900 border-amber-400 -translate-y-2.5 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400'
-                      : 'bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-750 hover:border-slate-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full text-[10px] font-mono text-slate-400">
-                    <span>#{cardNum}</span>
-                  </div>
-
-                  <div className="text-center my-auto">
-                    <span className={`text-base font-black ${card.color === 'red' ? 'text-red-500' : isSelected ? 'text-slate-900' : 'text-slate-100'}`}>
-                      {card.rank}
-                    </span>
-                    <div className={`text-xs ${card.color === 'red' ? 'text-red-500' : 'text-slate-400'}`}>
-                      {SUIT_SYMBOLS[card.suit]}
-                    </div>
-                  </div>
-                </button>
+                  size="sm"
+                  badgeIndex={cardNum}
+                  className="shrink-0"
+                />
               );
             })}
           </div>

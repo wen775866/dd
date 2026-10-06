@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="167.0869141pt" height="242.6669922pt" viewBox="0 0 167.0869141 242.6669922">
+  <!-- Card Background -->
+  <rect x="0.5" y="0.5" width="166" height="241.6" rx="6.8" fill="#FFFFFF" stroke="#000000" stroke-width="0.8" />
+  
+  <!-- Corner Labels (Red Joker / 大王) -->
+  <text x="8" y="24" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">J</text>
+  <text x="8" y="38" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">O</text>
+  <text x="8" y="52" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">K</text>
+  <text x="8" y="66" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">E</text>
+  <text x="8" y="80" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">R</text>
+  <text x="8" y="98" font-family="sans-serif" font-size="12" font-weight="bold" fill="#E11D48">★</text>
+
+  <!-- Bottom-Right Inverted Corner Labels -->
+  <g transform="rotate(180 159 220)">
+    <text x="151" y="202" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">J</text>
+    <text x="151" y="216" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">O</text>
+    <text x="151" y="230" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">K</text>
+    <text x="151" y="244" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">E</text>
+    <text x="151" y="258" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#E11D48">R</text>
+  </g>
+
+  <!-- Center Artwork: Colorful Crown / Golden Jester Sun (大王) -->
+  <g transform="translate(83.5, 121.3)">
+    <!-- Sunburst glow -->
+    <circle cx="0" cy="0" r="48" fill="#FFF1F2" stroke="#FECDD3" stroke-width="2" />
+    <circle cx="0" cy="0" r="38" fill="#FFE4E6" stroke="#FDA4AF" stroke-width="1.5" />
+    
+    <!-- Crown -->
+    <path d="M-28,14 L28,14 L24,24 L-24,24 Z" fill="#DC2626" stroke="#991B1B" stroke-width="1.5" />
+    <path d="M-28,14 L-34,-14 L-12,0 L0,-24 L12,0 L34,-14 L28,14 Z" fill="#E11D48" stroke="#991B1B" stroke-width="1.5" />
+    
+    <!-- Crown Jewels -->
+    <circle cx="-34" cy="-14" r="3.5" fill="#FBBF24" stroke="#D97706" stroke-width="1" />
+    <circle cx="0" cy="-24" r="4.5" fill="#FBBF24" stroke="#D97706" stroke-width="1" />
+    <circle cx="34" cy="-14" r="3.5" fill="#FBBF24" stroke="#D97706" stroke-width="1" />
+    
+    <circle cx="-16" cy="19" r="2.5" fill="#FDE047" />
+    <circle cx="0" cy="19" r="3" fill="#67E8F9" />
+    <circle cx="16" cy="19" r="2.5" fill="#FDE047" />
+
+    <!-- Center Label -->
+    <rect x="-36" y="32" width="72" height="20" rx="4" fill="#E11D48" />
+    <text x="0" y="46" font-family="'Microsoft YaHei', sans-serif" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">大 王</text>
+  </g>
+</svg>

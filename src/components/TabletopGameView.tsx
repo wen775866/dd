@@ -3,6 +3,7 @@ import { GameState, Card, CardHand, Player } from '../types/game';
 import { SUIT_SYMBOLS, analyzeHand, canBeat, getHandDescription, sortCards } from '../utils/doudizhuRules';
 import { aiChoosePlay, calculateBid } from '../utils/doudizhuAI';
 import { sounds } from '../utils/audio';
+import { SvgCard } from './SvgCard';
 import { Play, RotateCcw, Lightbulb, Bomb, Flame, Trophy, Crown, User, Bot, Sparkles, Check, ChevronUp } from 'lucide-react';
 
 interface TabletopGameViewProps {
@@ -294,27 +295,12 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               {gameState.bottomCards.map((card, i) => {
                 const isRevealed = gameState.phase !== 'BIDDING';
                 return (
-                  <div
-                    key={i}
-                    className={`w-9 h-13 sm:w-11 sm:h-15 rounded-md border flex flex-col items-center justify-center font-bold shadow-md transition-all ${
-                      isRevealed
-                        ? 'bg-white text-slate-900 border-slate-300 scale-100'
-                        : 'bg-emerald-800/80 border-emerald-600/60 scale-95'
-                    }`}
-                  >
-                    {isRevealed ? (
-                      <>
-                        <span className={`text-xs font-black ${card.color === 'red' ? 'text-red-600' : 'text-slate-900'}`}>
-                          {card.rank}
-                        </span>
-                        <span className={`text-[11px] ${card.color === 'red' ? 'text-red-600' : 'text-slate-700'}`}>
-                          {SUIT_SYMBOLS[card.suit]}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-emerald-400 text-xs font-mono">?</span>
-                    )}
-                  </div>
+                  <SvgCard
+                    key={card.id || i}
+                    card={card}
+                    showBack={!isRevealed}
+                    size="sm"
+                  />
                 );
               })}
             </div>
@@ -375,12 +361,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
 
             {/* Back card fan representation */}
-            <div className="flex -space-x-4 mt-1.5">
+            <div className="flex -space-x-5 mt-1.5">
               {Array.from({ length: Math.min(6, botLeft.cards.length) }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-5 h-8 rounded bg-gradient-to-tr from-cyan-900 to-blue-800 border border-blue-400/40 shadow-sm"
-                />
+                <SvgCard key={i} showBack={true} size="mini" className="shadow-sm" />
               ))}
             </div>
           </div>
@@ -395,22 +378,12 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap justify-center">
                   {gameState.lastValidHand.hand.cards.map((c, i) => (
-                    <div
+                    <SvgCard
                       key={c.id || i}
-                      className="w-11 h-16 sm:w-13 sm:h-18 rounded-lg bg-white border border-slate-300 shadow-xl flex flex-col items-center justify-between p-1 transition-transform animate-in fade-in zoom-in-95 duration-200"
-                    >
-                      <div className="w-full flex justify-between text-[11px] font-black">
-                        <span className={c.color === 'red' ? 'text-red-600' : 'text-slate-900'}>
-                          {c.rank}
-                        </span>
-                      </div>
-                      <div className={`text-base ${c.color === 'red' ? 'text-red-600' : 'text-slate-800'}`}>
-                        {SUIT_SYMBOLS[c.suit]}
-                      </div>
-                      <div className="w-full flex justify-end text-[10px] font-bold text-slate-400">
-                        {c.displayRank}
-                      </div>
-                    </div>
+                      card={c}
+                      size="md"
+                      className="animate-in fade-in zoom-in-95 duration-200"
+                    />
                   ))}
                 </div>
               </div>
@@ -464,12 +437,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               </div>
             </div>
 
-            <div className="flex -space-x-4 mt-1.5">
+            <div className="flex -space-x-5 mt-1.5">
               {Array.from({ length: Math.min(6, botRight.cards.length) }).map((_, i) => (
-                <div
-                  key={i}
-                  className="w-5 h-8 rounded bg-gradient-to-tr from-cyan-900 to-blue-800 border border-blue-400/40 shadow-sm"
-                />
+                <SvgCard key={i} showBack={true} size="mini" className="shadow-sm" />
               ))}
             </div>
           </div>
@@ -562,33 +532,18 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
 
           {/* Human Cards Hand Strip */}
-          <div className="w-full flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto py-3 px-2">
+          <div className="w-full flex items-center justify-center gap-1 sm:gap-2 overflow-x-auto py-3 px-2">
             {human.cards.map(card => {
               const isSelected = selectedCardIds.includes(card.id);
               return (
-                <button
+                <SvgCard
                   key={card.id}
+                  card={card}
+                  isSelected={isSelected}
                   onClick={() => toggleSelectCard(card.id)}
-                  className={`w-10 h-16 sm:w-14 sm:h-22 rounded-lg bg-white border flex flex-col justify-between p-1 sm:p-1.5 transition-all select-none cursor-pointer shrink-0 ${
-                    isSelected
-                      ? 'border-amber-400 ring-3 ring-amber-400 -translate-y-4 shadow-xl shadow-amber-500/30'
-                      : 'border-slate-300 hover:-translate-y-1 shadow-md hover:border-slate-400'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className={`text-xs sm:text-sm font-black ${card.color === 'red' ? 'text-red-600' : 'text-slate-900'}`}>
-                      {card.rank}
-                    </span>
-                  </div>
-
-                  <div className={`text-center text-sm sm:text-xl font-bold ${card.color === 'red' ? 'text-red-600' : 'text-slate-800'}`}>
-                    {SUIT_SYMBOLS[card.suit]}
-                  </div>
-
-                  <div className="flex items-center justify-end text-[9px] sm:text-[10px] font-bold text-slate-400">
-                    {card.displayRank}
-                  </div>
-                </button>
+                  size="lg"
+                  className="shrink-0"
+                />
               );
             })}
           </div>
