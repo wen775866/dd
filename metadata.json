@@ -1,0 +1,6 @@
+{
+  "name": "Go 斗地主 · Termux 极速部署与对战终端",
+  "description": "用 Go 语言编写的高性能斗地主（Dou Dizhu）终端与局域网游戏，包含完整的卡牌规则引擎、智能 AI 人机算法、ANSI 终端渲染器以及一键部署至 Android Termux 手机终端的完整教程与源码打包。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
