@@ -21,6 +21,8 @@ export default defineConfig(() => {
           background_color: '#050b14',
           display: 'standalone',
           orientation: 'landscape',
+          categories: ['games', 'entertainment'],
+          prefer_related_applications: false,
           start_url: '/',
           scope: '/',
           icons: [
@@ -45,6 +47,9 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
+          cleanupOutdatedCaches: true,
+          skipWaiting: true,
+          clientsClaim: true,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         },
         devOptions: {
@@ -53,6 +58,9 @@ export default defineConfig(() => {
         },
       }),
     ],
+    build: {
+      emptyOutDir: true,
+    },
     resolve: {
       alias: {
         '@': path.resolve('.'),

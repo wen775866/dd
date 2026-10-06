@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Download, Smartphone, Share, PlusSquare, X, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Download, Smartphone, Share, PlusSquare, X, CheckCircle2, Globe, Sparkles } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 import { sounds } from '../utils/audio';
 
@@ -13,11 +13,25 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
   className = '',
 }) => {
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [installSuccess, setInstallSuccess] = useState(false);
+  const [browserType, setBrowserType] = useState<'edge' | 'chrome' | 'ios' | 'other'>('other');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
+      if (/iphone|ipad|ipod/.test(ua)) {
+        setBrowserType('ios');
+      } else if (/edg\//.test(ua) || /edga\//.test(ua) || /edge\//.test(ua)) {
+        setBrowserType('edge');
+      } else if (/chrome\//.test(ua)) {
+        setBrowserType('chrome');
+      }
+    }
+  }, []);
 
   // If already installed and running as standalone PWA, hide button
-  if (isInstalled && !showIOSGuide) {
+  if (isInstalled && !showGuide) {
     return null;
   }
 
@@ -28,13 +42,11 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
       if (success) {
         setInstallSuccess(true);
         setTimeout(() => setInstallSuccess(false), 3000);
+        return;
       }
-    } else if (isIOS) {
-      setShowIOSGuide(true);
-    } else {
-      // Fallback guide for other browsers / desktop Chrome
-      setShowIOSGuide(true);
     }
+    // If browser didn't automatically pop up prompt or on Edge/Safari, show guided steps
+    setShowGuide(true);
   };
 
   return (
@@ -57,10 +69,10 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
         </span>
       </button>
 
-      {/* iOS Safari / Browser Guide Modal */}
-      {showIOSGuide && (
+      {/* Cross-Browser PWA Install Guide Modal */}
+      {showGuide && (
         <div
-          onClick={() => setShowIOSGuide(false)}
+          onClick={() => setShowGuide(false)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200"
         >
           <div
@@ -69,7 +81,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
           >
             {/* Close Button */}
             <button
-              onClick={() => setShowIOSGuide(false)}
+              onClick={() => setShowGuide(false)}
               className="absolute top-3.5 right-3.5 p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -81,14 +93,41 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                 <Smartphone className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="text-base font-black text-white">安装 QQ 斗地主到主屏幕</h3>
-                <p className="text-xs text-cyan-300/80">像原生 App 一样全屏极速畅玩</p>
+                <h3 className="text-base font-black text-white">安装到手机主屏幕</h3>
+                <p className="text-xs text-cyan-300/80">
+                  {browserType === 'edge'
+                    ? 'Edge 浏览器安装指引'
+                    : browserType === 'ios'
+                    ? 'iOS Safari 安装指引'
+                    : 'Chrome / 安卓安装指引'}
+                </p>
               </div>
             </div>
 
-            {/* Guide Steps */}
+            {/* Guide Steps based on browser */}
             <div className="bg-slate-950/70 rounded-2xl p-3.5 border border-slate-800 flex flex-col gap-2.5 text-xs text-slate-300">
-              {isIOS ? (
+              {browserType === 'edge' ? (
+                <>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">1</span>
+                    <p>
+                      点击 Edge 底部中间的 <strong>菜单按钮 (···)</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">2</span>
+                    <p>
+                      向右滑动工具栏，点击 <strong>【添加到手机】</strong> 或 <strong>【作为应用安装】</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">3</span>
+                    <p>
+                      确认添加到桌面，即可生成独立桌面 App，自动以满屏横屏启动！
+                    </p>
+                  </div>
+                </>
+              ) : browserType === 'ios' ? (
                 <>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">1</span>
@@ -104,22 +143,28 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">3</span>
-                    <p>点击右上角 <strong>添加</strong>，即可从桌面一键横屏进入游戏！</p>
+                    <p>点击右上角 <strong>添加</strong>，桌面即可一键直接进入横屏游戏！</p>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">1</span>
-                    <p>点击浏览器地址栏右侧或菜单中的 <strong>“安装应用” / “添加到主屏幕”</strong></p>
+                    <p>
+                      点击浏览器右上角 <strong>菜单 (⋮)</strong>
+                    </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">2</span>
-                    <p>确认安装，即可在桌面或应用列表生成独立应用图标</p>
+                    <p>
+                      点击 <strong>【安装应用】</strong> 或 <strong>【添加到主屏幕】</strong>
+                    </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 font-bold flex items-center justify-center shrink-0">3</span>
-                    <p>支持离线自动缓存，随时随地单机对战！</p>
+                    <p>
+                      点击安装后，桌面将生成独立应用图标，支持离线单机极速对战！
+                    </p>
                   </div>
                 </>
               )}
@@ -127,7 +172,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
 
             {/* Modal Footer Button */}
             <button
-              onClick={() => setShowIOSGuide(false)}
+              onClick={() => setShowGuide(false)}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:brightness-110 text-white font-black text-xs cursor-pointer shadow-lg shadow-cyan-500/30 transition-all"
             >
               我知道了

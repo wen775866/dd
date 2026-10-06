@@ -2,10 +2,12 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 
 interface LandscapeContextType {
   isLandscape: boolean;
+  isRotated: boolean;
 }
 
 export const LandscapeContext = createContext<LandscapeContextType>({
   isLandscape: true,
+  isRotated: false,
 });
 
 export const useLandscape = () => useContext(LandscapeContext);
@@ -49,15 +51,22 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
     };
   }, []);
 
-  // Fixed 90-degree rotation geometry:
-  // Container width equals physical screen height; Container height equals physical screen width.
-  const containerWidth = dimensions.height;
-  const containerHeight = dimensions.width;
+  // Is physical screen currently in portrait mode (height > width)?
+  const isPortrait = dimensions.height > dimensions.width;
+
+  // Geometry calculation:
+  // - If portrait: rotate 90deg to present a full-screen landscape game.
+  // - If already landscape (e.g. Chrome PWA standalone mode, landscape phone, PC): render directly at 0deg.
+  const containerWidth = isPortrait ? dimensions.height : dimensions.width;
+  const containerHeight = isPortrait ? dimensions.width : dimensions.height;
+  const rotationTransform = isPortrait
+    ? 'translate(-50%, -50%) rotate(90deg)'
+    : 'translate(-50%, -50%) rotate(0deg)';
 
   return (
-    <LandscapeContext.Provider value={{ isLandscape: true }}>
+    <LandscapeContext.Provider value={{ isLandscape: true, isRotated: isPortrait }}>
       <div className="fixed inset-0 w-screen h-screen bg-[#050b14] overflow-hidden select-none">
-        {/* Strictly Fixed 90-degree Rotated Global Landscape Canvas */}
+        {/* Responsive Landscape Canvas (90° on portrait, 0° on landscape) */}
         <div
           style={{
             width: `${containerWidth}px`,
@@ -65,7 +74,7 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
             position: 'fixed',
             left: '50%',
             top: '50%',
-            transform: 'translate(-50%, -50%) rotate(90deg)',
+            transform: rotationTransform,
             transformOrigin: 'center center',
             overflow: 'hidden',
           }}

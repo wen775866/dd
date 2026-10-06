@@ -9,6 +9,8 @@
   "orientation": "landscape",
   "background_color": "#050b14",
   "theme_color": "#050b14",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/pwa-192x192.png",

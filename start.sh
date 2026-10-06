@@ -19,8 +19,9 @@ if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/vite" ] || [ ! -d "node_
 fi
 
 echo -e "\033[33;1m[3/3] 检查项目构建...\033[0m"
-if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ]; then
-    echo "正在构建 PWA 静态资源 (npm run build)..."
+if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ] || [ "$FORCE_REBUILD" = "1" ]; then
+    echo "正在清理旧构建并重新编译静态资源 (npm run build)..."
+    rm -rf dist
     npm run build
 fi
 
