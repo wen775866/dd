@@ -279,6 +279,29 @@ class SoundEffects {
     osc.start();
     osc.stop(this.ctx.currentTime + 0.055);
   }
+
+  // Urgent alarm beep when remaining cards <= 2 or turn timeout
+  playAlarm() {
+    if (!this.enabled) return;
+    this.initCtx();
+    if (!this.ctx) return;
+
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(1174, this.ctx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.17);
+  }
 }
 
 export const sounds = new SoundEffects();

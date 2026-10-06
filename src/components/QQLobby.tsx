@@ -24,7 +24,6 @@ import {
   Radio,
   Check,
   Smartphone,
-  Maximize2,
 } from 'lucide-react';
 
 export const QQ_ROOM_PRESETS: RoomConfig[] = [
@@ -69,15 +68,48 @@ export const QQ_ROOM_PRESETS: RoomConfig[] = [
     badge: '土豪专属',
   },
   {
+    id: 'room-no-shuffle-novice',
+    name: '不洗牌初级 · 连炸新手',
+    tag: '底分 300 豆 · 封顶 x128',
+    baseScore: 300,
+    entryMin: 500,
+    maxMultiplier: 128,
+    colorTheme: 'from-teal-600 via-emerald-700 to-cyan-950',
+    isNoShuffle: true,
+    badge: '连炸初级',
+  },
+  {
     id: 'room-no-shuffle',
-    name: '不洗牌场 · 炸弹狂欢',
-    tag: '底分 1000 豆 · 封顶 x512',
+    name: '不洗牌狂欢 · 炸弹风暴',
+    tag: '底分 1000 豆 · 封顶 x256',
     baseScore: 1000,
     entryMin: 2000,
-    maxMultiplier: 512,
-    colorTheme: 'from-red-600 via-rose-700 to-amber-900',
+    maxMultiplier: 256,
+    colorTheme: 'from-orange-600 via-amber-700 to-red-950',
     isNoShuffle: true,
     badge: '疯狂连炸',
+  },
+  {
+    id: 'room-no-shuffle-advanced',
+    name: '不洗牌高级 · 满屏轰炸',
+    tag: '底分 3000 豆 · 封顶 x512',
+    baseScore: 3000,
+    entryMin: 8000,
+    maxMultiplier: 512,
+    colorTheme: 'from-rose-600 via-red-700 to-purple-950',
+    isNoShuffle: true,
+    badge: '核弹齐飞',
+  },
+  {
+    id: 'room-no-shuffle-master',
+    name: '不洗牌至尊 · 毁灭连环',
+    tag: '底分 10000 豆 · 封顶 x1024',
+    baseScore: 10000,
+    entryMin: 30000,
+    maxMultiplier: 1024,
+    colorTheme: 'from-purple-600 via-fuchsia-800 to-rose-950',
+    isNoShuffle: true,
+    badge: '毁灭连环',
   },
 ];
 
@@ -87,7 +119,6 @@ interface QQLobbyProps {
   onEnterRoom: (room: RoomConfig) => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
-  onToggleFullscreen?: () => void;
 }
 
 export const QQLobby: React.FC<QQLobbyProps> = ({
@@ -96,7 +127,6 @@ export const QQLobby: React.FC<QQLobbyProps> = ({
   onEnterRoom,
   soundEnabled,
   onToggleSound,
-  onToggleFullscreen,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'CLASSIC' | 'NO_SHUFFLE' | 'RANK'>('CLASSIC');
   const [showRuleModal, setShowRuleModal] = useState(false);
@@ -250,17 +280,6 @@ export const QQLobby: React.FC<QQLobbyProps> = ({
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
-
-          {/* Fullscreen */}
-          {onToggleFullscreen && (
-            <button
-              onClick={onToggleFullscreen}
-              className="p-2 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs cursor-pointer"
-              title="切换横屏全屏"
-            >
-              <Maximize2 className="w-4 h-4" />
-            </button>
-          )}
 
           {/* Settings */}
           <button

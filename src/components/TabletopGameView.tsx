@@ -40,12 +40,14 @@ import {
   X,
   Award,
   AlertTriangle,
+  Shuffle,
 } from 'lucide-react';
 
 interface TabletopGameViewProps {
   gameState: GameState;
   onUpdateState: (newState: GameState) => void;
   onStartNewGame: () => void;
+  onChangeTable?: () => void;
   onBackToLobby: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -67,6 +69,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   gameState,
   onUpdateState,
   onStartNewGame,
+  onChangeTable,
   onBackToLobby,
   soundEnabled,
   onToggleSound,
@@ -78,7 +81,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   const [springBanner, setSpringBanner] = useState<string | null>(null);
   const [specialEffectBanner, setSpecialEffectBanner] = useState<{ text: string; sub?: string } | null>(null);
 
-  // Advanced features state
+  // Advanced interactive features
   const [hintIndex, setHintIndex] = useState<number>(0);
   const [sortByPattern, setSortByPattern] = useState<boolean>(false);
   const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
@@ -86,6 +89,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isPointerDownRef = useRef<boolean>(false);
+  const swipedCardsRef = useRef<Set<string>>(new Set());
 
   const currentPlayer = gameState.players[gameState.currentPlayerIndex];
   const isHumanCurrent = gameState.currentPlayerIndex === 0;
@@ -94,6 +98,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   useEffect(() => {
     const handleUp = () => {
       isPointerDownRef.current = false;
+      swipedCardsRef.current.clear();
     };
     window.addEventListener('pointerup', handleUp);
     return () => window.removeEventListener('pointerup', handleUp);
@@ -163,6 +168,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     );
   };
 
+  // Mouse / Stylus drag selection
   const handleCardPointerDown = (cardId: string) => {
     isPointerDownRef.current = true;
     toggleSelectCard(cardId);
@@ -173,6 +179,51 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       toggleSelectCard(cardId);
     }
   };
+
+  // Mobile Touch drag selection
+  const handleTouchStart = (cardId: string) => {
+    swipedCardsRef.current = new Set([cardId]);
+    toggleSelectCard(cardId);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+    const cardElem = elem?.closest('[data-card-id]');
+    const cardId = cardElem?.getAttribute('data-card-id');
+    if (cardId && !swipedCardsRef.current.has(cardId)) {
+      swipedCardsRef.current.add(cardId);
+      toggleSelectCard(cardId);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    swipedCardsRef.current.clear();
+  };
+
+  // Keyboard controls for desktop or Bluetooth keyboard on Termux
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (gameState.phase !== 'PLAYING' || !isHumanCurrent || isAutoPlay) return;
+      if (e.key === 'Enter') {
+        if (selectedCardIds.length > 0) {
+          handleHumanPlay();
+        }
+      } else if (e.key === 'p' || e.key === 'P') {
+        if (gameState.lastValidHand) {
+          handleHumanPass();
+        }
+      } else if (e.key === ' ' || e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        handleHumanHint();
+      } else if (e.key === 'Escape') {
+        setSelectedCardIds([]);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameState.phase, isHumanCurrent, isAutoPlay, selectedCardIds, gameState.lastValidHand]);
 
   // --- CALL LANDLORD (叫地主) ---
   const handleHumanCall = (call: boolean) => {
@@ -312,7 +363,6 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     const nextIdx = (gameState.currentPlayerIndex + 1) % 3;
 
     if (nextIdx === 0) {
-      // Everyone finished doubling, start game playing!
       showBubble(
         gameState.players[gameState.landlordIndex].id,
         '战斗开始！地主先出牌！'
@@ -384,7 +434,6 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
         sounds.playClick();
       }
     } else {
-      // Free opening lead: suggest lowest opening hand
       const opening = chooseLeadingCards(human.cards);
       if (opening.length > 0) {
         setSelectedCardIds(opening.map(c => c.id));
@@ -483,8 +532,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
     if (remainingCards.length === 2) {
       showBubble(player.id, '⚠️ 只剩两张牌！');
+      sounds.playAlarm();
     } else if (remainingCards.length === 1) {
       showBubble(player.id, '🚨 报警！只剩一张牌！');
+      sounds.playAlarm();
     }
 
     // Winner Check
@@ -710,7 +761,15 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     : sortCards(human.cards);
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-1 sm:p-2 select-none">
+    <div
+      onClick={(e) => {
+        // Tapping on green felt background clears card selection
+        if (e.target === e.currentTarget && selectedCardIds.length > 0) {
+          setSelectedCardIds([]);
+        }
+      }}
+      className="w-full h-full flex flex-col justify-between p-1 sm:p-2 select-none"
+    >
       {/* Tabletop Container */}
       <div className="relative w-full h-full rounded-2xl sm:rounded-3xl border-2 sm:border-6 border-amber-950/90 bg-gradient-to-b from-[#093d24] via-[#0c4c2d] to-[#08351f] p-2 sm:p-3 shadow-2xl overflow-hidden flex flex-col justify-between">
         {/* Felt Lighting Glow */}
@@ -984,7 +1043,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
         {/* BOTTOM SECTION: Human Actions & Overlapping Card Fan */}
         <div className="relative z-20 flex flex-col items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-2xl p-2 sm:p-3 border border-emerald-500/25">
           {/* Action Buttons Row */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
             {/* Autoplay Active Banner */}
             {isAutoPlay && isHumanCurrent && (
               <div className="flex items-center gap-2 bg-amber-500/90 text-slate-950 px-4 py-1.5 rounded-full font-black text-xs shadow-lg animate-pulse">
@@ -992,7 +1051,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 <span>智能托管中，AI将为您自动出牌</span>
                 <button
                   onClick={() => setIsAutoPlay(false)}
-                  className="ml-1 px-2 py-0.5 bg-slate-950 text-white text-[10px] rounded-full hover:bg-slate-800"
+                  className="ml-1 px-2.5 py-0.5 bg-slate-950 text-white text-[10px] font-bold rounded-full hover:bg-slate-800 cursor-pointer"
                 >
                   解除托管
                 </button>
@@ -1085,7 +1144,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 <button
                   onClick={handleHumanHint}
                   className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md cursor-pointer transition-all active:scale-95"
-                  title="多方案智能提示"
+                  title="多方案智能提示 (连续点击轮换)"
                 >
                   <Lightbulb className="w-4 h-4 text-amber-300" />
                   <span>提示</span>
@@ -1108,7 +1167,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 {selectedCardIds.length > 0 && (
                   <button
                     onClick={handleResetSelection}
-                    className="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-amber-200 text-xs sm:text-sm font-bold cursor-pointer transition-all active:scale-95"
+                    className="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-amber-200 text-xs sm:text-sm font-bold cursor-pointer transition-all active:scale-95"
                   >
                     重选
                   </button>
@@ -1138,22 +1197,29 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             )}
           </div>
 
-          {/* Overlapping Card Fan for Human Player */}
-          <div className="w-full flex items-center justify-center overflow-x-auto py-2 px-1">
+          {/* Overlapping Card Fan for Human Player with Touch/Drag Support */}
+          <div
+            className="w-full flex items-center justify-center overflow-x-auto py-2 px-1"
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="flex -space-x-7 sm:-space-x-9 md:-space-x-11 lg:-space-x-12 shrink-0">
               {displayedHumanCards.map(card => {
                 const isSelected = selectedCardIds.includes(card.id);
                 return (
                   <div
                     key={card.id}
+                    data-card-id={card.id}
                     onPointerDown={() => handleCardPointerDown(card.id)}
                     onPointerEnter={() => handleCardPointerEnter(card.id)}
+                    onTouchStart={() => handleTouchStart(card.id)}
+                    className="shrink-0 select-none cursor-pointer"
                   >
                     <SvgCard
                       card={card}
                       isSelected={isSelected}
                       size="lg"
-                      className="shrink-0"
+                      className="pointer-events-none"
                     />
                   </div>
                 );
@@ -1187,7 +1253,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   setSortByPattern(prev => !prev);
                 }}
                 className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer text-[11px] font-bold"
-                title="切换理牌方式"
+                title="切换理牌方式 (按大小 / 按牌型)"
               >
                 <SlidersHorizontal className="w-3 h-3 text-amber-400" />
                 <span>理牌: {sortByPattern ? '按牌型' : '按大小'}</span>
@@ -1214,7 +1280,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </h4>
                 <button
                   onClick={() => setShowChatModal(false)}
-                  className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1331,8 +1397,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 })}
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 w-full">
+              {/* Action Buttons: Return to Lobby / Change Table / Next Round */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
                 <button
                   onClick={onBackToLobby}
                   className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm cursor-pointer transition-all"
@@ -1340,10 +1406,17 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   返回大厅
                 </button>
                 <button
+                  onClick={onChangeTable || onStartNewGame}
+                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center justify-center gap-1"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span>换桌对战</span>
+                </button>
+                <button
                   onClick={onStartNewGame}
                   className="py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/40 cursor-pointer transition-all active:scale-95"
                 >
-                  继续下一局
+                  再来一局
                 </button>
               </div>
             </div>
