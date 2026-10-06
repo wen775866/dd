@@ -1,97 +1,86 @@
 import React from 'react';
-import { Terminal, LayoutGrid, Volume2, VolumeX, RotateCcw } from 'lucide-react';
-
-export type GameViewMode = 'terminal' | 'tabletop';
+import { Volume2, VolumeX, RotateCcw, Flame, Bomb, Trophy } from 'lucide-react';
+import { GameState } from '../types/game';
 
 interface HeaderProps {
-  viewMode: GameViewMode;
-  onViewModeChange: (mode: GameViewMode) => void;
+  gameState: GameState;
   soundEnabled: boolean;
   onToggleSound: () => void;
   onStartNewGame: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  viewMode,
-  onViewModeChange,
+  gameState,
   soundEnabled,
   onToggleSound,
   onStartNewGame,
 }) => {
+  const human = gameState.players[0];
+
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 shadow-md">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
-        {/* Brand */}
+    <header className="bg-slate-950/95 border-b border-emerald-950/80 text-white sticky top-0 z-50 backdrop-blur-md shadow-lg">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-3">
+        {/* Brand & Room Info */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-emerald-600 to-cyan-500 p-0.5 shadow-lg shadow-emerald-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-lg font-black tracking-tighter">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-emerald-600 to-teal-400 p-0.5 shadow-md shadow-emerald-900/30 flex items-center justify-center shrink-0">
+            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center text-sm font-black tracking-tight">
               <span className="text-amber-400">斗</span>
               <span className="text-emerald-400">地</span>
               <span className="text-cyan-400">主</span>
             </div>
           </div>
+
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-base sm:text-lg tracking-tight text-slate-100 flex items-center gap-1.5">
-                Go 斗地主
-                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">
-                  Termux
-                </span>
+              <h1 className="font-extrabold text-sm sm:text-base text-slate-100 tracking-tight">
+                欢乐斗地主
               </h1>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-300 border border-emerald-500/30">
+                第 {gameState.roundNumber} 局
+              </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">
-              纯 Go 语言 ANSI 终端引擎 · 经典三人对局 · 智能 AI 陪练
-            </p>
+            <div className="text-[11px] text-slate-400 hidden sm:flex items-center gap-2">
+              <span>你的积分: <strong className="text-amber-400 font-mono">{human?.score ?? 1000}</strong></span>
+              <span>•</span>
+              <span>当前倍数: <strong className="text-emerald-400 font-mono">x{gameState.multiplier}</strong></span>
+            </div>
           </div>
         </div>
 
-        {/* View Mode Switcher (Terminal vs Tabletop) */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
-          <button
-            onClick={() => onViewModeChange('terminal')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-              viewMode === 'terminal'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5" />
-            <span>Termux 终端模式</span>
-          </button>
-
-          <button
-            onClick={() => onViewModeChange('tabletop')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-              viewMode === 'tabletop'
-                ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>经典牌桌模式</span>
-          </button>
-        </div>
-
-        {/* Quick controls: Sound & Restart */}
+        {/* Live Table Multiplier & Bombs Badges */}
         <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 font-bold text-xs">
+            <Flame className="w-3.5 h-3.5 text-amber-400" />
+            <span>x{gameState.multiplier}</span>
+          </div>
+
+          {gameState.bombCount > 0 && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-500/15 border border-red-500/40 text-red-300 font-bold text-xs">
+              <Bomb className="w-3 h-3 text-red-400" />
+              <span>{gameState.bombCount}</span>
+            </div>
+          )}
+
+          {/* Audio toggle */}
           <button
             onClick={onToggleSound}
-            title={soundEnabled ? '音效已开启' : '音效已静音'}
+            title={soundEnabled ? '点击静音' : '点击开启声音'}
             className={`p-2 rounded-xl border transition-all text-xs flex items-center justify-center cursor-pointer ${
               soundEnabled
-                ? 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                ? 'bg-emerald-950/60 border-emerald-800/80 text-emerald-300 hover:bg-emerald-900/80'
                 : 'bg-slate-900 border-slate-800 text-slate-500 hover:bg-slate-800'
             }`}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
+          {/* Restart / New Round */}
           <button
             onClick={onStartNewGame}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold cursor-pointer transition-all active:scale-95"
-            title="重新洗牌发牌"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-950/40 transition-all cursor-pointer active:scale-95"
+            title="重新洗牌开局"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-cyan-400" />
+            <RotateCcw className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">新开一局</span>
           </button>
         </div>

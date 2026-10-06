@@ -2,6 +2,53 @@ import { Card, CardHand, Player } from '../types/game';
 import { analyzeHand, canBeat, groupByValue, sortCards } from './doudizhuRules';
 
 /**
+ * Evaluates hand power score (Rocket, Bombs, Jokers, 2s, Aces)
+ */
+export function evaluateHandPower(cards: Card[]): number {
+  let score = 0;
+  const groups = groupByValue(cards);
+
+  const hasBJ = cards.some(c => c.value === 16);
+  const hasRJ = cards.some(c => c.value === 17);
+  if (hasBJ && hasRJ) {
+    score += 4.5;
+  } else if (hasRJ) {
+    score += 2.0;
+  } else if (hasBJ) {
+    score += 1.5;
+  }
+
+  const twos = cards.filter(c => c.value === 15).length;
+  score += twos * 1.25;
+
+  for (const [, list] of groups.entries()) {
+    if (list.length === 4) {
+      score += 3.0; // Bomb
+    }
+  }
+
+  const aces = cards.filter(c => c.value === 14).length;
+  score += aces * 0.4;
+
+  return score;
+}
+
+export function aiShouldCallLandlord(cards: Card[]): boolean {
+  return evaluateHandPower(cards) >= 3.8;
+}
+
+export function aiShouldRobLandlord(cards: Card[], robCount: number): boolean {
+  return evaluateHandPower(cards) >= (4.8 + robCount * 1.2);
+}
+
+export function aiShouldDouble(cards: Card[], isLandlord: boolean): 'SUPER' | 'DOUBLE' | 'NONE' {
+  const power = evaluateHandPower(cards);
+  if (power >= 7.5) return 'SUPER';
+  if (power >= 4.8) return 'DOUBLE';
+  return 'NONE';
+}
+
+/**
  * AI Bidding decision
  */
 export function calculateBid(cards: Card[], currentHighestBid: number): number {

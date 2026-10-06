@@ -76,6 +76,18 @@ export function shuffleDeck(deck: Card[]): Card[] {
   return arr;
 }
 
+// 不洗牌模式切牌：保留连牌与炸弹聚集度，倍数超爽
+export function createNoShuffleDeck(): Card[] {
+  const base = createDeck();
+  let arr = [...base];
+  const cuts = 4 + Math.floor(Math.random() * 3);
+  for (let c = 0; c < cuts; c++) {
+    const cutPoint = 15 + Math.floor(Math.random() * 25);
+    arr = [...arr.slice(cutPoint), ...arr.slice(0, cutPoint)];
+  }
+  return arr;
+}
+
 // Sort cards: descending by value, then suit
 export function sortCards(cards: Card[]): Card[] {
   const suitOrder: Record<Suit, number> = {
@@ -452,4 +464,22 @@ export function getHandDescription(hand: CardHand): string {
     default:
       return '未知牌型';
   }
+}
+
+/**
+ * Sort cards by pattern/frequency: Bombs (4) -> Trios (3) -> Pairs (2) -> Singles (1)
+ */
+export function sortCardsByPattern(cards: Card[]): Card[] {
+  const groups = groupByValue(cards);
+  return [...cards].sort((a, b) => {
+    const countA = groups.get(a.value)?.length || 1;
+    const countB = groups.get(b.value)?.length || 1;
+    if (countA !== countB) {
+      return countB - countA;
+    }
+    if (a.value !== b.value) {
+      return b.value - a.value;
+    }
+    return 0;
+  });
 }

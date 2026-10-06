@@ -4,77 +4,157 @@
  */
 
 import React, { useState, useCallback } from 'react';
-import { GameState, Player } from './types/game';
-import { createDeck, shuffleDeck, sortCards } from './utils/doudizhuRules';
+import { GameState, Player, RoomConfig, UserProfile } from './types/game';
+import {
+  createDeck,
+  createNoShuffleDeck,
+  shuffleDeck,
+  sortCards,
+} from './utils/doudizhuRules';
 import { sounds } from './utils/audio';
-import { Header, GameViewMode } from './components/Header';
-import { TermuxTerminalView } from './components/TermuxTerminalView';
+import { QQLobby, QQ_ROOM_PRESETS } from './components/QQLobby';
 import { TabletopGameView } from './components/TabletopGameView';
+import { LandscapeWrapper } from './components/LandscapeWrapper';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<GameViewMode>('terminal');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
 
-  // Initialize fresh new game
-  const initGame = useCallback((): GameState => {
-    const deck = shuffleDeck(createDeck());
-    const p0Cards = sortCards(deck.slice(0, 17));
-    const p1Cards = sortCards(deck.slice(17, 34));
-    const p2Cards = sortCards(deck.slice(34, 51));
-    const bottomCards = sortCards(deck.slice(51, 54));
-
-    const players: Player[] = [
-      {
-        id: 'player-0',
-        name: '终端玩家(你)',
-        role: 'UNKNOWN',
-        cards: p0Cards,
-        isAI: false,
-        score: 1000,
-        avatar: '',
-      },
-      {
-        id: 'player-1',
-        name: 'AI 极速小哥(左)',
-        role: 'UNKNOWN',
-        cards: p1Cards,
-        isAI: true,
-        score: 1000,
-        avatar: '',
-      },
-      {
-        id: 'player-2',
-        name: 'AI 算牌大师(右)',
-        role: 'UNKNOWN',
-        cards: p2Cards,
-        isAI: true,
-        score: 1000,
-        avatar: '',
-      },
-    ];
-
-    sounds.playDeal();
-
+  // Persistent User Profile (QQ Dou Dizhu profile)
+  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     return {
-      phase: 'BIDDING',
-      players,
-      currentPlayerIndex: 0,
-      landlordIndex: 0,
-      bottomCards,
-      lastValidHand: null,
-      passCount: 0,
-      multiplier: 1,
-      bombCount: 0,
-      history: [],
-      winnerIndex: null,
-      roundNumber: 1,
+      nickname: 'QQ雀圣·大司马',
+      avatar: '🤠',
+      coins: 18888,
+      diamonds: 168,
+      wins: 28,
+      losses: 12,
+      title: '高阶雀仙',
+      hasCheckedInToday: false,
     };
-  }, []);
+  });
 
-  const [gameState, setGameState] = useState<GameState>(initGame);
+  // Current active room
+  const [currentRoom, setCurrentRoom] = useState<RoomConfig>(QQ_ROOM_PRESETS[0]);
 
+  // Create initial GameState
+  const initGame = useCallback(
+    (room: RoomConfig, prevPlayers?: Player[], round = 1): GameState => {
+      // Use no-shuffle deck if selected
+      const rawDeck = room.isNoShuffle ? createNoShuffleDeck() : shuffleDeck(createDeck());
+      const p0Cards = sortCards(rawDeck.slice(0, 17));
+      const p1Cards = sortCards(rawDeck.slice(17, 34));
+      const p2Cards = sortCards(rawDeck.slice(34, 51));
+      const bottomCards = sortCards(rawDeck.slice(51, 54));
+
+      const p0Score = userProfile.coins;
+      const p1Score = prevPlayers?.[1]?.score ?? room.baseScore * 50;
+      const p2Score = prevPlayers?.[2]?.score ?? room.baseScore * 50;
+
+      const players: Player[] = [
+        {
+          id: 'player-0',
+          name: userProfile.nickname,
+          role: 'UNKNOWN',
+          cards: p0Cards,
+          isAI: false,
+          score: p0Score,
+          avatar: userProfile.avatar,
+        },
+        {
+          id: 'player-1',
+          name: '电脑(左)·智多星',
+          role: 'UNKNOWN',
+          cards: p1Cards,
+          isAI: true,
+          score: p1Score,
+          avatar: '🤖',
+        },
+        {
+          id: 'player-2',
+          name: '电脑(右)·常胜客',
+          role: 'UNKNOWN',
+          cards: p2Cards,
+          isAI: true,
+          score: p2Score,
+          avatar: '🧐',
+        },
+      ];
+
+      // Random first caller
+      const firstCaller = Math.floor(Math.random() * 3);
+
+      return {
+        phase: 'CALL_LANDLORD',
+        room,
+        players,
+        currentPlayerIndex: firstCaller,
+        firstCallerIndex: firstCaller,
+        landlordIndex: -1,
+        currentRobberIndex: -1,
+        bottomCards,
+        lastValidHand: null,
+        passCount: 0,
+        multiplier: 1,
+        bombCount: 0,
+        isSpring: false,
+        isAntiSpring: false,
+        history: [],
+        winnerIndex: null,
+        roundNumber: round,
+      };
+    },
+    [userProfile]
+  );
+
+  const [gameState, setGameState] = useState<GameState>(() => ({
+    phase: 'LOBBY',
+    room: QQ_ROOM_PRESETS[0],
+    players: [],
+    currentPlayerIndex: 0,
+    firstCallerIndex: 0,
+    landlordIndex: -1,
+    currentRobberIndex: -1,
+    bottomCards: [],
+    lastValidHand: null,
+    passCount: 0,
+    multiplier: 1,
+    bombCount: 0,
+    isSpring: false,
+    isAntiSpring: false,
+    history: [],
+    winnerIndex: null,
+    roundNumber: 1,
+  }));
+
+  // Enter room from lobby
+  const handleEnterRoom = (room: RoomConfig) => {
+    setCurrentRoom(room);
+    const newGame = initGame(room, undefined, 1);
+    setGameState(newGame);
+
+    // Rapid deal sounds
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => sounds.playDeal(), i * 90);
+    }
+  };
+
+  // Next round
   const handleStartNewGame = () => {
-    setGameState(initGame());
+    const nextRound = gameState.roundNumber + 1;
+    const newGame = initGame(currentRoom, gameState.players, nextRound);
+    setGameState(newGame);
+
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => sounds.playDeal(), i * 90);
+    }
+  };
+
+  // Return to Lobby
+  const handleBackToLobby = () => {
+    setGameState(prev => ({
+      ...prev,
+      phase: 'LOBBY',
+    }));
   };
 
   const handleToggleSound = () => {
@@ -83,47 +163,62 @@ export default function App() {
     sounds.enabled = next;
   };
 
+  // Fullscreen trigger
+  const handleToggleFullscreen = () => {
+    if (typeof document !== 'undefined') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+        if ('orientation' in screen && 'lock' in screen.orientation) {
+          (screen.orientation as any).lock('landscape').catch(() => {});
+        }
+      } else {
+        document.exitFullscreen?.().catch(() => {});
+      }
+    }
+  };
+
+  // Sync human score back to userProfile
+  const handleUpdateGameState = (newState: GameState) => {
+    setGameState(newState);
+    if (newState.players[0]) {
+      setUserProfile(prev => ({
+        ...prev,
+        coins: newState.players[0].score,
+        wins:
+          newState.phase === 'GAME_OVER' && newState.winnerIndex === 0
+            ? prev.wins + 1
+            : prev.wins,
+        losses:
+          newState.phase === 'GAME_OVER' &&
+          newState.winnerIndex !== 0 &&
+          newState.winnerIndex !== null
+            ? prev.losses + 1
+            : prev.losses,
+      }));
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-black">
-      {/* Top Header */}
-      <Header
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        soundEnabled={soundEnabled}
-        onToggleSound={handleToggleSound}
-        onStartNewGame={handleStartNewGame}
-      />
-
-      {/* Main Game Screen */}
-      <main className="flex-1 p-2 sm:p-5 flex flex-col items-center justify-center">
-        {viewMode === 'terminal' ? (
-          <TermuxTerminalView
-            gameState={gameState}
-            onUpdateState={setGameState}
-            onStartNewGame={handleStartNewGame}
-          />
-        ) : (
-          <TabletopGameView
-            gameState={gameState}
-            onUpdateState={setGameState}
-            onStartNewGame={handleStartNewGame}
-          />
-        )}
-      </main>
-
-      {/* Clean Bottom Bar */}
-      <footer className="border-t border-slate-900 bg-slate-950/80 py-2.5 text-center text-xs text-slate-500">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500">
-            Go 斗地主 · Android Termux 终端原生移植版
-          </span>
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-slate-400 font-mono">
-              第 {gameState.roundNumber} 局 | 当前行动: {gameState.players[gameState.currentPlayerIndex]?.name}
-            </span>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <LandscapeWrapper>
+      {gameState.phase === 'LOBBY' ? (
+        <QQLobby
+          userProfile={userProfile}
+          onUpdateProfile={setUserProfile}
+          onEnterRoom={handleEnterRoom}
+          soundEnabled={soundEnabled}
+          onToggleSound={handleToggleSound}
+          onToggleFullscreen={handleToggleFullscreen}
+        />
+      ) : (
+        <TabletopGameView
+          gameState={gameState}
+          onUpdateState={handleUpdateGameState}
+          onStartNewGame={handleStartNewGame}
+          onBackToLobby={handleBackToLobby}
+          soundEnabled={soundEnabled}
+          onToggleSound={handleToggleSound}
+        />
+      )}
+    </LandscapeWrapper>
   );
 }
