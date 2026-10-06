@@ -13,7 +13,7 @@ export interface SourceFile {
 
 export const GO_MAIN_CODE = `// ==============================================================================
 // 斗地主 (Dou Dizhu) - 纯 Go 终端原生实现 (Termux 友好 / 零第三方依赖)
-// GitHub: https://github.com/wenxiu775866/termux-doudizhu
+// GitHub: https://github.com/wen775866/dd
 // 支持: 单机 AI 对战 / 多轮积分 / ANSI 终端彩色高亮 / 手机虚拟键盘自适应
 // ==============================================================================
 
@@ -907,8 +907,8 @@ export const GO_README = `# ♠ ♥ ♣ ♦ Termux Go 语言斗地主 (Termux Do
 pkg update -y && pkg install -y git golang
 
 # 2. 从 GitHub 拉取本项目
-git clone https://github.com/wenxiu775866/termux-doudizhu.git
-cd termux-doudizhu
+git clone https://github.com/wen775866/dd.git
+cd dd
 
 # 3. 执行自动化安装脚本 (自动编译并注册全局 ddz 命令与按键优化)
 chmod +x install.sh
