@@ -1,6 +1,6 @@
 {
-  "name": "欢聚锄大地 · 4人横屏决战与PWA独立应用",
-  "description": "经典 4 人横屏锄大地 (Big Two) Web 独立版，支持五大牌型压制、首出方块3规矩、关门三倍惩罚、真人语音配音与实时语音对讲、智能 AI 托管与离线单机畅玩。",
+  "name": "锄大地",
+  "description": "经典 4 人锄大地 & 烟三 Web 网页版，采用 ♠️ 黑桃主题，全局固定横屏，支持真人语音、实时对讲与离线 PWA 畅玩。",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

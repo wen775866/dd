@@ -427,7 +427,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4 text-slate-950" />
-                    <span>确认注册并领 30,000 豆</span>
+                    <span>确认注册并领 30,000 积分</span>
                   </>
                 )}
               </button>

@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: '雀圣斗地主',
-          short_name: '雀圣斗地主',
-          description: '经典横屏斗地主 Web PWA 独立版，支持不洗牌模式、真人语音合成对战、智能 AI 托管与离线畅玩。',
+          name: '锄大地',
+          short_name: '锄大地',
+          description: '经典 4 人锄大地与烟三 Web 横屏 PWA 独立版，黑桃 ♠️ 主题对局、真人语音对讲与离线单机畅玩。',
           theme_color: '#050b14',
           background_color: '#050b14',
           display: 'standalone',

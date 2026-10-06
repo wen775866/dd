@@ -29,52 +29,32 @@ import {
   ShieldCheck,
   LogOut,
   User,
-  Bot,
+  Heart,
+  Club,
+  Diamond,
 } from 'lucide-react';
 
 export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   {
-    id: 'room-novice',
-    name: '初级场 · 新手水之池',
-    tag: '底分 100 豆 · 关门双倍',
-    baseScore: 100,
+    id: 'room-chudadi',
+    name: '♠️ 锄大地 · 经典 4 人桌',
+    tag: '底分 1,000 积分 · 首出方块3 · 关门双倍/三倍暴击',
+    baseScore: 1000,
     entryMin: 100,
-    maxMultiplier: 32,
-    colorTheme: 'from-emerald-600 via-teal-700 to-emerald-950',
-    badge: '练手推荐',
+    maxMultiplier: 128,
+    colorTheme: 'from-emerald-600 via-teal-800 to-slate-950',
+    badge: '正宗无牌官',
     mode: 'classic',
   },
   {
-    id: 'room-intermediate',
-    name: '中级场 · 运筹风暴镇',
-    tag: '底分 500 豆 · 关门双倍',
-    baseScore: 500,
-    entryMin: 2000,
-    maxMultiplier: 64,
-    colorTheme: 'from-blue-600 via-indigo-700 to-slate-950',
-    badge: '高手进阶',
-    mode: 'express',
-  },
-  {
-    id: 'room-advanced',
-    name: '高级场 · 锄神至尊殿',
-    tag: '底分 2,000 豆 · 三倍关门暴击',
+    id: 'room-yansan',
+    name: '🔥 烟三 · 专场爆分竞技',
+    tag: '底分 2,000 积分 · 烟三特色组合 · 疯狂拼分火爆开打',
     baseScore: 2000,
-    entryMin: 10000,
-    maxMultiplier: 128,
-    colorTheme: 'from-purple-600 via-indigo-900 to-slate-950',
-    badge: '大佬云集',
-    mode: 'master',
-  },
-  {
-    id: 'room-god',
-    name: '神圣场 · 顶峰双倍爆金',
-    tag: '底分 5,000 豆 · 铁支/同花顺x4',
-    baseScore: 5000,
-    entryMin: 25000,
+    entryMin: 2000,
     maxMultiplier: 256,
-    colorTheme: 'from-amber-600 via-orange-800 to-amber-950',
-    badge: '富豪必玩',
+    colorTheme: 'from-amber-600 via-red-800 to-slate-950',
+    badge: '烟三热血场',
     mode: 'master',
   },
 ];
@@ -99,23 +79,21 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   soundEnabled,
   onToggleSound,
   onOpenAuth,
-  onOpenAdmin,
   onLogout,
 }) => {
   const [showRulesModal, setShowRulesModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showFreeBeansModal, setShowFreeBeansModal] = useState(false);
-  const [showMailModal, setShowMailModal] = useState(false);
 
   const handleDailyCheckin = () => {
     if (userProfile.hasCheckedInToday) {
       sounds.playClick();
-      alert('您今天已经签到领过福利豆了，明天再来吧！');
+      alert('您今天已经签到领过福利积分了，明天再来吧！');
       return;
     }
     sounds.playCoins();
     onUpdateCoins(userProfile.coins + 3000);
-    alert('🎉 每日签到成功！恭喜获得 3,000 欢乐豆奖励！');
+    alert('🎉 每日签到成功！恭喜获得 3,000 福利积分奖励！');
   };
 
   const winRate =
@@ -124,17 +102,17 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       : Math.round((userProfile.wins / (userProfile.wins + userProfile.losses)) * 100);
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-2 sm:p-4 select-none bg-gradient-to-br from-[#0a192f] via-[#081226] to-[#040914] text-white relative overflow-hidden">
+    <div className="w-full h-full flex flex-col justify-between p-2 sm:p-4 select-none bg-gradient-to-br from-[#080d1a] via-[#0b172a] to-[#040812] text-white relative overflow-hidden">
       {/* Ambient Radial Lights */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(16,185,129,0.18)_0%,transparent_60%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(16,185,129,0.15)_0%,transparent_60%)] pointer-events-none" />
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* TOP BAR: Profile Header & Currency */}
       <div className="relative z-10 flex items-center justify-between gap-2 px-1 py-1">
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Avatar Box */}
-          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md pl-1 pr-3 py-1 rounded-full border border-emerald-500/40 shadow-lg">
+          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md pl-1 pr-3 py-1 rounded-full border border-emerald-500/40 shadow-lg">
             <div className="relative">
               <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 p-0.5 shadow-md flex items-center justify-center">
                 <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-lg sm:text-xl">
@@ -158,10 +136,10 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             </div>
           </div>
 
-          {/* 欢乐豆 Capsule */}
+          {/* 积分 Capsule */}
           <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md pl-2.5 pr-1 py-1 rounded-full border border-yellow-500/50 shadow-md">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-slate-950 font-black text-[11px] shadow">
-              豆
+              分
             </div>
             <span className="font-mono font-black text-amber-300 text-xs sm:text-sm pr-1">
               {userProfile.coins.toLocaleString()}
@@ -169,7 +147,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             <button
               onClick={() => setShowFreeBeansModal(true)}
               className="w-5 h-5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 flex items-center justify-center text-slate-950 font-black cursor-pointer shadow active:scale-95 transition-transform"
-              title="免费充能补豆"
+              title="免费增加积分"
             >
               <Plus className="w-3.5 h-3.5 stroke-[3]" />
             </button>
@@ -186,19 +164,6 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
         {/* Right Feature Buttons */}
         <div className="flex items-center gap-1 sm:gap-2">
-          {/* TG Bot Admin Button */}
-          <button
-            onClick={() => {
-              sounds.playClick();
-              onOpenAdmin();
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:brightness-110 text-slate-950 font-black text-xs shadow-md active:scale-95 cursor-pointer transition-transform border border-amber-300/50"
-            title="Telegram Bot 管理员控制台"
-          >
-            <Bot className="w-3.5 h-3.5 text-slate-950" />
-            <span>Bot管理员</span>
-          </button>
-
           {/* Account Login / Register / Logout Button */}
           {currentUser ? (
             <button
@@ -206,8 +171,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-500/40 cursor-pointer shadow transition-all"
-              title={`已登录: ${currentUser.phone} (点击切换账号)`}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-500/40 cursor-pointer shadow transition-all"
+              title={`已登录账号: ${currentUser.phone} (点击切换)`}
             >
               <User className="w-3.5 h-3.5 text-emerald-400" />
               <span className="truncate max-w-[80px]">{currentUser.nickname}</span>
@@ -218,7 +183,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-bold text-xs shadow cursor-pointer transition-all border border-emerald-400/40"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-bold text-xs shadow cursor-pointer transition-all border border-emerald-400/40"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-white" />
               <span>登录 / 注册</span>
@@ -232,13 +197,13 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             className="relative hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 cursor-pointer transition-transform"
           >
             <Gift className="w-3.5 h-3.5" />
-            <span>福利签到</span>
+            <span>福利积分</span>
           </button>
 
           <button
             onClick={() => setShowRulesModal(true)}
             className="p-2 rounded-full bg-black/40 border border-slate-700/80 hover:bg-slate-800/80 text-amber-300 text-xs font-bold transition-all cursor-pointer shadow"
-            title="锄大地规则宝典"
+            title="规则宝典"
           >
             <BookOpen className="w-4 h-4" />
           </button>
@@ -253,22 +218,24 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       </div>
 
-      {/* CENTER HERO & ROOM SELECTOR */}
+      {/* CENTER HERO & TWO GAME SECTIONS */}
       <div className="relative z-10 my-auto py-2">
-        <div className="text-center mb-3 sm:mb-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-1 shadow-inner">
+        <div className="text-center mb-4 sm:mb-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-1.5 shadow-inner">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>经典 4 人大牌决战 · 2 &gt; A &gt; K ... &gt; 3 · 首出方块3</span>
+            <span>♠️ 经典 4 人桌对局 · 点数 2 最大 · 关门双倍暴击</span>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-lg tracking-wider">
-            🔨 欢聚锄大地 · 4人桌爆金赛
+          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-xl tracking-widest flex items-center justify-center gap-2">
+            <span>♠️ 锄大地</span>
           </h1>
         </div>
 
-        {/* 4 Room Presets Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 max-w-5xl mx-auto px-1">
-          {CHUDADI_ROOM_PRESETS.map((room) => {
+        {/* TWO GAME SECTIONS: 锄大地 & 烟三 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto px-2">
+          {CHUDADI_ROOM_PRESETS.map((room, idx) => {
             const canEnter = userProfile.coins >= room.entryMin;
+            const isChudadi = room.id === 'room-chudadi';
+
             return (
               <div
                 key={room.id}
@@ -278,47 +245,66 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                     onSelectRoom(room);
                   } else {
                     sounds.playPass();
-                    alert(`需要至少 ${room.entryMin.toLocaleString()} 欢乐豆方可进入该场次！`);
+                    alert(`进入【${room.name}】需要至少 ${room.entryMin.toLocaleString()} 积分！`);
                   }
                 }}
-                className={`relative rounded-3xl p-3 sm:p-4 border-2 transition-all duration-200 cursor-pointer flex flex-col justify-between overflow-hidden shadow-2xl group ${
+                className={`relative rounded-3xl p-5 border-2 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden shadow-2xl group ${
                   canEnter
-                    ? 'bg-gradient-to-b from-slate-900/90 to-slate-950/90 hover:-translate-y-1.5 hover:shadow-emerald-500/20 border-emerald-500/50 hover:border-amber-400'
+                    ? isChudadi
+                      ? 'bg-gradient-to-br from-emerald-950/90 via-slate-900/90 to-slate-950/95 border-emerald-500/60 hover:border-amber-400 hover:-translate-y-2 hover:shadow-emerald-500/25'
+                      : 'bg-gradient-to-br from-amber-950/90 via-slate-900/90 to-slate-950/95 border-amber-500/60 hover:border-amber-300 hover:-translate-y-2 hover:shadow-amber-500/25'
                     : 'bg-slate-950/60 opacity-60 border-slate-800'
                 }`}
               >
-                {/* Room Badge */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 shadow">
+                {/* Decorative Background Symbol */}
+                <div className="absolute -right-4 -bottom-4 opacity-10 font-black text-8xl pointer-events-none select-none text-white">
+                  {isChudadi ? '♠️' : '🔥'}
+                </div>
+
+                {/* Top Badge & Score */}
+                <div className="flex items-center justify-between z-10">
+                  <span
+                    className={`text-xs font-black px-3 py-1 rounded-full shadow ${
+                      isChudadi
+                        ? 'bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950'
+                        : 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950'
+                    }`}
+                  >
                     {room.badge}
                   </span>
-                  <span className="text-[11px] font-mono font-bold text-emerald-400">
-                    底分 {room.baseScore}
+                  <span className="text-xs font-mono font-black text-amber-300 bg-black/40 px-2.5 py-1 rounded-full border border-amber-500/30">
+                    底分 {room.baseScore.toLocaleString()} 积分
                   </span>
                 </div>
 
-                <div className="my-3">
-                  <h3 className="text-base sm:text-lg font-black text-amber-200 group-hover:text-white transition-colors">
-                    {room.name}
-                  </h3>
-                  <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">{room.tag}</p>
+                {/* Card Title & Desc */}
+                <div className="my-4 sm:my-6 z-10">
+                  <h2 className="text-2xl sm:text-3xl font-black text-amber-200 group-hover:text-white transition-colors flex items-center gap-2">
+                    <span>{room.name}</span>
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                    {room.tag}
+                  </p>
                 </div>
 
-                {/* Entry Requirement & Action */}
-                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                  <div className="text-[10px] text-slate-400">
-                    准入: <span className="text-amber-300 font-mono font-bold">{room.entryMin.toLocaleString()}</span> 豆
+                {/* Action & Entry Button */}
+                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between z-10">
+                  <div className="text-xs text-slate-400 font-mono">
+                    准入要求: <span className="text-amber-300 font-black">{room.entryMin.toLocaleString()}</span> 积分
                   </div>
+
                   <button
                     disabled={!canEnter}
-                    className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 transition-all ${
+                    className={`px-5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
                       canEnter
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md group-hover:scale-105'
+                        ? isChudadi
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-lg group-hover:scale-105'
+                          : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-lg group-hover:scale-105'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}
                   >
-                    <Play className="w-3 h-3 fill-current" />
-                    <span>入场</span>
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>立即开局</span>
                   </button>
                 </div>
               </div>
@@ -331,11 +317,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       <div className="relative z-10 flex items-center justify-between px-2 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>正在在线匹配对局房间 (公平绿色无挂)</span>
+          <span>正在在线匹配 4 人对局桌 (绿色公平竞技)</span>
         </div>
         <div className="flex items-center gap-3">
-          <span>当前版本: v2.5.0 PWA</span>
-          <span>按住对讲语音</span>
+          <span>当前版本: v2.6.0 PWA</span>
+          <span>语音对讲已就绪</span>
         </div>
       </div>
 
@@ -346,7 +332,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-amber-400" />
-                <span>锄大地 (Big Two) 玩法规则宝典</span>
+                <span>♠️ 锄大地 & 烟三 规则宝典</span>
               </h3>
               <button
                 onClick={() => setShowRulesModal(false)}
@@ -376,12 +362,10 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               </div>
 
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <h4 className="font-bold text-amber-400 mb-1">3. 跑清与双倍/三倍关门结算</h4>
-                <p>• 先清空 13 张手牌的玩家获得第一名胜出！</p>
-                <p>• 剩 1~9 张牌：按剩牌张数扣分。</p>
+                <h4 className="font-bold text-amber-400 mb-1">3. 烟三特色与积分关门结算</h4>
+                <p>• 先清空 13 张手牌的玩家胜出获得最大积分！</p>
                 <p>• 剩 10~12 张牌：触发 <strong className="text-rose-400">双倍惩罚 (张数x2)</strong>。</p>
-                <p>• 剩 13 张未出一张：触发 <strong className="text-rose-500 font-bold">三倍关门暴击 (13x3 = 39倍底分)</strong>！</p>
-                <p>• 若胜者以老二清牌倍数额外x2，以铁支/同花顺清牌倍数额外x4！</p>
+                <p>• 剩 13 张未出一张：触发 <strong className="text-rose-500 font-bold">三倍关门暴击 (39倍底分)</strong>！</p>
               </div>
             </div>
 
@@ -395,7 +379,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* 免费充能补豆 Modal */}
+      {/* 免费充能补积分 Modal */}
       {showFreeBeansModal && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
           <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-xs w-full p-5 shadow-2xl flex flex-col items-center text-center gap-3 animate-in zoom-in-95 duration-150">
@@ -403,8 +387,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               <Coins className="w-7 h-7" />
             </div>
             <div>
-              <h3 className="text-base font-black text-amber-300">免费补豆充能站</h3>
-              <p className="text-xs text-slate-400 mt-1">资金不足？即刻领取 5,000 免费欢乐豆救救急！</p>
+              <h3 className="text-base font-black text-amber-300">积分补充站</h3>
+              <p className="text-xs text-slate-400 mt-1">积分不足？即刻免费补充 5,000 救急积分！</p>
             </div>
             <button
               onClick={() => {
@@ -414,7 +398,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               }}
               className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110"
             >
-              领取 5,000 豆
+              免费领取 5,000 积分
             </button>
           </div>
         </div>
@@ -427,7 +411,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <h3 className="text-base font-black text-white flex items-center gap-2">
                 <Settings className="w-4 h-4 text-amber-400" />
-                锄大地系统设置
+                系统设置
               </h3>
               <button
                 onClick={() => setShowSettingsModal(false)}
@@ -458,9 +442,9 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-bold text-amber-300">
                     <Mic className="w-3.5 h-3.5 text-amber-400" />
-                    <span>真人语音发音风格</span>
+                    <span>真人配音风格</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">实时配音</span>
+                  <span className="text-[10px] text-slate-400">方言选音</span>
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {DIALECT_OPTIONS.map(d => {
@@ -495,7 +479,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               </div>
 
               <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
-                <span>PWA 独立桌面版</span>
+                <span>PWA 独立桌面应用</span>
                 <PWAInstallButton variant="compact" />
               </div>
             </div>

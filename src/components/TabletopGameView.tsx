@@ -1190,7 +1190,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   🏆 [{gameState.players[gameState.winnerIndex!]?.name}] 率先清盘夺冠！
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  场次底分: <span className="text-amber-400 font-bold font-mono">{gameState.room.baseScore} 豆</span>
+                  场次底分: <span className="text-amber-400 font-bold font-mono">{gameState.room.baseScore} 积分</span>
                   {gameState.multiplier > 1 && ` (终盘加倍 x${gameState.multiplier})`}
                 </p>
               </div>
@@ -1224,7 +1224,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                           )}
                         </span>
                         <span className="font-mono text-amber-400 font-bold text-xs sm:text-sm">
-                          {p.score.toLocaleString()} 豆
+                          {p.score.toLocaleString()} 积分
                         </span>
                       </div>
 
