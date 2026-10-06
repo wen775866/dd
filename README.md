@@ -58,7 +58,30 @@ cd dd
 
 ---
 
-### 第三步：安装依赖并构建生产版本
+### 第三步：配置 Telegram Bot 环境变量 (.env)
+
+你可以在 `dd` 文件夹的上一级目录（即 Termux 根目录 `~/.env`）或 `dd/.env` 中创建 `.env` 配置文件：
+
+```bash
+# 在 Termux 根目录创建并配置 .env 文件
+nano ~/.env
+```
+
+填入以下内容（包含你的 Telegram Bot ID 与 Token）：
+
+```env
+# Telegram Bot 简易配置 (存放在 Termux 根目录 ~/.env 或 dd/.env)
+BOT_ID="你的_BOT_ID"
+BOT_TOKEN="你的_BOT_TOKEN"
+```
+
+> **自动化特性**：
+> - 启动 Express 服务器时会自动向上寻址并加载 `~/.env`。
+> - 自动开启 **Telegram Bot 实时 Polling 监听**。在 Telegram 软件中向机器人发送 `/auth 手机号`、`/list`、`/users`、`/addcoins` 等指令即可实时交互与授权！
+
+---
+
+### 第四步：安装依赖并构建生产版本
 
 ```bash
 # 安装项目依赖（使用 --legacy-peer-deps 保证在 Termux 下 100% 顺畅安装）

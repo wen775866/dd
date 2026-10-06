@@ -614,6 +614,22 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
           {/* ================= TAB 4: CONFIG & LOGS ================= */}
           {activeTab === 'CONFIG' && (
             <div className="space-y-4">
+              {/* Termux Root .env Status Banner */}
+              <div className="p-3 rounded-2xl bg-slate-950 border border-emerald-500/40 text-xs text-slate-200 flex items-start gap-2.5 shadow">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="font-bold text-emerald-300">
+                    Termux 根目录 `.env` 配置文件加载状态
+                  </div>
+                  <div className="text-[11px] text-slate-300 font-mono">
+                    系统会自动优先加载 <code className="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">../.env</code> (即 Termux 根目录 ~/.env)。
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    只需配置两个变量：<code className="text-cyan-300">BOT_ID</code> 与 <code className="text-cyan-300">BOT_TOKEN</code> (或 <code className="text-cyan-300">TELEGRAM_BOT_TOKEN</code>)
+                  </div>
+                </div>
+              </div>
+
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                 <h4 className="font-bold text-xs text-amber-300 flex items-center gap-1.5">
                   <Bot className="w-4 h-4 text-amber-400" />
