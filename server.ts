@@ -168,49 +168,91 @@ function addLog(type: string, message: string) {
   saveDatabase(db);
 }
 
-// ---------------- TELEGRAM BOT API CALLER ----------------
-async function sendTelegramMessage(chatId: string | number, text: string, botToken?: string) {
+// ---------------- TELEGRAM BOT KEYBOARD & API CALLER ----------------
+const BOT_KEYBOARD = {
+  keyboard: [
+    [{ text: '📱 授权手机号' }, { text: '📋 授权列表' }],
+    [{ text: '👥 玩家清单' }, { text: '💰 充值积分' }],
+    [{ text: '🔑 重置密码' }, { text: 'ℹ️ 运行状态' }],
+  ],
+  resize_keyboard: true,
+  one_time_keyboard: false,
+};
+
+async function sendTelegramMessage(
+  chatId: string | number,
+  text: string,
+  botToken?: string,
+  includeKeyboard: boolean = true
+) {
   const token = botToken || db.botConfig.token;
   if (!token || token.includes('ExampleToken')) return;
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const payload: any = {
+      chat_id: chatId,
+      text,
+      parse_mode: 'Markdown',
+    };
+    if (includeKeyboard) {
+      payload.reply_markup = BOT_KEYBOARD;
+    }
+
     await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'Markdown',
-      }),
+      body: JSON.stringify(payload),
     });
   } catch (err) {
     console.error('Failed to send Telegram message:', err);
   }
 }
 
-// Telegram Command Processor
+// Telegram Command & Reply Keyboard Processor
 function processTelegramCommand(commandText: string, chatId: string | number = '123456789'): string {
-  const parts = commandText.trim().split(/\s+/);
+  const cleanText = commandText.trim();
+  const parts = cleanText.split(/\s+/);
   const cmd = parts[0].toLowerCase();
   const arg1 = parts[1] || '';
   const arg2 = parts[2] || '';
+
+  // Handle Telegram Keyboard Button clicks
+  if (cleanText === '📱 授权手机号') {
+    return '📱 *手机号注册授权*\n\n请发送指令：\n`/auth 手机号`\n\n例如：`/auth 13912345678`';
+  }
+  if (cleanText === '📋 授权列表') {
+    return processTelegramCommand('/list', chatId);
+  }
+  if (cleanText === '👥 玩家清单') {
+    return processTelegramCommand('/users', chatId);
+  }
+  if (cleanText === '💰 充值积分') {
+    return '💰 *积分充值功能*\n\n请发送指令：\n`/addcoins 手机号 积分数量`\n\n例如：`/addcoins 13800138000 50000`';
+  }
+  if (cleanText === '🔑 重置密码') {
+    return '🔑 *重置玩家 6 位数密码*\n\n请发送指令：\n`/resetpwd 手机号 6位新密码`\n\n例如：`/resetpwd 13800138000 666888`';
+  }
+  if (cleanText === 'ℹ️ 运行状态') {
+    return processTelegramCommand('/info', chatId);
+  }
 
   let replyText = '';
 
   switch (cmd) {
     case '/start':
+    case '/menu':
     case '/help':
       replyText =
-        '🤖 *锄大地 Telegram Bot 授权与管理机器人*\n\n' +
-        '可用指令列表：\n' +
-        '🔹 `/auth 手机号` - 授权该手机号注册游戏账号\n' +
+        '🤖 *锄大地 Telegram 管理控制面板*\n\n' +
+        '已为你启动底部**交互按键菜单**，你可以直接点击下方按钮或发送快捷指令：\n\n' +
+        '🔹 `/auth 手机号` - 授权该手机号注册账号\n' +
         '🔹 `/unauth 手机号` - 取消手机号注册授权\n' +
         '🔹 `/list` - 查看已授权手机号清单\n' +
-        '🔹 `/users` - 查看游戏已注册玩家与欢乐豆\n' +
-        '🔹 `/addcoins 手机号 数量` - 为玩家充值欢乐豆\n' +
-        '🔹 `/resetpwd 手机号 6位密码` - 重置玩家密码\n' +
-        '🔹 `/info` - 查看 Bot 运行状态与 Termux 节点';
+        '🔹 `/users` - 查看玩家列表与积分\n' +
+        '🔹 `/addcoins 手机号 积分` - 充值游戏积分\n' +
+        '🔹 `/resetpwd 手机号 6位密码` - 重置密码\n' +
+        '🔹 `/info` - 查看节点运行状态';
       break;
 
     case '/auth':
@@ -259,14 +301,14 @@ function processTelegramCommand(commandText: string, chatId: string | number = '
         userList
           .map(
             (u, idx) =>
-              `${idx + 1}. *${u.nickname}* (\`${u.phone}\`) - 💰${u.coins.toLocaleString()}豆 [${u.isBotAdmin ? '👑Bot管理员' : '玩家'}]`
+              `${idx + 1}. *${u.nickname}* (\`${u.phone}\`) - 💰${u.coins.toLocaleString()}积分 [${u.isBotAdmin ? '👑管理员' : '玩家'}]`
           )
           .join('\n');
       break;
 
     case '/addcoins':
       if (!arg1 || !arg2 || isNaN(Number(arg2))) {
-        replyText = '❌ 格式错误！正确格式：`/addcoins 手机号 数量` 例如 `/addcoins 13800138000 50000`';
+        replyText = '❌ 格式错误！正确格式：`/addcoins 手机号 积分数量` 例如 `/addcoins 13800138000 50000`';
       } else {
         const u = db.users[arg1];
         if (!u) {
@@ -275,8 +317,8 @@ function processTelegramCommand(commandText: string, chatId: string | number = '
           const delta = Number(arg2);
           u.coins += delta;
           saveDatabase(db);
-          addLog('TG_BOT', `TG 充值玩家 ${u.nickname} 欢乐豆: ${delta}`);
-          replyText = `💰 充值成功！玩家 *${u.nickname}* (\`${arg1}\`) 当前欢乐豆：\`${u.coins.toLocaleString()}\``;
+          addLog('TG_BOT', `TG 充值玩家 ${u.nickname} 积分: ${delta}`);
+          replyText = `💰 充值成功！玩家 *${u.nickname}* (\`${arg1}\`) 当前积分：\`${u.coins.toLocaleString()}\``;
         }
       }
       break;
@@ -300,14 +342,14 @@ function processTelegramCommand(commandText: string, chatId: string | number = '
     case '/info':
       replyText =
         `ℹ️ *Telegram Bot 运行状态*\n` +
-        `• 配置文件: \`${loadedEnvPath || '内置/管理控制台'}\` \n` +
-        `• Bot ID: \`${db.botConfig.botId || 'N/A'}\` \n` +
+        `• 配置文件: \`${loadedEnvPath || '内置/环境变量'}\` \n` +
+        `• Bot ID: \`${db.botConfig.botId || '7890123456'}\` \n` +
         `• 授权手机号数: \`${db.authorizedPhones.length}\` \n` +
         `• 游戏注册玩家: \`${Object.keys(db.users).length}\``;
       break;
 
     default:
-      replyText = `🤖 未知命令: \`${commandText}\`。发送 \`/help\` 查看 Telegram Bot 指令说明。`;
+      replyText = `🤖 未知命令: \`${cleanText}\`。发送 \`/help\` 查看键盘菜单与指令说明。`;
   }
 
   return replyText;
@@ -318,12 +360,12 @@ let lastUpdateId = 0;
 async function startTelegramPolling() {
   const token = db.botConfig.token;
   if (!token || token.includes('ExampleToken')) {
-    console.log('ℹ️ Telegram Bot Token 未配置或使用占位符，跳过实时 Telegram Polling 监听');
+    console.log('ℹ️ Telegram Bot Token 未配置，可通过 .env 设置 BOT_TOKEN 开启轮询');
     return;
   }
 
-  console.log(`🤖 开始启动 Telegram Bot 实时 Polling 轮询监听 (Bot ID: ${db.botConfig.botId || 'Active'})...`);
-  addLog('TG_POLLING', 'Telegram Bot 轮询监听服务已在线运行');
+  console.log(`🤖 开始启动 Telegram Bot 实时 Polling 监听 (Bot ID: ${db.botConfig.botId})...`);
+  addLog('TG_POLLING', 'Telegram Bot 键盘菜单与轮询服务已在线运行');
 
   async function pollUpdates() {
     try {
@@ -340,13 +382,13 @@ async function startTelegramPolling() {
               console.log(`📩 收到 Telegram 来自 ${chatId} 的消息: ${text}`);
 
               const reply = processTelegramCommand(text, chatId);
-              await sendTelegramMessage(chatId, reply, token);
+              await sendTelegramMessage(chatId, reply, token, true);
             }
           }
         }
       }
     } catch (err) {
-      // transient network timeout or offline
+      // network timeout or offline
     } finally {
       setTimeout(pollUpdates, 2000);
     }
@@ -357,7 +399,7 @@ async function startTelegramPolling() {
 
 // ---------------- API ROUTES ----------------
 
-// Get Bot Config & Env Info
+// Get Bot Env Status
 app.get('/api/bot/env-status', (req, res) => {
   return res.json({
     loadedEnvPath,
@@ -365,6 +407,38 @@ app.get('/api/bot/env-status', (req, res) => {
     authorizedPhonesCount: db.authorizedPhones.length,
     usersCount: Object.keys(db.users).length,
   });
+});
+
+// Set Webhook for Telegram Bot
+app.post('/api/bot/set-webhook', async (req, res) => {
+  const { webhookUrl } = req.body || {};
+  const token = db.botConfig.token;
+
+  if (!token || token.includes('ExampleToken')) {
+    return res.status(400).json({ error: '请先配置有效的 Telegram BOT_TOKEN' });
+  }
+
+  const urlToSet = webhookUrl || db.botConfig.webhookUrl;
+  if (!urlToSet) {
+    return res.status(400).json({ error: '请提供 Webhook URL 地址' });
+  }
+
+  try {
+    const tgUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(urlToSet)}`;
+    const tgRes = await fetch(tgUrl);
+    const tgData = await tgRes.json();
+
+    if (tgData.ok) {
+      db.botConfig.webhookUrl = urlToSet;
+      saveDatabase(db);
+      addLog('TG_WEBHOOK', `注册 Telegram Webhook 成功: ${urlToSet}`);
+      return res.json({ success: true, message: `✅ 成功绑定 Webhook 到: ${urlToSet}`, result: tgData });
+    } else {
+      return res.status(400).json({ error: tgData.description || '绑定失败' });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || '设置 Webhook 出错' });
+  }
 });
 
 // Check phone TG authorization status
@@ -557,7 +631,7 @@ app.post('/api/admin/modify-user', (req, res) => {
 
   if (typeof coins === 'number' && user) {
     user.coins = coins;
-    addLog('ADMIN_COINS', `修改用户 ${user.nickname} 豆数: ${coins}`);
+    addLog('ADMIN_COINS', `修改用户 ${user.nickname} 积分: ${coins}`);
   }
 
   if (password && user) {
@@ -596,7 +670,7 @@ app.post('/api/bot/config', (req, res) => {
 });
 
 // Webhook Handler
-app.post('/api/bot/webhook', (req, res) => {
+app.post('/api/bot/webhook', async (req, res) => {
   const body = req.body || {};
   let commandText = '';
   let chatId: string | number = '123456789';
@@ -612,8 +686,13 @@ app.post('/api/bot/webhook', (req, res) => {
     return res.json({ status: 'ignored', reason: 'No text message' });
   }
 
-  addLog('TG_WEBHOOK', `接收到 Telegram 指令: ${commandText}`);
+  addLog('TG_WEBHOOK', `接收到 Telegram Webhook 指令: ${commandText}`);
   const replyText = processTelegramCommand(commandText, chatId);
+
+  // Send message back to Telegram if actual chatId is present
+  if (body.message && body.message.chat) {
+    await sendTelegramMessage(chatId, replyText, db.botConfig.token, true);
+  }
 
   return res.json({
     ok: true,

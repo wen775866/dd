@@ -75,9 +75,22 @@ BOT_ID="你的_BOT_ID"
 BOT_TOKEN="你的_BOT_TOKEN"
 ```
 
-> **自动化特性**：
+> **自动化特性与 Telegram 键盘菜单**：
 > - 启动 Express 服务器时会自动向上寻址并加载 `~/.env`。
-> - 自动开启 **Telegram Bot 实时 Polling 监听**。在 Telegram 软件中向机器人发送 `/auth 手机号`、`/list`、`/users`、`/addcoins` 等指令即可实时交互与授权！
+> - 自动开启 **Telegram Bot 实时 Polling 监听** 并自动推送 **6 按钮快捷键盘菜单** (`📱 授权手机号`, `📋 授权列表`, `👥 玩家清单`, `💰 充值积分`, `🔑 重置密码`, `ℹ️ 运行状态`)！
+
+---
+
+### 🤖 设置 Telegram Webhook 启动 Bot 方式
+
+如果你有公网域名或使用了 Cloudflare Tunnel / Ngrok，可通过一行 `curl` 命令快速绑定 Telegram Webhook：
+
+```bash
+# 绑定 Webhook 方式 (替换你的 BOT_TOKEN 与你的公网域名)
+curl -X POST "https://api.telegram.org/bot<你的_BOT_TOKEN>/setWebhook?url=https://<你的域名>/api/bot/webhook"
+```
+
+绑定成功后 Telegram 会返回：`{"ok":true,"result":true,"description":"Webhook was set"}`！用户在 Telegram 软件中与 Bot 交互时即可通过 Webhook 毫秒级响应授权。
 
 ---
 
