@@ -3,11 +3,27 @@
  * High-fidelity, zero external audio asset dependencies.
  */
 
+import { voiceEngine } from './voiceSystem';
+
 class SoundEffects {
   private ctx: AudioContext | null = null;
   public enabled: boolean = true;
+  public voiceEnabled: boolean = true;
   public bgmEnabled: boolean = false;
   private bgmInterval: NodeJS.Timeout | null = null;
+
+  // Speak Chinese voice line
+  speak(text: string, playerId: string = 'player-0') {
+    if (!this.enabled || !this.voiceEnabled) return;
+    voiceEngine.speak(text, playerId);
+  }
+
+  // Announce played hand in voice
+  speakHand(handType: string, cards: { rank: string; suit: string; displayRank: string }[], isBeat: boolean = false, playerId: string = 'player-0') {
+    if (!this.enabled || !this.voiceEnabled) return;
+    const text = voiceEngine.getHandVoiceLine(handType, cards, isBeat);
+    voiceEngine.speak(text, playerId);
+  }
 
   private initCtx() {
     if (!this.ctx && typeof window !== 'undefined') {

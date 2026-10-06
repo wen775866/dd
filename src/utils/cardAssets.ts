@@ -5,13 +5,6 @@ import { Card } from '../types/game';
  * Files are located in /cards/ (e.g. /cards/ace_of_spades.svg, /cards/red_joker.svg)
  */
 export function getCardImagePath(card: Card): string {
-  if (card.suit === 'joker') {
-    if (card.rank === 'RJ' || card.value === 17 || card.displayRank === '大王') {
-      return '/cards/red_joker.svg';
-    }
-    return '/cards/black_joker.svg';
-  }
-
   let rankStr = card.rank.toLowerCase();
   if (rankStr === 'j') rankStr = 'jack';
   else if (rankStr === 'q') rankStr = 'queen';

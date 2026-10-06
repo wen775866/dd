@@ -59,7 +59,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
             ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 hover:brightness-110 shadow-emerald-500/20'
             : 'bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-white hover:brightness-110 shadow-cyan-500/30 border border-cyan-300/40'
         } ${className}`}
-        title="安装手机 QQ 斗地主独立应用 (PWA)"
+        title="安装雀圣斗地主独立应用 (PWA)"
       >
         <Download className="w-3.5 h-3.5 animate-bounce" />
         <span className="whitespace-nowrap">安装 App</span>

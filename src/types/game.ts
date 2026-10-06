@@ -1,64 +1,54 @@
 /**
- * Dou Dizhu (斗地主) types and definitions
+ * 锄大地 (Big Two / Big 2) types and definitions
  */
 
-export type Suit = 'spade' | 'heart' | 'club' | 'diamond' | 'joker';
+export type Suit = 'spade' | 'heart' | 'club' | 'diamond';
 
 export interface Card {
-  id: string;          // e.g. "spade-3", "joker-black"
+  id: string;          // e.g. "spade-2", "diamond-3"
   suit: Suit;
-  rank: string;        // "3".."10", "J", "Q", "K", "A", "2", "BJ", "RJ"
-  displayRank: string; // "3", "J", "小王", "大王"
-  value: number;       // 3..17 (BJ=16, RJ=17)
+  rank: string;        // "3".."10", "J", "Q", "K", "A", "2"
+  displayRank: string; // "3", "10", "J", "Q", "K", "A", "2"
+  rankValue: number;   // 3..15 (3=3, ..., A=14, 2=15)
+  suitValue: number;   // diamond=1, club=2, heart=3, spade=4
+  totalValue: number;  // rankValue * 10 + suitValue
   color: 'red' | 'black';
 }
 
 export type HandType =
   | 'PASS'
-  | 'SINGLE'
-  | 'PAIR'
-  | 'TRIO'
-  | 'TRIO_SINGLE'
-  | 'TRIO_PAIR'
-  | 'STRAIGHT'
-  | 'CONSECUTIVE_PAIRS'
-  | 'AIRPLANE'
-  | 'AIRPLANE_SINGLES'
-  | 'AIRPLANE_PAIRS'
-  | 'FOUR_TWO_SINGLES'
-  | 'FOUR_TWO_PAIRS'
-  | 'BOMB'
-  | 'ROCKET';
+  | 'SINGLE'          // 单张
+  | 'PAIR'            // 对子
+  | 'TRIPLE'          // 三条
+  | 'STRAIGHT'        // 顺子 (五张)
+  | 'FLUSH'           // 同花 (五张)
+  | 'FULL_HOUSE'      // 葫芦 (三带二)
+  | 'FOUR_OF_A_KIND'  // 铁支 (四带一)
+  | 'STRAIGHT_FLUSH'; // 同花顺 (五张)
 
 export interface CardHand {
   type: HandType;
   cards: Card[];
-  mainValue: number; // For comparisons
-  length?: number;   // Length for straights, airplane trios count
+  categoryWeight: number; // 1 for single/pair/triple, 10=Straight, 20=Flush, 30=FullHouse, 40=FourOfAKind, 50=StraightFlush
+  primaryValue: number;   // Used for comparing hands of the same type/category
+  suitValue: number;      // Used for comparing suits
 }
-
-export type Role = 'LANDLORD' | 'FARMER' | 'UNKNOWN';
 
 export interface Player {
   id: string;
   name: string;
-  role: Role;
   cards: Card[];
   isAI: boolean;
-  score: number;
+  score: number;       // 金币 / 积分
   avatar: string;
-  isDoubled?: boolean;       // 是否加倍
-  hasSuperDoubled?: boolean;  // 是否超级加倍
-  biddingScore?: number;
-  robCount?: number;
+  position: 'bottom' | 'left' | 'top' | 'right'; // 4 玩家方位
+  rankTitle?: string;
+  lastActionText?: string;
 }
 
 export type GamePhase =
   | 'LOBBY'             // 游戏大厅
-  | 'DEALING'           // 发牌动画
-  | 'CALL_LANDLORD'     // 叫地主
-  | 'ROB_LANDLORD'      // 抢地主
-  | 'DOUBLING'          // 加倍阶段
+  | 'DEALING'           // 洗牌发牌
   | 'PLAYING'           // 出牌对战
   | 'GAME_OVER';        // 结算
 
@@ -70,14 +60,14 @@ export interface RoomConfig {
   entryMin: number;      // 准入豆数
   maxMultiplier: number; // 封顶倍数
   colorTheme: string;
-  isNoShuffle?: boolean; // 不洗牌模式
   badge: string;
+  mode: 'classic' | 'express' | 'master'; // 经典场 / 快速场 / 雀圣至尊场
 }
 
 export interface UserProfile {
   nickname: string;
   avatar: string;
-  coins: number;         // 欢乐豆
+  coins: number;         // 锄大地金币
   diamonds: number;      // 钻石
   wins: number;
   losses: number;
@@ -90,7 +80,7 @@ export interface PlayHistoryItem {
   playerId: string;
   playerName: string;
   isAI: boolean;
-  action: 'CALL' | 'ROB' | 'DOUBLE' | 'PLAY' | 'PASS';
+  action: 'PLAY' | 'PASS';
   hand?: CardHand;
   timestamp: number;
 }
@@ -98,23 +88,18 @@ export interface PlayHistoryItem {
 export interface GameState {
   phase: GamePhase;
   room: RoomConfig;
-  players: Player[];
-  currentPlayerIndex: number;
-  landlordIndex: number;
-  firstCallerIndex: number;  // 第一个叫地主的人
-  currentRobberIndex: number;
+  players: Player[];           // 4 玩家
+  currentPlayerIndex: number;  // 当前出牌玩家 (0, 1, 2, 3)
+  starterCardId: string;       // 首出必备牌 (如方块3: "diamond-3")
+  isFirstTrick: boolean;       // 是否是首局首出
   lastValidHand: {
     playerId: string;
     hand: CardHand;
   } | null;
-  bottomCards: Card[];
-  passCount: number;
-  multiplier: number;
-  bombCount: number;
-  isSpring: boolean;         // 春天
-  isAntiSpring: boolean;     // 反春天
+  passCount: number;           // 连续 Pass 计数 (达到 3 时领牌者重新任意出牌)
+  trickLeaderIndex: number;    // 当前轮的领牌玩家
   history: PlayHistoryItem[];
   winnerIndex: number | null;
   roundNumber: number;
-  dealingIndex?: number;     // 发牌动画计数
+  multiplier: number;          // 结算加倍乘数 (若出2清牌x2，铁支/同花顺清牌x4)
 }

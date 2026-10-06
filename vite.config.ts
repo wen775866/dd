@@ -14,9 +14,9 @@ export default defineConfig(() => {
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
         manifest: {
           id: '/',
-          name: '手机 QQ 斗地主',
-          short_name: 'QQ斗地主',
-          description: '经典手机 QQ 斗地主 Web 横屏版，支持不洗牌模式、智能 AI 托管对战与离线畅玩。',
+          name: '雀圣斗地主',
+          short_name: '雀圣斗地主',
+          description: '经典横屏斗地主 Web PWA 独立版，支持不洗牌模式、真人语音合成对战、智能 AI 托管与离线畅玩。',
           theme_color: '#050b14',
           background_color: '#050b14',
           display: 'standalone',

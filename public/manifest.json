@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "手机 QQ 斗地主",
-  "short_name": "QQ斗地主",
-  "description": "经典手机 QQ 斗地主 Web 横屏版，支持不洗牌模式、智能 AI 托管对战与离线畅玩。",
+  "name": "欢聚锄大地",
+  "short_name": "欢聚锄大地",
+  "description": "经典横屏 4 人锄大地 (Big Two) Web PWA 独立版，支持 52 张标准卡牌规则、首出方块3规矩、关门三倍惩罚、真人语音与实时语音对讲对战。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

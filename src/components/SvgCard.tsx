@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../types/game';
 import { getCardImagePath, CARD_BACK_IMAGE } from '../utils/cardAssets';
-import { SUIT_SYMBOLS } from '../utils/doudizhuRules';
+import { SUIT_SYMBOLS } from '../utils/chudadiRules';
 
 interface SvgCardProps {
   card?: Card;
