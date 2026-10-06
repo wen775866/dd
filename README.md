@@ -55,12 +55,18 @@ cd dd
 ### 第三步：安装依赖并构建生产版本
 
 ```bash
-# 安装项目依赖
-npm install
+# 安装项目依赖（使用 --legacy-peer-deps 保证在 Termux 下 100% 顺畅安装）
+npm install --legacy-peer-deps
 
 # 编译打包前端静态工程（极速编译并优化体积）
 npm run build
 ```
+
+> **或者使用一键免配置脚本**：
+> ```bash
+> chmod +x start.sh
+> ./start.sh
+> ```
 
 ---
 
