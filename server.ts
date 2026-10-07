@@ -682,15 +682,15 @@ app.post('/api/bot/config', (req, res) => {
   return res.json({ success: true, botConfig: db.botConfig });
 });
 
-// Webhook Handler
+// Webhook Handler (Returns method: sendMessage directly in HTTP response JSON for zero-lag TG Webhook reply)
 app.post('/api/bot/webhook', async (req, res) => {
   const body = req.body || {};
   let commandText = '';
-  let chatId: string | number = '123456789';
+  let chatId: string | number = '';
 
   if (body.message && body.message.text) {
     commandText = body.message.text.trim();
-    chatId = body.message.chat?.id || chatId;
+    chatId = body.message.chat?.id || '';
   } else if (body.text) {
     commandText = String(body.text).trim();
   }
@@ -699,17 +699,28 @@ app.post('/api/bot/webhook', async (req, res) => {
     return res.json({ status: 'ignored', reason: 'No text message' });
   }
 
+  console.log(`📩 收到 Telegram Webhook 指令 [Chat: ${chatId}]: ${commandText}`);
   addLog('TG_WEBHOOK', `接收到 Telegram Webhook 指令: ${commandText}`);
-  const replyText = processTelegramCommand(commandText, chatId);
+  const replyText = processTelegramCommand(commandText, chatId || '123456789');
 
-  // Send message back to Telegram if actual chatId is present
-  if (body.message && body.message.chat) {
-    await sendTelegramMessage(chatId, replyText, db.botConfig.token, true);
+  // Also try async background call as fallback
+  if (chatId) {
+    sendTelegramMessage(chatId, replyText, db.botConfig.token, true).catch(() => {});
+  }
+
+  // Telegram official Webhook direct response
+  if (chatId) {
+    return res.json({
+      method: 'sendMessage',
+      chat_id: chatId,
+      text: replyText,
+      parse_mode: 'Markdown',
+      reply_markup: BOT_KEYBOARD,
+    });
   }
 
   return res.json({
     ok: true,
-    chat_id: chatId,
     replyText,
     authorizedPhones: db.authorizedPhones,
     usersCount: Object.keys(db.users).length,
