@@ -237,7 +237,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     if (cardsToPlay.length === 0) return;
 
     // Check if first trick requires starter card (diamond-2)
-    if (gameState.isFirstTrick && !cardsToPlay.some(c => c.id === gameState.starterCardId)) {
+    if (gameState.isFirstTrick && gameState.starterCardId && !cardsToPlay.some(c => c.id === gameState.starterCardId)) {
       sounds.playPass();
       showBubble('player-0', '首出必须包含方块2 (♦2)！');
       return;
@@ -257,7 +257,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       !canBeat(gameState.lastValidHand.hand, hand)
     ) {
       sounds.playPass();
-      showBubble('player-0', '压不过桌上的牌！');
+      showBubble('player-0', `压不过【${getHandDescription(gameState.lastValidHand.hand)}】！`);
       return;
     }
 
@@ -668,6 +668,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
             <span className="text-xs font-black text-amber-300 hidden sm:inline">
               🔨 {gameState.room.name}
+            </span>
+
+            <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-amber-500/30">
+              第 {gameState.matchNumber || 1} 场 · 第 {gameState.roundNumber || 1} 局
             </span>
 
             <span className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1 font-mono">

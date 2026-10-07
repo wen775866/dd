@@ -11,6 +11,7 @@
     "preview:3000": "PORT=3000 tsx server.ts",
     "preview:8080": "PORT=8080 tsx server.ts",
     "clean": "rm -rf dist server.js",
+    "update": "rm -rf dist && vite build",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
