@@ -766,7 +766,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative ${
                   activeVoicePlayer === botLeft.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
-                    : gameState.currentPlayerIndex === 1
+                    : gameState.currentPlayerIndex === 3
                     ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-emerald-900'
                     : 'border-emerald-700/80 bg-slate-950/70'
                 }`}
@@ -865,7 +865,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative ${
                   activeVoicePlayer === botRight.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
-                    : gameState.currentPlayerIndex === 3
+                    : gameState.currentPlayerIndex === 1
                     ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-emerald-900'
                     : 'border-emerald-700/80 bg-slate-950/70'
                 }`}
@@ -894,7 +894,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
         </div>
 
         {/* BOTTOM SECTION: Human Actions & 13 Card Hand Fan */}
-        <div className="relative z-20 flex flex-col items-center gap-1.5 bg-black/60 backdrop-blur-md rounded-2xl p-2 sm:p-3 border border-emerald-500/25">
+        <div className="relative z-20 flex flex-col items-center bg-black/75 backdrop-blur-md rounded-t-3xl pt-1.5 sm:pt-2 border-t-2 border-x-2 border-emerald-500/35 overflow-hidden -mb-2 sm:-mb-3 w-full">
           {speechBubble['player-0'] && (
             <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-2xl border-2 border-white z-40 animate-bounce flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
@@ -902,75 +902,107 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
           )}
 
-          {/* Action Buttons Row */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
-            {isHumanCurrent && gameState.phase === 'PLAYING' && (
-              <div className="flex items-center gap-2 sm:gap-3">
-                {/* Timer Circle */}
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500 text-slate-950 font-black text-sm font-mono shadow-md border-2 border-yellow-200">
-                  {countdown}
+          {/* Action Buttons Row & Info */}
+          <div className="flex items-center justify-between w-full px-3 py-1 bg-black/40 border-b border-emerald-900/40">
+            {/* Left: Player Identity */}
+            <div className="flex items-center gap-1.5 text-xs text-slate-300">
+              <User className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-bold text-slate-100">{human.name} (南家)</span>
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setSortByPattern(prev => !prev);
+                }}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer text-[10px] font-bold ml-1"
+              >
+                <SlidersHorizontal className="w-2.5 h-2.5 text-amber-400" />
+                <span>{sortByPattern ? '按点数' : '按大小'}</span>
+              </button>
+            </div>
+
+            {/* Center: Action Buttons */}
+            <div className="flex items-center gap-2">
+              {isHumanCurrent && gameState.phase === 'PLAYING' && (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Timer Circle */}
+                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono shadow-md border-2 border-yellow-200">
+                    {countdown}
+                  </div>
+
+                  {/* Pass Button (if not leading) */}
+                  {gameState.lastValidHand && gameState.lastValidHand.playerId !== 'player-0' && (
+                    <button
+                      onClick={handleHumanPass}
+                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-700"
+                    >
+                      不出
+                    </button>
+                  )}
+
+                  {/* Hint Button */}
+                  <button
+                    onClick={handleHumanHint}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 text-xs font-black cursor-pointer shadow-lg active:scale-95"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5 fill-current" />
+                    <span>提示</span>
+                  </button>
+
+                  {/* Reset Selection */}
+                  {selectedCardIds.length > 0 && (
+                    <button
+                      onClick={() => setSelectedCardIds([])}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-amber-200 text-xs font-bold cursor-pointer transition-all"
+                    >
+                      重选
+                    </button>
+                  )}
+
+                  {/* Play Button */}
+                  <button
+                    onClick={handleHumanPlay}
+                    disabled={selectedCardIds.length === 0}
+                    className={`flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-black shadow-xl transition-all cursor-pointer ${
+                      selectedCardIds.length > 0
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-white shadow-emerald-950/60 scale-105 active:scale-100'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                    }`}
+                  >
+                    <Play className="w-3.5 h-3.5" />
+                    <span>出牌 ({selectedCardIds.length})</span>
+                  </button>
                 </div>
+              )}
 
-                {/* Pass Button (if not leading) */}
-                {gameState.lastValidHand && gameState.lastValidHand.playerId !== 'player-0' && (
-                  <button
-                    onClick={handleHumanPass}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-bold cursor-pointer transition-all border border-slate-700"
-                  >
-                    不出
-                  </button>
-                )}
+              {!isHumanCurrent && gameState.phase !== 'GAME_OVER' && (
+                <div className="text-xs text-emerald-300/80 font-bold py-0.5 animate-pulse flex items-center gap-1.5">
+                  <Bot className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{currentPlayer?.name} 正在思考中...</span>
+                </div>
+              )}
+            </div>
 
-                {/* Hint Button */}
-                <button
-                  onClick={handleHumanHint}
-                  className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 text-xs sm:text-sm font-black cursor-pointer shadow-lg active:scale-95"
-                >
-                  <Lightbulb className="w-4 h-4 fill-current" />
-                  <span>提示</span>
-                </button>
-
-                {/* Reset Selection */}
-                {selectedCardIds.length > 0 && (
-                  <button
-                    onClick={() => setSelectedCardIds([])}
-                    className="px-3.5 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-amber-200 text-xs sm:text-sm font-bold cursor-pointer transition-all"
-                  >
-                    重选
-                  </button>
-                )}
-
-                {/* Play Button */}
-                <button
-                  onClick={handleHumanPlay}
-                  disabled={selectedCardIds.length === 0}
-                  className={`flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs sm:text-sm font-black shadow-xl transition-all cursor-pointer ${
-                    selectedCardIds.length > 0
-                      ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-white shadow-emerald-950/60 scale-105 active:scale-100'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                  }`}
-                >
-                  <Play className="w-4 h-4" />
-                  <span>出牌 ({selectedCardIds.length})</span>
-                </button>
-              </div>
-            )}
-
-            {!isHumanCurrent && gameState.phase !== 'GAME_OVER' && (
-              <div className="text-xs sm:text-sm text-emerald-300/80 font-bold py-1.5 animate-pulse flex items-center gap-2">
-                <Bot className="w-4 h-4 text-cyan-400" />
-                <span>{currentPlayer?.name} 正在思考中...</span>
-              </div>
-            )}
+            {/* Right: Scores & Cards Count */}
+            <div className="flex items-center gap-2 text-[11px] text-slate-300">
+              <span>
+                手牌 <strong className="text-white font-mono">{human.cards.length}</strong> 张
+              </span>
+              <span className="text-amber-300 font-bold bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-500/40">
+                累计 <strong className="font-mono">{human.accumulatedCards || 0}</strong>/100张
+              </span>
+              <span>
+                积分 <strong className="text-amber-400 font-mono">{human.score.toLocaleString()}</strong>
+              </span>
+            </div>
           </div>
 
-          {/* 13 Overlapping Cards Fan */}
+          {/* 13 Overlapping Cards Fan: Giant Cards shifted downward, bottom half sliced off */}
           <div
-            className="w-full flex items-center justify-center overflow-x-auto py-1 px-1"
+            className="w-full flex items-start justify-center overflow-x-auto overflow-y-hidden pt-1 pb-0 px-2 h-[82px] sm:h-[105px] md:h-[120px]"
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="flex -space-x-7 sm:-space-x-9 md:-space-x-11 lg:-space-x-12 shrink-0">
+            <div className="flex -space-x-8 sm:-space-x-11 md:-space-x-13 lg:-space-x-15 shrink-0 translate-y-1 sm:translate-y-2">
               {displayedHumanCards.map(card => {
                 const isSelected = selectedCardIds.includes(card.id);
                 return (
@@ -991,37 +1023,6 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Bottom Info Bar: Player Name, Card Count, Sort Mode */}
-          <div className="flex items-center justify-between w-full px-2 text-xs text-slate-300">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-emerald-400" />
-              <span className="font-bold text-slate-100">{human.name} (南家)</span>
-            </div>
-
-            <div className="flex items-center gap-3 text-slate-400 text-xs">
-              <button
-                onClick={() => {
-                  sounds.playClick();
-                  setSortByPattern(prev => !prev);
-                }}
-                className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer text-[11px] font-bold"
-              >
-                <SlidersHorizontal className="w-3 h-3 text-amber-400" />
-                <span>理牌: {sortByPattern ? '按点数' : '按大小'}</span>
-              </button>
-
-              <span>
-                手牌: <strong className="text-slate-100 font-mono">{human.cards.length}</strong> 张
-              </span>
-              <span className="text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40">
-                累计剩牌: <strong className="font-mono">{human.accumulatedCards || 0}</strong>/100张
-              </span>
-              <span>
-                积分: <strong className="text-amber-400 font-mono">{human.score.toLocaleString()}</strong>
-              </span>
             </div>
           </div>
         </div>
