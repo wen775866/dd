@@ -292,17 +292,36 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     const human = gameState.players[0];
 
     if (gameState.lastValidHand && gameState.lastValidHand.playerId !== human.id) {
+      const bestMove = aiChoosePlay(
+        human,
+        human.cards,
+        gameState.lastValidHand,
+        gameState.players,
+        gameState.isFirstTrick,
+        gameState.starterCardId
+      );
       const candidates = findBeatingHands(human.cards, gameState.lastValidHand.hand);
-      if (candidates.length === 0) {
+      if (candidates.length === 0 || (bestMove.length === 0 && candidates.length === 0)) {
         showBubble('player-0', '要不起，请点不出~');
       } else {
-        const candidate = candidates[hintIndex % candidates.length];
-        setSelectedCardIds(candidate.cards.map(c => c.id));
+        // 第一下提示优先展示宗师级 AI 推荐的最优出牌
+        let candidateCards = bestMove.length > 0 ? bestMove : candidates[0].cards;
+        if (hintIndex > 0 && candidates.length > 1) {
+          const candidate = candidates[(hintIndex - 1) % candidates.length];
+          candidateCards = candidate.cards;
+        }
+        setSelectedCardIds(candidateCards.map(c => c.id));
         setHintIndex(prev => prev + 1);
         sounds.playClick();
       }
     } else {
-      const opening = chooseLeadingCards(human.cards, gameState.isFirstTrick, gameState.starterCardId);
+      const opening = chooseLeadingCards(
+        human.cards,
+        gameState.isFirstTrick,
+        gameState.starterCardId,
+        gameState.players,
+        human.id
+      );
       if (opening.length > 0) {
         setSelectedCardIds(opening.map(c => c.id));
         sounds.playClick();
