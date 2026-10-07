@@ -724,122 +724,146 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
       {/* MODAL 2: CREATE CUSTOM ROOM MODAL */}
       {createModalRoom && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-lg w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
               <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
                 <PlusCircle className="w-5 h-5 text-amber-400" />
                 <span>创建 4 人对局房间 ({createModalRoom.name})</span>
               </h3>
               <button
                 onClick={() => setCreateModalRoom(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block text-slate-400 mb-1 font-bold">房间名称</label>
-                <input
-                  type="text"
-                  value={customRoomName}
-                  onChange={e => setCustomRoomName(e.target.value)}
-                  placeholder="请输入房间名称..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-3 text-xs flex-1 overflow-y-auto pr-1">
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-bold">房间名称</label>
+                  <input
+                    type="text"
+                    value={customRoomName}
+                    onChange={e => setCustomRoomName(e.target.value)}
+                    placeholder="请输入房间名称..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1 font-bold">底分选择</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[1000, 2000, 5000].map(score => (
-                    <button
-                      key={score}
-                      onClick={() => setCustomBaseScore(score)}
-                      className={`py-1.5 rounded-xl font-bold border transition-all cursor-pointer ${
-                        customBaseScore === score
-                          ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                      }`}
-                    >
-                      底分 {score}
-                    </button>
-                  ))}
+                <div>
+                  <label className="block text-slate-400 mb-1 font-bold">底分选择</label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {[1000, 2000, 5000].map(score => (
+                      <button
+                        key={score}
+                        onClick={() => setCustomBaseScore(score)}
+                        className={`py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer ${
+                          customBaseScore === score
+                            ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                        }`}
+                      >
+                        底分 {score}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-400 mb-1 font-bold">房间口令密码 (选填)</label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={customPasscode}
-                  onChange={e => setCustomPasscode(e.target.value)}
-                  placeholder="为空即为公开房间，填密码则仅好友可入..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
-                />
+              <div className="space-y-2.5">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-bold">房间口令密码 (选填)</label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={customPasscode}
+                    onChange={e => setCustomPasscode(e.target.value)}
+                    placeholder="为空即为公开，填密码则仅好友可入"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 leading-relaxed">
+                  💡 创建成功后将生成 <strong className="text-amber-300">6 位专属房号</strong>，可直接复制发送给好友一键加入！
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={handleConfirmCreateRoom}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110 mt-1"
-            >
-              🚀 生成 6 位房号并进入房间
-            </button>
+            <div className="pt-2 border-t border-slate-800 shrink-0">
+              <button
+                onClick={handleConfirmCreateRoom}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs sm:text-sm cursor-pointer shadow-lg hover:brightness-110 active:scale-98"
+              >
+                🚀 生成 6 位房号并进入房间
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 3: JOIN ROOM BY 6-DIGIT CODE */}
+      {/* MODAL 3: JOIN ROOM BY 6-DIGIT CODE - Optimized Horizontal Layout */}
       {showJoinRoomModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="text-base font-black text-emerald-300 flex items-center gap-2">
-                <LogIn className="w-5 h-5 text-emerald-400" />
-                <span>输入 6 位数字房号加入</span>
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-lg w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 shrink-0">
+              <h3 className="text-sm sm:text-base font-black text-emerald-300 flex items-center gap-2">
+                <LogIn className="w-4 h-4 text-emerald-400" />
+                <span>输入 6 位数字房号加入房间</span>
               </h3>
               <button
                 onClick={() => {
                   setShowJoinRoomModal(false);
                   setJoinErrorMsg('');
                 }}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-center">
-              <p className="text-xs text-slate-300">
-                请向房间创建者获取 6 位数字房间号：
-              </p>
+            <div className="grid grid-cols-2 gap-3 items-center flex-1 min-h-0">
+              {/* Left Column: PIN Display & Quick Action */}
+              <div className="flex flex-col items-center justify-center text-center space-y-2">
+                <p className="text-[11px] text-slate-300">
+                  请输入 6 位数字好友房间号：
+                </p>
 
-              {/* 6-Digit PIN Display */}
-              <div className="flex items-center justify-center gap-1.5 my-2">
-                {Array.from({ length: 6 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-9 h-11 rounded-xl border-2 flex items-center justify-center font-mono font-black text-lg ${
-                      joinRoomCodeInput[idx]
-                        ? 'bg-emerald-950 border-emerald-400 text-amber-300 shadow-md'
-                        : 'bg-slate-950 border-slate-800 text-slate-600'
-                    }`}
-                  >
-                    {joinRoomCodeInput[idx] || '•'}
-                  </div>
-                ))}
+                {/* 6-Digit PIN Display */}
+                <div className="flex items-center justify-center gap-1.5 my-1">
+                  {Array.from({ length: 6 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-7 h-9 sm:w-8 sm:h-10 rounded-xl border-2 flex items-center justify-center font-mono font-black text-base sm:text-lg ${
+                        joinRoomCodeInput[idx]
+                          ? 'bg-emerald-950 border-emerald-400 text-amber-300 shadow-md'
+                          : 'bg-slate-950 border-slate-800 text-slate-600'
+                      }`}
+                    >
+                      {joinRoomCodeInput[idx] || '•'}
+                    </div>
+                  ))}
+                </div>
+
+                {joinErrorMsg && (
+                  <div className="text-[11px] text-rose-400 font-bold">{joinErrorMsg}</div>
+                )}
+
+                <button
+                  onClick={() => {
+                    const sampleCode = '888888';
+                    setJoinRoomCodeInput(sampleCode);
+                    handleConfirmJoinRoom(sampleCode);
+                  }}
+                  className="text-[11px] text-amber-400 hover:underline cursor-pointer font-bold mt-1 bg-amber-950/40 border border-amber-500/30 rounded-lg px-2.5 py-1"
+                >
+                  ⚡ 一键体验示例好友房 (888888)
+                </button>
               </div>
 
-              {joinErrorMsg && (
-                <div className="text-xs text-rose-400 font-bold">{joinErrorMsg}</div>
-              )}
-
-              {/* Numpad Keyboard */}
-              <div className="grid grid-cols-3 gap-1.5 max-w-[220px] mx-auto">
+              {/* Right Column: Numpad Keyboard */}
+              <div className="grid grid-cols-3 gap-1.5 max-w-[210px] mx-auto w-full">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((num, i) => (
                   <button
                     key={i}
@@ -857,7 +881,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                         }
                       }
                     }}
-                    className={`py-2 rounded-xl font-mono font-bold text-sm cursor-pointer transition-all active:scale-95 ${
+                    className={`py-1.5 sm:py-2 rounded-xl font-mono font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
                       num === 'C' || num === '⌫'
                         ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                         : 'bg-slate-950 border border-slate-800 hover:border-emerald-500 text-amber-200 shadow'
@@ -867,84 +891,71 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   </button>
                 ))}
               </div>
-
-              {/* Sample Quick Test Join Button */}
-              <div className="pt-2 border-t border-slate-800 flex justify-center">
-                <button
-                  onClick={() => {
-                    const sampleCode = '888888';
-                    setJoinRoomCodeInput(sampleCode);
-                    handleConfirmJoinRoom(sampleCode);
-                  }}
-                  className="text-xs text-amber-400 hover:underline cursor-pointer font-bold"
-                >
-                  ⚡ 一键体验示例好友房 (房号: 888888)
-                </button>
-              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 4: ROOM WAITING LOBBY (房间等待大厅) */}
+      {/* MODAL 4: ROOM WAITING LOBBY (房间等待大厅 - Landscape Optimized) */}
       {waitingRoom && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
+          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
             {/* Header with Room Code */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div>
-                <h3 className="text-base font-black text-amber-300 flex items-center gap-1.5">
-                  <Crown className="w-5 h-5 text-amber-400" />
-                  <span>{waitingRoom.roomName}</span>
-                </h3>
-                <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  底分: <strong className="text-amber-400">{waitingRoom.baseScore.toLocaleString()}</strong> 积分 · 房主: {waitingRoom.hostName}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 shrink-0">
+              <div className="flex items-center gap-2 truncate">
+                <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+                <div className="truncate">
+                  <h3 className="text-sm sm:text-base font-black text-amber-300 truncate">
+                    {waitingRoom.roomName}
+                  </h3>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    底分: <strong className="text-amber-400">{waitingRoom.baseScore.toLocaleString()}</strong> 积分 · 房主: {waitingRoom.hostName}
+                  </div>
                 </div>
+              </div>
+
+              {/* Prominent 6-Digit Room Code Box */}
+              <div className="flex items-center gap-2 bg-gradient-to-r from-amber-950 via-slate-950 to-amber-950 border border-amber-500/60 rounded-xl px-3 py-1 shadow shrink-0">
+                <div className="text-right">
+                  <div className="text-[9px] text-amber-400/80 font-bold">房号:</div>
+                  <div className="text-base sm:text-lg font-mono font-black text-amber-200 tracking-wider">
+                    {waitingRoom.code}
+                  </div>
+                </div>
+                <button
+                  onClick={copyRoomCodeToClipboard}
+                  className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-bold text-[10px] shadow hover:brightness-110 cursor-pointer active:scale-95 flex items-center gap-1"
+                >
+                  {copiedCodeSuccess ? <Check className="w-3.5 h-3.5 text-slate-950" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedCodeSuccess ? '已复制' : '复制'}</span>
+                </button>
               </div>
 
               <button
                 onClick={() => setWaitingRoom(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Prominent 6-Digit Room Code Box */}
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-950/80 via-slate-950 to-amber-950/80 border border-amber-500/50 flex items-center justify-between shadow-inner">
-              <div>
-                <div className="text-[10px] text-amber-400/80 font-bold">房间号码 (分享邀请好友):</div>
-                <div className="text-2xl font-mono font-black text-amber-200 tracking-widest mt-0.5">
-                  {waitingRoom.code}
-                </div>
-              </div>
-
-              <button
-                onClick={copyRoomCodeToClipboard}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow hover:brightness-110 cursor-pointer active:scale-95"
-              >
-                {copiedCodeSuccess ? <Check className="w-4 h-4 text-slate-950" /> : <Copy className="w-4 h-4" />}
-                <span>{copiedCodeSuccess ? '已复制' : '复制房号'}</span>
-              </button>
-            </div>
-
-            {/* 4 Seats Grid */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-300">
+            {/* 4 Seats Grid in 4 Columns or 2x2 */}
+            <div className="flex-1 min-h-0 flex flex-col justify-center">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 pb-1 shrink-0">
                 <span>4 人桌座位状态:</span>
                 <span className="text-emerald-400 font-mono">
-                  {waitingRoom.seats.filter(s => s.playerName !== '空位').length} / 4 人已准备
+                  {waitingRoom.seats.filter(s => s.playerName !== '空位').length} / 4 人已就绪
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {waitingRoom.seats.map((seat, idx) => {
                   const isEmpty = seat.playerName === '空位';
 
                   return (
                     <div
                       key={idx}
-                      className={`p-2.5 rounded-2xl border flex items-center justify-between transition-all ${
+                      className={`p-2 rounded-2xl border flex flex-col justify-between gap-1.5 transition-all ${
                         isEmpty
                           ? 'bg-slate-950/50 border-slate-800 text-slate-500'
                           : seat.isHost
@@ -952,50 +963,52 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                           : 'bg-emerald-950/60 border-emerald-500/80 text-white shadow'
                       }`}
                     >
-                      <div className="flex items-center gap-2 truncate pr-1">
-                        <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-base shrink-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-sm shrink-0">
                           {seat.avatar}
                         </div>
                         <div className="leading-tight truncate">
-                          <div className="font-bold text-xs truncate flex items-center gap-1">
-                            <span>{seat.playerName}</span>
+                          <div className="font-bold text-[11px] truncate flex items-center gap-0.5">
+                            <span className="truncate">{seat.playerName}</span>
                             {seat.isHost && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
                           </div>
                           <div className="text-[9px] text-slate-400 font-mono">
-                            {seat.isHost ? '房主' : seat.isAI ? '电脑人偶' : isEmpty ? '可邀请' : '玩家'}
+                            {seat.isHost ? '房主' : seat.isAI ? '电脑人偶' : isEmpty ? '待入座' : '玩家'}
                           </div>
                         </div>
                       </div>
 
                       {/* Action for Seat */}
                       {isEmpty ? (
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1 w-full pt-1 border-t border-slate-800/60">
                           <button
                             onClick={() => handleAddBotToSeat(idx)}
-                            className="p-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[10px] font-bold cursor-pointer flex items-center gap-0.5 border border-amber-500/40"
+                            className="flex-1 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[9px] font-bold cursor-pointer flex items-center justify-center gap-0.5 border border-amber-500/40"
                             title="加电脑人偶填补"
                           >
                             <Bot className="w-3 h-3" />
-                            <span>➕加AI</span>
+                            <span>加AI</span>
                           </button>
                           <button
                             onClick={copyRoomCodeToClipboard}
-                            className="p-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-bold cursor-pointer flex items-center gap-0.5 border border-emerald-500/40"
+                            className="flex-1 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[9px] font-bold cursor-pointer flex items-center justify-center gap-0.5 border border-emerald-500/40"
                             title="复制邀请口令给真人好友"
                           >
                             <UserPlus className="w-3 h-3" />
-                            <span>➕邀请</span>
+                            <span>邀请</span>
                           </button>
                         </div>
                       ) : (
                         idx !== 0 && (
-                          <button
-                            onClick={() => handleKickSeat(idx)}
-                            className="p-1 rounded-lg bg-rose-950 text-rose-400 hover:bg-rose-900 text-[10px] cursor-pointer shrink-0"
-                            title="请出房间"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="pt-1 border-t border-slate-800/60 flex justify-end">
+                            <button
+                              onClick={() => handleKickSeat(idx)}
+                              className="px-2 py-0.5 rounded-md bg-rose-950 text-rose-400 hover:bg-rose-900 text-[9px] cursor-pointer"
+                              title="请出房间"
+                            >
+                              请离
+                            </button>
+                          </div>
                         )
                       )}
                     </div>
@@ -1005,11 +1018,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             </div>
 
             {/* Launch Game or Invite Button */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
+            <div className="pt-2 border-t border-slate-800 space-y-1.5 shrink-0">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={copyRoomCodeToClipboard}
-                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs cursor-pointer border border-amber-500/40 flex items-center justify-center gap-1"
+                  className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs cursor-pointer border border-amber-500/40 flex items-center justify-center gap-1.5"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   <span>{copiedCodeSuccess ? '已复制房号' : '邀请真人好友'}</span>
@@ -1017,15 +1030,15 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
                 <button
                   onClick={handleFillAllBotsAndStart}
-                  className="py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/30 cursor-pointer hover:brightness-110 active:scale-95 flex items-center justify-center gap-1"
+                  className="py-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 cursor-pointer hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5"
                 >
                   <Play className="w-3.5 h-3.5 fill-current" />
                   <span>⚡ 一键全员补满开局</span>
                 </button>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-slate-400">
-                <span>空位可直接【➕邀请】或【⚡一键补满人机】</span>
+              <div className="flex justify-between items-center text-[10px] text-slate-400 px-1">
+                <span>空位可直接【邀请】或【⚡一键补满开局】</span>
                 <button
                   onClick={() => setWaitingRoom(null)}
                   className="text-slate-400 hover:text-slate-200 underline cursor-pointer"
@@ -1038,58 +1051,60 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* 规则宝典 Modal */}
+      {/* 规则宝典 Modal - Landscape Optimized */}
       {showRulesModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto custom-scrollbar">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
+              <h3 className="text-sm sm:text-base font-black text-amber-300 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-400" />
                 <span>♠️ 锄大地 & 烟三 规则宝典</span>
               </h3>
               <button
                 onClick={() => setShowRulesModal(false)}
                 className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5 text-xs text-slate-300 leading-relaxed">
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <h4 className="font-bold text-amber-400 mb-1">1. 4人桌基础牌值规则</h4>
-                <p>• 必须满 <strong className="text-amber-300">4 位玩家</strong> 才可以发牌开局，每人分得 13 张手牌。</p>
-                <p>• 点数大小：<strong className="text-amber-300">A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3 &gt; 2</strong>（A最大，2最小）。</p>
-                <p>• 花色大小：<strong className="text-amber-300">♠黑桃 &gt; ♥红桃 &gt; ♣草花 &gt; ♦方块</strong>。</p>
-                <p>• 首局首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 的玩家优先首出（方块2为全副牌最小一张），首出牌型中必须包含♦2。</p>
-                <p>• 出牌顺序：四个玩家的出牌顺序为 <strong className="text-emerald-300">逆时针轮流</strong> (南➔东➔北➔西)。</p>
-              </div>
-
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <h4 className="font-bold text-amber-400 mb-1">2. 牌型与压制规则</h4>
-                <p>• 基础牌型：<strong className="text-emerald-300">单张、对子、三条、四带一</strong>（没有铁支，不能出纯四张）。</p>
-                <p>• 五张牌型大小顺序：<strong className="text-emerald-300">同花顺 &gt; 四带一 &gt; 俘虏 (三带二) &gt; 同花 &gt; 顺子</strong>。</p>
-                <p>• 顺子与同花顺大小：<strong className="text-amber-300">A2345 最大</strong>，<strong className="text-amber-300">9 10 J Q K 第二大</strong>，其余按连续顺子递减。</p>
-                <p>• 同花与同花顺的花色绝对压制：<strong className="text-amber-300">黑桃 &gt; 红桃 &gt; 梅花 &gt; 方块</strong>（例如黑桃同花顺 23456 比红桃 56789 大）。</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-300 leading-relaxed flex-1 overflow-y-auto pr-1 custom-scrollbar">
+              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <h4 className="font-bold text-amber-400 mb-0.5">1. 4人桌基础牌值</h4>
+                <p>• 必须满 <strong className="text-amber-300">4 位玩家</strong> 发牌开局，每人 13 张牌。</p>
+                <p>• 点数：<strong className="text-amber-300">A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3 &gt; 2</strong>（A最大，2最小）。</p>
+                <p>• 花色：<strong className="text-amber-300">♠黑桃 &gt; ♥红桃 &gt; ♣草花 &gt; ♦方块</strong>。</p>
+                <p>• 首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 优先首出，且首出牌型必含♦2。</p>
+                <p>• 顺序：<strong className="text-emerald-300">逆时针轮流出牌</strong>。</p>
               </div>
 
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <h4 className="font-bold text-amber-400 mb-1">3. 剩牌折算倍数与两两对减结算</h4>
-                <p>• 只要有任意 1 位玩家手牌打完，局即结束并开始算分。</p>
-                <p>• <strong className="text-amber-300">剩 1~7 张牌</strong>：原张数 (1倍)。</p>
-                <p>• <strong className="text-orange-400">剩 8~9 张牌</strong>：翻 2 倍 (8张➔16张，9张➔18张)。</p>
-                <p>• <strong className="text-rose-400">剩 10~12 张牌</strong>：翻 3 倍 (10张➔30张，11张➔33张，12张➔36张)。</p>
-                <p>• <strong className="text-red-500 font-bold">剩 13 张牌 (全关未出)</strong>：翻 4 倍 (13张➔52张)！</p>
-                <p>• <strong className="text-emerald-300">两两对减算法</strong>：每位玩家与其余三位玩家按折算张数进行两两相减累加，多退少补，完全公平保值（如北胜出0张，东1，南2，西5，北赢得1+2+5=8分，东获得-1+1+4=4分，南0分，西-12分）。</p>
+                <h4 className="font-bold text-amber-400 mb-0.5">2. 牌型与压制</h4>
+                <p>• 牌型：<strong className="text-emerald-300">单张、对子、三条、四带一、五张牌</strong>（无纯四张）。</p>
+                <p>• 五张大小：<strong className="text-emerald-300">同花顺 &gt; 四带一 &gt; 俘虏 &gt; 同花 &gt; 顺子</strong>。</p>
+                <p>• 顺子顺序：<strong className="text-amber-300">A2345 最大</strong>，<strong className="text-amber-300">9 10 J Q K 第二大</strong>。</p>
+                <p>• 同花按花色压制：<strong className="text-amber-300">黑桃 &gt; 红桃 &gt; 梅花 &gt; 方块</strong>。</p>
+              </div>
+
+              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <h4 className="font-bold text-amber-400 mb-0.5">3. 剩牌折算与对减</h4>
+                <p>• 任意 1 人出完即当局结束。</p>
+                <p>• <strong className="text-amber-300">剩 1~7 张</strong>：1倍。</p>
+                <p>• <strong className="text-orange-400">剩 8~9 张</strong>：2倍 (8➔16, 9➔18)。</p>
+                <p>• <strong className="text-rose-400">剩 10~12 张</strong>：3倍 (10➔30, 11➔33)。</p>
+                <p>• <strong className="text-red-500 font-bold">剩 13 张全关</strong>：4倍 (13➔52)！</p>
+                <p>• <strong className="text-emerald-300">满100张大结算</strong>：四舍五入到十位，四家两两对减计算！</p>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowRulesModal(false)}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110 mt-1"
-            >
-              我知道了，去开局
-            </button>
+            <div className="pt-2 border-t border-slate-800 shrink-0">
+              <button
+                onClick={() => setShowRulesModal(false)}
+                className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110"
+              >
+                我知道了，去开局
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1097,13 +1112,13 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       {/* 免费充能补积分 Modal */}
       {showFreeBeansModal && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
-          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-xs w-full p-5 shadow-2xl flex flex-col items-center text-center gap-3 animate-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300">
-              <Coins className="w-7 h-7" />
+          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-xs w-full p-4 shadow-2xl flex flex-col items-center text-center gap-2.5 animate-in zoom-in-95 duration-150">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300">
+              <Coins className="w-6 h-6" />
             </div>
             <div>
               <h3 className="text-base font-black text-amber-300">积分补充站</h3>
-              <p className="text-xs text-slate-400 mt-1">积分不足？即刻免费补充 5,000 救急积分！</p>
+              <p className="text-xs text-slate-400 mt-0.5">积分不足？即刻免费补充 5,000 救急积分！</p>
             </div>
             <button
               onClick={() => {
@@ -1119,24 +1134,24 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* 系统设置 Modal */}
+      {/* 系统设置 Modal - Landscape Optimized */}
       {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl max-w-sm w-full p-5 shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h3 className="text-base font-black text-white flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl max-w-md w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
+              <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
                 <Settings className="w-4 h-4 text-amber-400" />
-                系统设置
+                <span>系统设置</span>
               </h3>
               <button
                 onClick={() => setShowSettingsModal(false)}
-                className="text-slate-400 hover:text-white p-1"
+                className="text-slate-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-300">
+            <div className="space-y-2.5 text-xs text-slate-300 flex-1 overflow-y-auto pr-1">
               <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
                 <span className="flex items-center gap-1.5">
                   <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -1199,12 +1214,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               </div>
             </div>
 
-            <button
-              onClick={() => setShowSettingsModal(false)}
-              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer"
-            >
-              保存并关闭
-            </button>
+            <div className="pt-2 border-t border-slate-800 shrink-0">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer"
+              >
+                保存并关闭
+              </button>
+            </div>
           </div>
         </div>
       )}

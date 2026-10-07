@@ -14,6 +14,10 @@ html, body, #root {
 }
 
 /* Custom Gaming Scrollbar */
+.custom-scrollbar {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
 .custom-scrollbar::-webkit-scrollbar {
   width: 5px;
   height: 5px;

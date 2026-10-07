@@ -1047,11 +1047,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
         </div>
 
-        {/* Quick Chat Modal */}
+        {/* Quick Chat Modal - Optimized for Landscape */}
         {showChatModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3">
-            <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl max-w-md w-full p-4 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
                 <div className="flex items-center gap-1.5">
                   <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
                     <button
@@ -1096,8 +1096,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               </div>
 
               {chatTab === 'phrases' && (
-                <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center justify-around bg-slate-950 p-2 rounded-2xl border border-slate-800">
+                <div className="flex flex-col gap-2 flex-1 min-h-0">
+                  <div className="flex items-center justify-around bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
                     {CHAT_EMOJIS.map((emoji, idx) => (
                       <button
                         key={idx}
@@ -1105,14 +1105,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                           handleSendChat(emoji);
                           setShowChatModal(false);
                         }}
-                        className="text-2xl hover:scale-125 transition-transform active:scale-95 cursor-pointer p-1"
+                        className="text-2xl hover:scale-125 transition-transform active:scale-95 cursor-pointer p-0.5"
                       >
                         {emoji}
                       </button>
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+                  <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
                     <input
                       type="text"
                       value={customChatText}
@@ -1136,13 +1136,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                         }
                       }}
                       disabled={!customChatText.trim()}
-                      className="p-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow"
+                      className="p-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-1.5 flex-1 overflow-y-auto pr-1">
                     {CHAT_PHRASES.map((phrase, idx) => (
                       <button
                         key={idx}
@@ -1150,14 +1150,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                           handleSendChat(phrase);
                           setShowChatModal(false);
                         }}
-                        className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors cursor-pointer flex items-center justify-between group"
+                        className="text-left px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between group"
                       >
-                        <span className="flex items-center gap-2">
-                          <Radio className="w-3.5 h-3.5 text-amber-400" />
-                          <span>{phrase}</span>
+                        <span className="flex items-center gap-1.5 truncate">
+                          <Radio className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span className="truncate">{phrase}</span>
                         </span>
-                        <span className="text-[10px] text-amber-400 opacity-0 group-hover:opacity-100">
-                          播报 ➔
+                        <span className="text-[10px] text-amber-400 opacity-0 group-hover:opacity-100 shrink-0">
+                          播报➔
                         </span>
                       </button>
                     ))}
@@ -1166,23 +1166,23 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               )}
 
               {chatTab === 'history' && (
-                <div className="flex flex-col gap-3">
-                  <div className="p-3 bg-slate-950 rounded-2xl border border-emerald-500/40 flex flex-col items-center gap-2">
+                <div className="flex flex-col gap-2.5 flex-1 min-h-0">
+                  <div className="p-2 bg-slate-950 rounded-2xl border border-emerald-500/40 flex flex-col items-center gap-1.5 shrink-0">
                     <button
                       onPointerDown={handleStartRecord}
                       onPointerUp={handleStopRecord}
-                      className={`w-full py-3 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      className={`w-full py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                         isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-600 text-white shadow'
                       }`}
                     >
-                      <Mic className="w-5 h-5" />
+                      <Mic className="w-4 h-4" />
                       <span>{isRecording ? '松开即发送语音' : '按住说话 (语音对讲)'}</span>
                     </button>
                   </div>
 
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
                     {chatMessages.length === 0 ? (
-                      <div className="text-center py-6 text-slate-500 text-xs">暂无语音记录，按住对讲说话！</div>
+                      <div className="text-center py-4 text-slate-500 text-xs">暂无语音记录，按住对讲说话！</div>
                     ) : (
                       chatMessages.map(msg => (
                         <div key={msg.id} className="p-2 rounded-xl bg-slate-800/70 text-xs text-slate-200">
@@ -1196,8 +1196,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               )}
 
               {chatTab === 'dialect' && (
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  <div className="grid grid-cols-1 gap-2">
+                <div className="flex-1 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-2">
                     {DIALECT_OPTIONS.map(d => {
                       const isActive = voiceEngine.dialect === d.id;
                       return (
@@ -1207,15 +1207,18 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                             voiceEngine.setDialect(d.id);
                             sounds.speak(`已切换为${d.label}！`);
                           }}
-                          className={`p-2.5 rounded-xl border text-left flex items-center justify-between ${
-                            isActive ? 'bg-amber-500/20 border-amber-500 text-amber-300' : 'bg-slate-950 border-slate-800 text-slate-400'
+                          className={`p-2 rounded-xl border text-left flex items-center justify-between ${
+                            isActive ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow' : 'bg-slate-950 border-slate-800 text-slate-400'
                           }`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span>{d.icon}</span>
-                            <span className="font-bold text-xs text-white">{d.label}</span>
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="text-base">{d.icon}</span>
+                            <div className="truncate">
+                              <div className="font-bold text-xs text-white truncate">{d.label}</div>
+                              <div className="text-[9px] text-slate-400 truncate">{d.desc}</div>
+                            </div>
                           </div>
-                          <span className="text-xs text-amber-400">{isActive ? '当前' : '试听'}</span>
+                          <span className="text-[10px] text-amber-400 shrink-0">{isActive ? '当前' : '选择'}</span>
                         </button>
                       );
                     })}
@@ -1226,134 +1229,316 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
         )}
 
-        {/* 1. ROUND SUMMARY MODAL (局小结 - 仅累加剩牌张数，不进行金币大结算) */}
+        {/* 1. ROUND SUMMARY FULL-SCREEN VIEW (局小结 - 全屏横屏战绩面板，永不遮挡裁剪) */}
         {gameState.phase === 'ROUND_SUMMARY' && (
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
-            <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl max-w-lg w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center gap-3 max-h-[92vh] overflow-y-auto custom-scrollbar">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-xl">
-                <Sparkles className="w-7 h-7" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#060e1d] via-[#09152b] to-[#040810] z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200">
+            {/* Top Header Bar */}
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 px-1 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-md">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base md:text-lg font-black text-white tracking-wide">
+                      ♠️ 烟三 · 第 <span className="text-amber-300">{gameState.roundNumber}</span> 局战报小结
+                    </h2>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+                      底分 {gameState.room.baseScore.toLocaleString()} 积分
+                    </span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-amber-300/90 font-medium">
+                    小局不扣总积分，剩牌张数已折算累加！满 <span className="text-white font-black underline">100张</span> 触发终局大结算！
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <h3 className="text-lg sm:text-xl font-black text-white">
-                  🎉 第 {gameState.roundNumber} 局打完小结
-                </h3>
-                <p className="text-xs text-amber-300 font-bold mt-0.5">
-                  局不扣积分，剩牌张数已累加到头像！满 <span className="text-amber-200 underline">100张</span> 触发大结算！
-                </p>
+              {/* Winner Announcement Badge */}
+              <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl px-3 py-1 text-right flex items-center gap-2">
+                <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+                <div className="text-left">
+                  <div className="text-[10px] text-slate-400 leading-tight">本局头游获胜者</div>
+                  <div className="text-xs sm:text-sm font-black text-amber-300 truncate">
+                    {gameState.players[gameState.winnerIndex ?? 0]?.name}
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* 4 Players Round Accumulation List */}
-              <div className="w-full bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 text-left">
+            {/* 4 Players Horizontal Settlement Cards Grid */}
+            <div className="flex-1 flex items-center justify-center min-h-0 py-2">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-6xl h-full items-stretch">
                 {gameState.players.map((p, idx) => {
                   const isWinner = idx === gameState.winnerIndex;
                   const rawCount = p.cards ? p.cards.length : 0;
                   const eff = getEffectiveCards(rawCount);
+                  const accCards = p.accumulatedCards || 0;
+                  const progressPct = Math.min(100, (accCards / 100) * 100);
+                  const isHuman = idx === 0;
 
                   return (
-                    <div key={p.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-1 shadow-sm">
-                      <div className="flex justify-between items-center text-slate-300">
-                        <span className="font-bold flex items-center gap-1.5 flex-wrap">
-                          <span className="text-white font-black text-sm">{p.name}</span>
-                          {isWinner && (
-                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">
-                              🏆 率先出清 (0张)
-                            </span>
-                          )}
-                          {!isWinner && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
-                              本局剩{rawCount}张 (折算+{eff.effective}张)
-                            </span>
-                          )}
-                        </span>
+                    <div
+                      key={p.id}
+                      className={`rounded-2xl border p-2.5 sm:p-3 flex flex-col justify-between relative transition-all shadow-xl overflow-hidden ${
+                        isWinner
+                          ? 'bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 border-amber-400/80 ring-2 ring-amber-400/30'
+                          : isHuman
+                          ? 'bg-gradient-to-b from-slate-900 to-slate-950 border-emerald-500/50'
+                          : 'bg-slate-900/90 border-slate-800'
+                      }`}
+                    >
+                      {/* Top Rank / Seat Indicator */}
+                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 shrink-0">
+                        <div className="flex items-center gap-1.5 truncate">
+                          <span className="text-base sm:text-lg">{p.avatar}</span>
+                          <div className="truncate">
+                            <div className="font-black text-xs text-white truncate flex items-center gap-1">
+                              <span>{p.name}</span>
+                              {isHuman && (
+                                <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-300 font-bold">
+                                  你
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9px] text-slate-400 font-mono">
+                              {['南家', '东家', '北家', '西家'][idx]}
+                            </div>
+                          </div>
+                        </div>
 
-                        <span className="font-mono font-black text-amber-300 text-sm">
-                          累计剩牌: {p.accumulatedCards || 0} / 100 张
-                        </span>
+                        {isWinner ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black shadow-md shrink-0 flex items-center gap-0.5">
+                            <Crown className="w-3 h-3" />
+                            <span>胜出 0张</span>
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold shrink-0 ${
+                              eff.multiplier >= 4
+                                ? 'bg-red-500/30 text-red-300 border border-red-500/50'
+                                : eff.multiplier >= 2
+                                ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
+                                : 'bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            {eff.multiplier > 1 ? `${eff.multiplier}倍关门` : '正常1倍'}
+                          </span>
+                        )}
                       </div>
 
-                      {/* Progress Bar towards 100 */}
-                      <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800 my-0.5">
-                        <div
-                          className={`h-full transition-all duration-300 ${
-                            (p.accumulatedCards || 0) >= 80
-                              ? 'bg-rose-500'
-                              : (p.accumulatedCards || 0) >= 50
-                              ? 'bg-amber-400'
-                              : 'bg-emerald-400'
-                          }`}
-                          style={{ width: `${Math.min(100, ((p.accumulatedCards || 0) / 100) * 100)}%` }}
-                        />
+                      {/* Middle Card: Round Result Status */}
+                      <div className="my-auto py-1.5 text-center flex flex-col items-center justify-center gap-1">
+                        {isWinner ? (
+                          <>
+                            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center text-amber-300 shadow-md">
+                              <Trophy className="w-6 h-6" />
+                            </div>
+                            <div className="text-xs sm:text-sm font-black text-amber-300">
+                              率先清空手牌！
+                            </div>
+                            <div className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 rounded-lg px-2 py-0.5">
+                              🚩 获第 {gameState.roundNumber + 1} 局首出权
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-[11px] text-slate-300">
+                              本局剩牌: <strong className="text-white font-black text-sm">{rawCount}</strong> 张
+                            </div>
+                            <div className="text-xs font-black text-amber-400 bg-amber-950/40 border border-amber-500/30 rounded-xl px-2.5 py-1">
+                              折算增加: <span className="text-base font-mono">+{eff.effective}</span> 张
+                            </div>
+                            <div className="text-[9px] text-slate-400">
+                              {rawCount >= 13
+                                ? '⚠️ 13张全关 (4倍惩罚)'
+                                : rawCount >= 10
+                                ? '⚠️ 10~12张 (3倍翻番)'
+                                : rawCount >= 8
+                                ? '⚠️ 8~9张 (2倍翻番)'
+                                : '1~7张 (1倍计入)'}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Bottom Gauge: Progress towards 100 accumulated cards */}
+                      <div className="pt-1.5 border-t border-slate-800/60 shrink-0 space-y-1">
+                        <div className="flex justify-between items-center text-[10px] font-mono">
+                          <span className="text-slate-400">累计总剩牌:</span>
+                          <span
+                            className={`font-black text-xs ${
+                              accCards >= 80
+                                ? 'text-red-400'
+                                : accCards >= 50
+                                ? 'text-amber-300'
+                                : 'text-emerald-400'
+                            }`}
+                          >
+                            {accCards} / 100 张
+                          </span>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              accCards >= 80
+                                ? 'bg-gradient-to-r from-orange-500 to-rose-600'
+                                : accCards >= 50
+                                ? 'bg-gradient-to-r from-yellow-500 to-amber-500'
+                                : 'bg-gradient-to-r from-teal-400 to-emerald-500'
+                            }`}
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between items-center text-[9px] text-slate-400">
+                          <span>
+                            {accCards >= 100
+                              ? '🚨 已达100张大结算'
+                              : `距结算还差 ${100 - accCards} 张`}
+                          </span>
+                          <span className="text-amber-300 font-mono font-bold">
+                            结余: {p.score.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+            </div>
 
-              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs w-full text-center font-bold">
-                📢 下一局（第 {gameState.roundNumber + 1} 局）由本局胜出者【{gameState.players[gameState.winnerIndex ?? 0]?.name}】优先领牌首出！
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full">
+            {/* Bottom Rules Tip & Action Bar */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 px-1 gap-2 shrink-0">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={onBackToLobby}
-                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm cursor-pointer transition-all"
+                  className="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs cursor-pointer transition-all flex items-center gap-1.5 border border-slate-700"
                 >
-                  返回大厅
+                  <Home className="w-3.5 h-3.5 text-slate-400" />
+                  <span>返回大厅</span>
                 </button>
-                <button
-                  onClick={onStartNewGame}
-                  className="py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>▶️ 继续下一局 (第 {gameState.roundNumber + 1} 局)</span>
-                </button>
+                <div className="hidden sm:flex text-[11px] text-slate-400 items-center gap-1">
+                  <span>📢 下一局由【{gameState.players[gameState.winnerIndex ?? 0]?.name}】优先领牌首出！</span>
+                </div>
               </div>
+
+              {/* Big, High-Contrast Action Button - Always reachable */}
+              <button
+                onClick={onStartNewGame}
+                className="px-6 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm md:text-base shadow-xl shadow-emerald-500/30 cursor-pointer transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Play className="w-4 h-4 fill-current text-slate-950" />
+                <span>▶️ 继续下一局 (第 {gameState.roundNumber + 1} 局)</span>
+              </button>
             </div>
           </div>
         )}
 
-        {/* 2. MATCH SETTLEMENT MODAL (场大结算 - 满100张触发四舍五入大结算) */}
+        {/* 2. MATCH SETTLEMENT FULL-SCREEN VIEW (场大结算 - 满100张四舍五入大结算面板) */}
         {(gameState.phase === 'MATCH_SETTLEMENT' || gameState.phase === 'GAME_OVER') && (
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-200">
-            <div className="bg-slate-900 border-2 border-amber-500 rounded-3xl max-w-lg w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center gap-3 max-h-[92vh] overflow-y-auto custom-scrollbar">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/30">
-                <Trophy className="w-8 h-8" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#120803] via-[#1a0e05] to-[#0a0502] z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200">
+            {/* Top Header Bar */}
+            <div className="flex items-center justify-between border-b border-amber-900/60 pb-2 px-1 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/30">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm sm:text-base md:text-lg font-black text-white tracking-wide">
+                      🏆 第 <span className="text-amber-300">{gameState.matchNumber || 1}</span> 场终局大结算 (四舍五入到十位)
+                    </h2>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
+                      满 100 张触发
+                    </span>
+                  </div>
+                  <div className="text-[10px] sm:text-xs text-amber-300/90 font-medium">
+                    采用正宗 <span className="text-white font-black underline">四舍五入法 (如 84➔80, 85➔90)</span> 两两对减公平结算！
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <h3 className="text-xl sm:text-2xl font-black text-white">
-                  🏆 第 {gameState.matchNumber || 1} 场总结算 (四舍五入到十位)
-                </h3>
-                <p className="text-xs text-amber-300 font-bold mt-0.5">
-                  累计剩牌满 100 张比赛结束！采用 <span className="text-white underline">四舍五入法 (如 84➔80, 85➔90)</span> 两两对减精计算分！
-                </p>
+              <div className="text-[11px] text-amber-400 font-mono font-bold bg-amber-950/60 border border-amber-500/40 rounded-xl px-3 py-1">
+                底分: {gameState.room.baseScore.toLocaleString()} 积分/分
               </div>
+            </div>
 
-              {/* 4 Players Final Match Settlement Table */}
-              <div className="w-full bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 text-left">
+            {/* 4 Players Final Match Settlement Table Grid */}
+            <div className="flex-1 flex items-center justify-center min-h-0 py-2">
+              <div className="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-6xl h-full items-stretch">
                 {(() => {
                   const matchSettlements = calculateMatchSettlement(
                     gameState.players,
                     gameState.room.baseScore
                   );
 
+                  // Sort to find champion
+                  const sortedIndices = [...gameState.players.keys()].sort((a, b) => {
+                    const stA = matchSettlements[a]?.coinChange || 0;
+                    const stB = matchSettlements[b]?.coinChange || 0;
+                    return stB - stA;
+                  });
+
                   return gameState.players.map((p, idx) => {
                     const st = matchSettlements[idx];
+                    const rankIndex = sortedIndices.indexOf(idx);
+                    const rankMedals = ['🥇 冠军', '🥈 亚军', '🥉 季军', '🎖️ 殿军'];
+                    const isChampion = rankIndex === 0;
+                    const isHuman = idx === 0;
 
                     return (
-                      <div key={p.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-1 shadow-sm">
-                        <div className="flex justify-between items-center text-slate-300">
-                          <span className="font-bold flex items-center gap-1.5 flex-wrap">
-                            <span className="text-white font-black text-sm">{p.name}</span>
-                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-slate-800 text-amber-300 font-mono">
-                              累计: {st.accumulatedCards}张 ➔ 四舍五入: <strong className="text-white font-black">{st.roundedCards}张</strong>
-                            </span>
-                          </span>
+                      <div
+                        key={p.id}
+                        className={`rounded-2xl border p-2.5 sm:p-3 flex flex-col justify-between relative transition-all shadow-xl overflow-hidden ${
+                          isChampion
+                            ? 'bg-gradient-to-b from-amber-950/80 via-slate-900 to-slate-950 border-amber-400/90 ring-2 ring-amber-400/40'
+                            : st.coinChange > 0
+                            ? 'bg-gradient-to-b from-emerald-950/40 to-slate-900 border-emerald-500/50'
+                            : 'bg-slate-900/90 border-slate-800'
+                        }`}
+                      >
+                        {/* Top Rank Badge */}
+                        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 shrink-0">
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="text-base sm:text-lg">{p.avatar}</span>
+                            <div className="truncate">
+                              <div className="font-black text-xs text-white truncate flex items-center gap-1">
+                                <span>{p.name}</span>
+                                {isHuman && (
+                                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/30 text-emerald-300 font-bold">
+                                    你
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[9px] text-slate-400 font-mono">
+                                {['南家', '东家', '北家', '西家'][idx]}
+                              </div>
+                            </div>
+                          </div>
 
                           <span
-                            className={`font-mono font-black text-sm ${
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-black shadow shrink-0 ${
+                              isChampion
+                                ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950'
+                                : rankIndex === 1
+                                ? 'bg-slate-300 text-slate-950'
+                                : 'bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            {rankMedals[rankIndex]}
+                          </span>
+                        </div>
+
+                        {/* Middle: Coin Delta & Rounded Calculation */}
+                        <div className="my-auto py-2 text-center flex flex-col items-center justify-center gap-1">
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            累计: <span className="text-amber-300 font-bold">{st.accumulatedCards}张</span> ➔ 四舍五入: <strong className="text-white font-black">{st.roundedCards}张</strong>
+                          </div>
+
+                          <div
+                            className={`text-base sm:text-lg md:text-xl font-mono font-black ${
                               st.coinChange > 0
                                 ? 'text-emerald-400'
                                 : st.coinChange < 0
@@ -1362,36 +1547,44 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                             }`}
                           >
                             {st.coinChange > 0 ? `+${st.coinChange.toLocaleString()}` : st.coinChange.toLocaleString()} 积分
-                          </span>
+                          </div>
+
+                          <div className="text-[9px] text-slate-400 font-mono bg-black/40 border border-slate-800 rounded-lg px-2 py-1 w-full truncate">
+                            公式: <code className="text-amber-300 font-bold">{st.formulaDesc}</code>
+                          </div>
                         </div>
 
-                        {/* Pairwise Formula */}
-                        <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between">
-                          <span>两两对减公式: <code className="text-amber-300 font-bold">{st.formulaDesc}</code></span>
-                          <span className="text-slate-300 font-bold">最新结余: {st.finalScore.toLocaleString()}</span>
+                        {/* Bottom Balance */}
+                        <div className="pt-1.5 border-t border-slate-800/60 shrink-0 flex justify-between items-center text-[10px]">
+                          <span className="text-slate-400 font-mono">结余积分:</span>
+                          <span className="font-mono font-black text-amber-300">
+                            {st.finalScore.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     );
                   });
                 })()}
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full">
-                <button
-                  onClick={onBackToLobby}
-                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm cursor-pointer transition-all"
-                >
-                  返回大厅
-                </button>
-                <button
-                  onClick={onStartNewMatch || onStartNewGame}
-                  className="py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/40 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1"
-                >
-                  <Trophy className="w-4 h-4" />
-                  <span>🏆 开始新一场 (重置从♦2首出)</span>
-                </button>
-              </div>
+            {/* Bottom Action Bar */}
+            <div className="flex items-center justify-between pt-2 border-t border-amber-900/60 px-1 gap-2 shrink-0">
+              <button
+                onClick={onBackToLobby}
+                className="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs cursor-pointer transition-all flex items-center gap-1.5 border border-slate-700"
+              >
+                <Home className="w-3.5 h-3.5 text-slate-400" />
+                <span>返回大厅</span>
+              </button>
+
+              <button
+                onClick={onStartNewMatch || onStartNewGame}
+                className="px-6 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm md:text-base shadow-xl shadow-amber-500/40 cursor-pointer transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Trophy className="w-4 h-4 text-slate-950" />
+                <span>🏆 开始新一场 (重置从♦2首出)</span>
+              </button>
             </div>
           </div>
         )}

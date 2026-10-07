@@ -180,22 +180,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 select-none">
-      <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl text-slate-100 relative flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 select-none">
+      <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl text-slate-100 relative flex flex-col max-h-[94vh]">
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 p-4 border-b border-emerald-500/30 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg text-slate-950 font-black">
-              <ShieldCheck className="w-6 h-6 text-slate-950" />
+        <div className="bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 p-3 sm:p-4 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg text-slate-950 font-black shrink-0">
+              <ShieldCheck className="w-5 h-5 text-slate-950" />
             </div>
             <div>
-              <h3 className="font-black text-lg text-emerald-200 flex items-center gap-1.5">
+              <h3 className="font-black text-sm sm:text-base text-emerald-200 flex items-center gap-1.5">
                 <span>锄大地账号系统</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
                   TG Bot 授权防护
                 </span>
               </h3>
-              <p className="text-[11px] text-emerald-400/80">
+              <p className="text-[10px] sm:text-[11px] text-emerald-400/80">
                 支持 Telegram Bot 授权注册与 6位密码登录
               </p>
             </div>
@@ -206,14 +206,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               sounds.playClick();
               onClose();
             }}
-            className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 p-1">
+        <div className="flex border-b border-slate-800 bg-slate-950/60 p-1 shrink-0">
           <button
             type="button"
             onClick={() => {
@@ -221,7 +221,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setActiveTab('LOGIN');
               setErrorMsg('');
             }}
-            className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'LOGIN'
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -238,7 +238,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               setActiveTab('REGISTER');
               setErrorMsg('');
             }}
-            className={`flex-1 py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'REGISTER'
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-white'
@@ -250,9 +250,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+        <div className="p-3 sm:p-4 overflow-y-auto space-y-3 flex-1 min-h-0 custom-scrollbar">
           {errorMsg && (
-            <div className="p-3 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-start gap-2 shadow-lg animate-pulse">
+            <div className="p-2.5 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-start gap-2 shadow-lg animate-pulse">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <div className="leading-tight font-medium">{errorMsg}</div>
             </div>
@@ -260,167 +260,168 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {activeTab === 'REGISTER' ? (
             /* ================= REGISTER FORM ================= */
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+            <form onSubmit={handleRegisterSubmit} className="space-y-3">
               {/* TG Authorized Phone Requirement Notice */}
-              <div className="p-2.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-300/90 flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-[10px] sm:text-[11px] text-emerald-300/90 flex items-center gap-2">
                 <Bot className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
-                  <b>授权规则：</b>仅 Telegram Bot 授权的手机号可进行注册。无需真实的短信验证码。
+                  <b>授权规则：</b>仅 Telegram Bot 授权的手机号可进行注册。无需真实短信验证码。
                 </span>
               </div>
 
-              {/* Phone Input with TG Check Button */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                    授权手机号
-                  </span>
-                  <span className="text-[10px] text-slate-400">例: 13800138000</span>
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Column 1: Phone & Nickname */}
+                <div className="space-y-2.5">
+                  {/* Phone Input with TG Check Button */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                        授权手机号
+                      </span>
+                      <span className="text-[10px] text-slate-400">例: 13800138000</span>
+                    </label>
+                    <div className="flex gap-1.5">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          maxLength={11}
+                          placeholder="输入手机号"
+                          value={phone}
+                          onChange={handlePhoneChange}
+                          className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCheckPhone(phone)}
+                        disabled={isCheckingPhone || !phone}
+                        className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer disabled:opacity-50 transition-all shrink-0 flex items-center gap-1"
+                      >
+                        {isCheckingPhone ? (
+                          <span className="animate-spin">⏳</span>
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        )}
+                        <span>检查授权</span>
+                      </button>
+                    </div>
+
+                    {/* Phone Authorization Status Badge */}
+                    {phoneAuthStatus.checked && (
+                      <div className="mt-1">
+                        {phoneAuthStatus.isAuthorized ? (
+                          <div className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 rounded-lg px-2 py-0.5 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>{phoneAuthStatus.message}</span>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-red-300 bg-red-950/60 border border-red-500/40 rounded-lg px-2 py-0.5 flex items-start gap-1">
+                            <AlertCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                            <span>
+                              ❌ 未获授权！请在 Telegram Bot 中发送{' '}
+                              <code className="text-amber-300 bg-black/40 px-1 rounded">
+                                /auth {phone || '手机号'}
+                              </code>
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nickname Input */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-amber-400" />
+                      游戏昵称
+                    </label>
                     <input
                       type="text"
-                      maxLength={11}
-                      placeholder="输入手机号"
-                      value={phone}
-                      onChange={handlePhoneChange}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none font-mono"
+                      maxLength={12}
+                      placeholder="2-12 位个性昵称 (例: 锄神小霸王)"
+                      value={nickname}
+                      onChange={e => {
+                        setNickname(e.target.value);
+                        setErrorMsg('');
+                      }}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none"
                     />
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleCheckPhone(phone)}
-                    disabled={isCheckingPhone || !phone}
-                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer disabled:opacity-50 transition-all shrink-0 flex items-center gap-1"
-                  >
-                    {isCheckingPhone ? (
-                      <span className="animate-spin">⏳</span>
-                    ) : (
-                      <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                    )}
-                    <span>检查授权</span>
-                  </button>
                 </div>
 
-                {/* Phone Authorization Status Badge */}
-                {phoneAuthStatus.checked && (
-                  <div className="mt-1.5">
-                    {phoneAuthStatus.isAuthorized ? (
-                      <div className="text-[11px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 rounded-xl px-2.5 py-1 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{phoneAuthStatus.message}</span>
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-red-300 bg-red-950/60 border border-red-500/40 rounded-xl px-2.5 py-1 flex items-start gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-                        <span>
-                          ❌ 未获授权！请在 Telegram Bot 中发送命令{' '}
-                          <code className="text-amber-300 bg-black/40 px-1 py-0.5 rounded">
-                            /auth {phone || '手机号'}
-                          </code>{' '}
-                          完成授权后再试。
+                {/* Column 2: Password & Avatar */}
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Password Input */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+                        <span className="flex items-center gap-1">
+                          <Lock className="w-3 h-3 text-cyan-400" />
+                          6位密码
                         </span>
-                      </div>
-                    )}
+                        <span className="text-[9px] font-mono text-slate-400">{password.length}/6位</span>
+                      </label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        placeholder="6位密码"
+                        value={password}
+                        onChange={handlePasswordChange}
+                        className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-wider"
+                      />
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
+                        <KeyRound className="w-3 h-3 text-indigo-400" />
+                        确认密码
+                      </label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        placeholder="再次输入"
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-wider"
+                      />
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {/* Nickname Input */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-amber-400" />
-                  游戏昵称
-                </label>
-                <input
-                  type="text"
-                  maxLength={12}
-                  placeholder="2-12 位个性昵称 (例: 锄神小霸王)"
-                  value={nickname}
-                  onChange={e => {
-                    setNickname(e.target.value);
-                    setErrorMsg('');
-                  }}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none"
-                />
-              </div>
-
-              {/* Password Input (Must be exactly 6 characters) */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
-                  <span className="flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-cyan-400" />
-                    登录密码 (6位字母或数字)
-                  </span>
-                  <span
-                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
-                      password.length === 6
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {password.length}/6位
-                  </span>
-                </label>
-                <input
-                  type="password"
-                  maxLength={6}
-                  placeholder="设置 6 位数密码 (不限大小写)"
-                  value={password}
-                  onChange={handlePasswordChange}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-widest"
-                />
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
-                  <KeyRound className="w-3.5 h-3.5 text-indigo-400" />
-                  确认密码
-                </label>
-                <input
-                  type="password"
-                  maxLength={6}
-                  placeholder="再次输入 6 位数密码"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-widest"
-                />
-              </div>
-
-              {/* Avatar Selector */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1.5">
-                  选择形象头像
-                </label>
-                <div className="grid grid-cols-5 gap-1.5 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
-                  {AVATAR_OPTIONS.map(av => (
-                    <button
-                      key={av}
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setSelectedAvatar(av);
-                      }}
-                      className={`h-10 rounded-xl text-xl flex items-center justify-center transition-all cursor-pointer ${
-                        selectedAvatar === av
-                          ? 'bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-md ring-2 ring-white text-slate-950 scale-105'
-                          : 'bg-slate-900 hover:bg-slate-800 text-white'
-                      }`}
-                    >
-                      {av}
-                    </button>
-                  ))}
+                  {/* Avatar Selector */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                      选择形象头像
+                    </label>
+                    <div className="grid grid-cols-5 gap-1 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+                      {AVATAR_OPTIONS.map(av => (
+                        <button
+                          key={av}
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setSelectedAvatar(av);
+                          }}
+                          className={`h-8 rounded-xl text-lg flex items-center justify-center transition-all cursor-pointer ${
+                            selectedAvatar === av
+                              ? 'bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-md ring-2 ring-white text-slate-950 scale-105'
+                              : 'bg-slate-900 hover:bg-slate-800 text-white'
+                          }`}
+                        >
+                          {av}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 font-black text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2 mt-2"
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 font-black text-xs sm:text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2 mt-1"
               >
                 {loading ? (
                   <span>正在提交注册...</span>
