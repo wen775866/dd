@@ -34,11 +34,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (file("release.jks").exists()) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
+            signingConfig (file("release.jks").exists() ? signingConfigs.release : signingConfigs.debug)
         }
     }
 }

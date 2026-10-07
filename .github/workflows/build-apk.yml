@@ -41,15 +41,17 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 21
+          cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      - name: Ensure Android Platform & gradlew
+      - name: Accept Android SDK Licenses
         run: |
-          # If android directory or gradlew is missing, cleanly re-add platform
+          yes | sdkmanager --licenses || true
+
+      - name: Ensure Android Platform & Capacitor Sync
+        run: |
+          # If android directory or gradlew is missing, cleanly add platform
           if [ ! -f "android/gradlew" ]; then
-            echo "android/gradlew not found in repo. Creating fresh Android project..."
+            echo "android/gradlew not found. Initializing Capacitor Android platform..."
             rm -rf android
             npx cap add android
           fi
@@ -57,25 +59,17 @@ jobs:
           # Sync web distribution to Android project
           npx cap sync android
 
-          # Re-apply brand icons
+          # Re-apply brand icons to all mipmap densities
           node scripts/generate-pwa-icons.js
 
-          # If gradlew still missing for any reason, generate it using gradle wrapper
-          if [ ! -f "android/gradlew" ]; then
-            echo "Generating gradle wrapper..."
-            cd android
-            gradle wrapper || true
-            cd ..
-          fi
-
-          # Grant execution permission
+          # Ensure gradlew executable permission
           if [ -f "android/gradlew" ]; then
             chmod +x android/gradlew
           fi
 
       - name: Configure Android Immersive Landscape, Resources & Keystore
         run: |
-          # 1. Package folder
+          # 1. Ensure package folder exists
           mkdir -p android/app/src/main/java/com/game/yansan
           
           # 2. Immersive Sticky MainActivity.java
@@ -169,6 +163,7 @@ jobs:
           EOF
 
           # 4. Generate Release Keystore (Self-contained, no secrets needed!)
+          mkdir -p android/app
           if [ ! -f android/app/release.jks ]; then
             keytool -genkeypair -v -keystore android/app/release.jks \
               -alias yansan \
@@ -184,11 +179,10 @@ jobs:
       - name: Build Debug and Release APKs
         run: |
           cd android
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleDebug assembleRelease --no-daemon --stacktrace
-          else
-            gradle assembleDebug assembleRelease --no-daemon --stacktrace
-          fi
+          chmod +x gradlew
+          ./gradlew --version
+          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleRelease --stacktrace
 
       - name: Organize Output APK Files
         run: |
