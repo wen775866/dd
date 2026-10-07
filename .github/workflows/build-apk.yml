@@ -140,8 +140,10 @@ jobs:
           }
           EOF
 
-          # 3. Ensure App Name strings & AAPT2 colors
+          # 3. Ensure App Name strings & AAPT2 colors (Remove duplicate ic_launcher_background.xml)
           mkdir -p android/app/src/main/res/values
+          rm -f android/app/src/main/res/values/ic_launcher_background.xml
+
           cat << 'EOF' > android/app/src/main/res/values/strings.xml
           <?xml version='1.0' encoding='utf-8'?>
           <resources>
