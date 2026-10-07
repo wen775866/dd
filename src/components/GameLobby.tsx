@@ -37,7 +37,7 @@ import {
 export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   {
     id: 'room-chudadi',
-    name: '♠️ 锄大地 · 经典 4 人桌',
+    name: '♠️ 锄大地',
     tag: '底分 1,000 积分 · 首出方块3 · 关门双倍/三倍暴击',
     baseScore: 1000,
     entryMin: 100,
@@ -48,7 +48,7 @@ export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   },
   {
     id: 'room-yansan',
-    name: '🔥 烟三 · 专场爆分竞技',
+    name: '🔥 烟三',
     tag: '底分 2,000 积分 · 烟三特色组合 · 疯狂拼分火爆开打',
     baseScore: 2000,
     entryMin: 2000,
@@ -102,30 +102,30 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       : Math.round((userProfile.wins / (userProfile.wins + userProfile.losses)) * 100);
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-2 sm:p-4 select-none bg-gradient-to-br from-[#080d1a] via-[#0b172a] to-[#040812] text-white relative overflow-hidden">
+    <div className="w-full h-full flex flex-col justify-between p-1.5 sm:p-3 select-none bg-gradient-to-br from-[#080d1a] via-[#0b172a] to-[#040812] text-white relative overflow-hidden">
       {/* Ambient Radial Lights */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(16,185,129,0.15)_0%,transparent_60%)] pointer-events-none" />
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* TOP BAR: Profile Header & Currency */}
-      <div className="relative z-10 flex items-center justify-between gap-2 px-1 py-1">
+      <div className="relative z-10 flex items-center justify-between gap-1.5 px-1 py-0.5 shrink-0">
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Avatar Box */}
           <div className="flex items-center gap-2 bg-black/50 backdrop-blur-md pl-1 pr-3 py-1 rounded-full border border-emerald-500/40 shadow-lg">
             <div className="relative">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 p-0.5 shadow-md flex items-center justify-center">
-                <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-lg sm:text-xl">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 p-0.5 shadow-md flex items-center justify-center">
+                <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-base sm:text-lg">
                   {userProfile.avatar}
                 </div>
               </div>
-              <span className="absolute -bottom-1 -right-1 text-[9px] font-black px-1.5 py-0.2 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow ring-1 ring-white/30">
+              <span className="absolute -bottom-1 -right-1 text-[8px] font-black px-1.5 py-0.2 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow ring-1 ring-white/30">
                 锄神
               </span>
             </div>
 
             <div className="leading-tight">
-              <div className="font-black text-xs sm:text-sm text-amber-200 truncate max-w-[100px] sm:max-w-[130px]">
+              <div className="font-black text-xs sm:text-sm text-amber-200 truncate max-w-[90px] sm:max-w-[120px]">
                 {userProfile.nickname}
               </div>
               <div className="text-[10px] text-amber-400/80 font-mono flex items-center gap-1">
@@ -138,7 +138,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
           {/* 积分 Capsule */}
           <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md pl-2.5 pr-1 py-1 rounded-full border border-yellow-500/50 shadow-md">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-slate-950 font-black text-[11px] shadow">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-slate-950 font-black text-[10px] sm:text-[11px] shadow">
               分
             </div>
             <span className="font-mono font-black text-amber-300 text-xs sm:text-sm pr-1">
@@ -146,16 +146,16 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             </span>
             <button
               onClick={() => setShowFreeBeansModal(true)}
-              className="w-5 h-5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 flex items-center justify-center text-slate-950 font-black cursor-pointer shadow active:scale-95 transition-transform"
+              className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 flex items-center justify-center text-slate-950 font-black cursor-pointer shadow active:scale-95 transition-transform"
               title="免费增加积分"
             >
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
+              <Plus className="w-3 h-3 stroke-[3]" />
             </button>
           </div>
 
           {/* 钻石 Capsule */}
           <div className="hidden md:flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 rounded-full border border-cyan-500/40 shadow">
-            <Gem className="w-4 h-4 text-cyan-400" />
+            <Gem className="w-3.5 h-3.5 text-cyan-400" />
             <span className="font-mono font-black text-cyan-300 text-xs">
               {userProfile.diamonds}
             </span>
@@ -171,11 +171,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-500/40 cursor-pointer shadow transition-all"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-500/40 cursor-pointer shadow transition-all"
               title={`已登录账号: ${currentUser.phone} (点击切换)`}
             >
               <User className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="truncate max-w-[80px]">{currentUser.nickname}</span>
+              <span className="truncate max-w-[70px]">{currentUser.nickname}</span>
             </button>
           ) : (
             <button
@@ -183,7 +183,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-bold text-xs shadow cursor-pointer transition-all border border-emerald-400/40"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-bold text-xs shadow cursor-pointer transition-all border border-emerald-400/40"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-white" />
               <span>登录 / 注册</span>
@@ -194,7 +194,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
           <button
             onClick={handleDailyCheckin}
-            className="relative hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 cursor-pointer transition-transform"
+            className="relative hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg hover:brightness-110 active:scale-95 cursor-pointer transition-transform"
           >
             <Gift className="w-3.5 h-3.5" />
             <span>福利积分</span>
@@ -202,37 +202,37 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
           <button
             onClick={() => setShowRulesModal(true)}
-            className="p-2 rounded-full bg-black/40 border border-slate-700/80 hover:bg-slate-800/80 text-amber-300 text-xs font-bold transition-all cursor-pointer shadow"
+            className="p-1.5 rounded-full bg-black/40 border border-slate-700/80 hover:bg-slate-800/80 text-amber-300 text-xs font-bold transition-all cursor-pointer shadow"
             title="规则宝典"
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="p-2 rounded-full bg-black/40 border border-slate-700/80 hover:bg-slate-800/80 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer shadow"
+            className="p-1.5 rounded-full bg-black/40 border border-slate-700/80 hover:bg-slate-800/80 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer shadow"
             title="系统设置"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      {/* CENTER HERO & TWO GAME SECTIONS */}
-      <div className="relative z-10 my-auto py-2">
-        <div className="text-center mb-4 sm:mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold mb-1.5 shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>♠️ 经典 4 人桌对局 · 点数 2 最大 · 关门双倍暴击</span>
+      {/* CENTER HERO & SIDE-BY-SIDE TWO GAME SECTIONS */}
+      <div className="relative z-10 my-auto flex flex-col justify-center flex-1 min-h-0 py-1">
+        <div className="text-center mb-1.5 sm:mb-2 shrink-0">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold shadow-inner">
+            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+            <span>♠️ 经典 4 人桌对局 · 点数 2 最大 · 关门暴击</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-xl tracking-widest flex items-center justify-center gap-2">
-            <span>♠️ 锄大地</span>
+          <h1 className="text-xl sm:text-3xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-xl tracking-widest flex items-center justify-center gap-2 mt-0.5">
+            <span>♠️ 锄大地 & 🔥 烟三</span>
           </h1>
         </div>
 
-        {/* TWO GAME SECTIONS: 锄大地 & 烟三 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto px-2">
-          {CHUDADI_ROOM_PRESETS.map((room, idx) => {
+        {/* GUARANTEED 2 COLUMNS (SIDE BY SIDE) GAME SECTIONS: 锄大地 & 烟三 */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 max-w-3xl mx-auto w-full px-1 items-stretch min-h-0">
+          {CHUDADI_ROOM_PRESETS.map((room) => {
             const canEnter = userProfile.coins >= room.entryMin;
             const isChudadi = room.id === 'room-chudadi';
 
@@ -248,23 +248,23 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                     alert(`进入【${room.name}】需要至少 ${room.entryMin.toLocaleString()} 积分！`);
                   }
                 }}
-                className={`relative rounded-3xl p-5 border-2 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden shadow-2xl group ${
+                className={`relative rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-2 transition-all duration-300 cursor-pointer flex flex-col justify-between overflow-hidden shadow-2xl group ${
                   canEnter
                     ? isChudadi
-                      ? 'bg-gradient-to-br from-emerald-950/90 via-slate-900/90 to-slate-950/95 border-emerald-500/60 hover:border-amber-400 hover:-translate-y-2 hover:shadow-emerald-500/25'
-                      : 'bg-gradient-to-br from-amber-950/90 via-slate-900/90 to-slate-950/95 border-amber-500/60 hover:border-amber-300 hover:-translate-y-2 hover:shadow-amber-500/25'
+                      ? 'bg-gradient-to-br from-emerald-950/90 via-slate-900/90 to-slate-950/95 border-emerald-500/60 hover:border-amber-400 hover:-translate-y-1 hover:shadow-emerald-500/25'
+                      : 'bg-gradient-to-br from-amber-950/90 via-slate-900/90 to-slate-950/95 border-amber-500/60 hover:border-amber-300 hover:-translate-y-1 hover:shadow-amber-500/25'
                     : 'bg-slate-950/60 opacity-60 border-slate-800'
                 }`}
               >
-                {/* Decorative Background Symbol */}
-                <div className="absolute -right-4 -bottom-4 opacity-10 font-black text-8xl pointer-events-none select-none text-white">
+                {/* Background Symbol */}
+                <div className="absolute -right-3 -bottom-3 opacity-10 font-black text-6xl sm:text-8xl pointer-events-none select-none text-white">
                   {isChudadi ? '♠️' : '🔥'}
                 </div>
 
                 {/* Top Badge & Score */}
-                <div className="flex items-center justify-between z-10">
+                <div className="flex items-center justify-between z-10 shrink-0">
                   <span
-                    className={`text-xs font-black px-3 py-1 rounded-full shadow ${
+                    className={`text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full shadow ${
                       isChudadi
                         ? 'bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950'
                         : 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950'
@@ -272,39 +272,39 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   >
                     {room.badge}
                   </span>
-                  <span className="text-xs font-mono font-black text-amber-300 bg-black/40 px-2.5 py-1 rounded-full border border-amber-500/30">
-                    底分 {room.baseScore.toLocaleString()} 积分
+                  <span className="text-[10px] sm:text-xs font-mono font-black text-amber-300 bg-black/40 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    底分 {room.baseScore.toLocaleString()}
                   </span>
                 </div>
 
                 {/* Card Title & Desc */}
-                <div className="my-4 sm:my-6 z-10">
-                  <h2 className="text-2xl sm:text-3xl font-black text-amber-200 group-hover:text-white transition-colors flex items-center gap-2">
+                <div className="my-2 sm:my-3 z-10">
+                  <h2 className="text-lg sm:text-2xl font-black text-amber-200 group-hover:text-white transition-colors flex items-center gap-1.5">
                     <span>{room.name}</span>
                   </h2>
-                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-300 mt-1 line-clamp-2 leading-tight">
                     {room.tag}
                   </p>
                 </div>
 
                 {/* Action & Entry Button */}
-                <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between z-10">
-                  <div className="text-xs text-slate-400 font-mono">
-                    准入要求: <span className="text-amber-300 font-black">{room.entryMin.toLocaleString()}</span> 积分
+                <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between z-10 shrink-0">
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    准入: <span className="text-amber-300 font-black">{room.entryMin.toLocaleString()}</span> 积分
                   </div>
 
                   <button
                     disabled={!canEnter}
-                    className={`px-5 py-2 rounded-2xl text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                    className={`px-3 sm:px-4 py-1.5 rounded-xl text-[11px] sm:text-xs font-black flex items-center gap-1 transition-all cursor-pointer ${
                       canEnter
                         ? isChudadi
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-lg group-hover:scale-105'
-                          : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-lg group-hover:scale-105'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md group-hover:scale-105'
+                          : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-md group-hover:scale-105'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                     }`}
                   >
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>立即开局</span>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>入场</span>
                   </button>
                 </div>
               </div>
@@ -314,8 +314,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       </div>
 
       {/* FOOTER */}
-      <div className="relative z-10 flex items-center justify-between px-2 text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
-        <div className="flex items-center gap-2">
+      <div className="relative z-10 flex items-center justify-between px-2 text-[10px] sm:text-[11px] text-slate-400 border-t border-slate-800/80 pt-1 shrink-0">
+        <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>正在在线匹配 4 人对局桌 (绿色公平竞技)</span>
         </div>
@@ -328,7 +328,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       {/* 规则宝典 Modal */}
       {showRulesModal && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto">
+          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-2">
               <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-amber-400" />
