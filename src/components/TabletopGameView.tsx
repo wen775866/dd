@@ -7,6 +7,9 @@ import {
   getHandDescription,
   sortCards,
   sortCardsByRank,
+  calculateSettlement,
+  getEffectiveCards,
+  calculateMatchSettlement,
 } from '../utils/chudadiRules';
 import {
   aiChoosePlay,
@@ -43,6 +46,7 @@ interface TabletopGameViewProps {
   gameState: GameState;
   onUpdateState: (newState: GameState) => void;
   onStartNewGame: () => void;
+  onStartNewMatch?: () => void;
   onChangeTable?: () => void;
   onBackToLobby: () => void;
   soundEnabled: boolean;
@@ -66,6 +70,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   gameState,
   onUpdateState,
   onStartNewGame,
+  onStartNewMatch,
   onChangeTable,
   onBackToLobby,
   soundEnabled,
@@ -231,10 +236,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
     if (cardsToPlay.length === 0) return;
 
-    // Check if first trick requires starter card
+    // Check if first trick requires starter card (diamond-2)
     if (gameState.isFirstTrick && !cardsToPlay.some(c => c.id === gameState.starterCardId)) {
       sounds.playPass();
-      showBubble('player-0', '首出必须包含方块3 (♦3)！');
+      showBubble('player-0', '首出必须包含方块2 (♦2)！');
       return;
     }
 
@@ -485,66 +490,67 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     });
   };
 
-  // Game Over Settlement with Big Two Penalty Multipliers
+  // Game Over Round / Match Handler
   const handleGameOver = (winnerIdx: number, finalPlayers: Player[], finalHand: CardHand) => {
     const winner = finalPlayers[winnerIdx];
-    let mult = 1;
 
-    // Final card bonus
-    const lastCardRank = finalHand.cards[0]?.rank;
-    if (lastCardRank === '2') {
-      mult *= 2; // Ending with 2 doubles penalty
-    } else if (finalHand.type === 'FOUR_OF_A_KIND' || finalHand.type === 'STRAIGHT_FLUSH') {
-      mult *= 4; // Ending with Four of a kind / Straight Flush quadruples penalty
-    }
-
-    const basePoint = gameState.room.baseScore * mult;
-    let totalWonCoins = 0;
-
-    // Coins accounting
-    const settledPlayers = finalPlayers.map((p, idx) => {
-      if (idx === winnerIdx) return p;
-
-      const cardCount = p.cards.length;
-      let penaltyFactor = 1;
-
-      if (cardCount === 13) {
-        penaltyFactor = 3; // 三倍关门暴击 (13x3 = 39x)
-      } else if (cardCount >= 10) {
-        penaltyFactor = 2; // 双倍张数惩罚
-      }
-
-      const lossCoins = cardCount * penaltyFactor * basePoint;
-      totalWonCoins += lossCoins;
-
+    // Calculate effective cards for this round and accumulate for each player
+    const updatedPlayers = finalPlayers.map((p, idx) => {
+      const rawCount = p.cards ? p.cards.length : 0;
+      const effRound = getEffectiveCards(rawCount).effective;
+      const prevAcc = p.accumulatedCards || 0;
       return {
         ...p,
-        score: Math.max(0, p.score - lossCoins),
+        accumulatedCards: prevAcc + effRound,
       };
     });
 
-    // Award total won coins to winner
-    settledPlayers[winnerIdx] = {
-      ...winner,
-      score: winner.score + totalWonCoins,
-    };
+    // Check if any player's accumulated cards >= 100 (Triggers Match Final Settlement!)
+    const matchEnded = updatedPlayers.some(p => p.accumulatedCards >= 100);
 
-    if (winner.id === 'player-0') {
-      sounds.playWin();
-      sounds.playCoins();
-      sounds.speak('我清盘跑清啦！第一名！', 'player-0');
+    if (matchEnded) {
+      // Calculate final match score settlement with rounding to tens (四舍五入)
+      const matchSettlements = calculateMatchSettlement(updatedPlayers, gameState.room.baseScore);
+      const settledPlayers = updatedPlayers.map((p, idx) => {
+        const st = matchSettlements.find(s => s.playerIndex === idx);
+        return {
+          ...p,
+          score: st ? st.finalScore : p.score,
+        };
+      });
+
+      if (winner.id === 'player-0') {
+        sounds.playWin();
+        sounds.playCoins();
+        sounds.speak('比赛结束！大结算发分啦！', 'player-0');
+      } else {
+        sounds.playLose();
+        sounds.speak('比赛结束，大结算算分啦！', 'player-0');
+      }
+
+      onUpdateState({
+        ...gameState,
+        players: settledPlayers,
+        phase: 'MATCH_SETTLEMENT',
+        winnerIndex: winnerIdx,
+      });
     } else {
-      sounds.playLose();
-      sounds.speak('惨啦，被关门扣分了！', 'player-0');
-    }
+      // Round Summary (Keep playing, accumulate cards, winner leads next round!)
+      if (winner.id === 'player-0') {
+        sounds.playWin();
+        sounds.speak('本局胜利！下局由我优先出牌！', 'player-0');
+      } else {
+        sounds.playClick();
+        sounds.speak(`本局结束，下局由${winner.name}优先出牌！`, 'player-0');
+      }
 
-    onUpdateState({
-      ...gameState,
-      players: settledPlayers,
-      phase: 'GAME_OVER',
-      winnerIndex: winnerIdx,
-      multiplier: mult,
-    });
+      onUpdateState({
+        ...gameState,
+        players: updatedPlayers,
+        phase: 'ROUND_SUMMARY',
+        winnerIndex: winnerIdx,
+      });
+    }
   };
 
   // AUTOPLAY LOGIC FOR HUMAN
@@ -614,9 +620,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   }, [gameState.currentPlayerIndex, gameState.phase, gameState.lastValidHand]);
 
   const human = gameState.players[0] || { cards: [], name: '玩家', score: 0, position: 'bottom', id: 'player-0' };
-  const botLeft = gameState.players[1] || { cards: [], name: '西家', score: 0, position: 'left', id: 'player-1', avatar: '🤖' };
+  const botRight = gameState.players[1] || { cards: [], name: '东家', score: 0, position: 'right', id: 'player-1', avatar: '🐱' };
   const botTop = gameState.players[2] || { cards: [], name: '北家', score: 0, position: 'top', id: 'player-2', avatar: '👑' };
-  const botRight = gameState.players[3] || { cards: [], name: '东家', score: 0, position: 'right', id: 'player-3', avatar: '🐱' };
+  const botLeft = gameState.players[3] || { cards: [], name: '西家', score: 0, position: 'left', id: 'player-3', avatar: '🤖' };
 
   const displayedHumanCards = sortByPattern
     ? sortCardsByRank(human.cards)
@@ -670,10 +676,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </span>
           </div>
 
-          {/* Center Banner: Starter Card Reminder */}
-          {gameState.isFirstTrick && (
+          {/* Center Banner: Starter Card & Order Reminder */}
+          {gameState.isFirstTrick ? (
             <div className="hidden md:flex items-center gap-1.5 bg-amber-500/20 px-3 py-0.5 rounded-full border border-amber-400/50 text-amber-300 text-xs font-bold animate-pulse">
-              <span>♦3 (方块3) 首出局！有♦3者先发</span>
+              <span>♦2 (方块2) 先出！需带♦2牌型 🔄 逆时针出牌</span>
+            </div>
+          ) : (
+            <div className="hidden md:flex items-center gap-1.5 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30 text-emerald-300 text-[11px] font-bold">
+              <span>🔄 逆时针出牌顺序 (南➔东➔北➔西)</span>
             </div>
           )}
 
@@ -766,8 +776,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
             <div className="text-center mt-2">
               <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botLeft.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5">
-                {botLeft.cards.length <= 2 && '🚨 '}剩 {botLeft.cards.length} 张
+              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5 flex items-center justify-center gap-1">
+                <span>{botLeft.cards.length <= 2 && '🚨 '}手牌 {botLeft.cards.length} 张</span>
+                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botLeft.accumulatedCards || 0}</span>
               </div>
             </div>
 
@@ -798,7 +809,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
                 <span className="text-xs font-bold text-slate-200">{botTop.name} (北家)</span>
                 <span className="text-xs font-mono font-bold text-emerald-400">
-                  剩 {botTop.cards.length} 张
+                  手牌 {botTop.cards.length} 张
+                </span>
+                <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 rounded border border-amber-500/30">
+                  累计 {botTop.accumulatedCards || 0}
                 </span>
               </div>
             </div>
@@ -828,7 +842,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             ) : (
               <div className="my-auto text-center text-emerald-300/70 text-xs border-2 border-dashed border-emerald-500/30 px-6 py-3 rounded-2xl bg-black/25">
                 {gameState.isFirstTrick
-                  ? '♦3 (方块3) 首出！有方块3者优先发牌'
+                  ? '♦2 (方块2) 首出！首出牌型中必须包含♦2 (逆时针出牌)'
                   : '桌面无牌，轮到领牌者任意出牌'}
               </div>
             )}
@@ -861,8 +875,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
             <div className="text-center mt-2">
               <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botRight.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5">
-                {botRight.cards.length <= 2 && '🚨 '}剩 {botRight.cards.length} 张
+              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5 flex items-center justify-center gap-1">
+                <span>{botRight.cards.length <= 2 && '🚨 '}手牌 {botRight.cards.length} 张</span>
+                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botRight.accumulatedCards || 0}</span>
               </div>
             </div>
 
@@ -997,8 +1012,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               <span>
                 手牌: <strong className="text-slate-100 font-mono">{human.cards.length}</strong> 张
               </span>
+              <span className="text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/40">
+                累计剩牌: <strong className="font-mono">{human.accumulatedCards || 0}</strong>/100张
+              </span>
               <span>
-                金币: <strong className="text-amber-400 font-mono">{human.score.toLocaleString()}</strong>
+                积分: <strong className="text-amber-400 font-mono">{human.score.toLocaleString()}</strong>
               </span>
             </div>
           </div>
@@ -1183,87 +1201,76 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
         )}
 
-        {/* Victory / Defeat Settlement Modal */}
-        {gameState.phase === 'GAME_OVER' && (
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-slate-900 border-2 border-amber-500 rounded-3xl max-w-lg w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/30">
-                <Trophy className="w-8 h-8" />
+        {/* 1. ROUND SUMMARY MODAL (局小结 - 仅累加剩牌张数，不进行金币大结算) */}
+        {gameState.phase === 'ROUND_SUMMARY' && (
+          <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150">
+            <div className="bg-slate-900 border-2 border-emerald-500 rounded-3xl max-w-lg w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center gap-3 max-h-[92vh] overflow-y-auto custom-scrollbar">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-xl">
+                <Sparkles className="w-7 h-7" />
               </div>
 
               <div>
-                <h3 className="text-xl sm:text-2xl font-black text-white">
-                  🏆 [{gameState.players[gameState.winnerIndex!]?.name}] 率先清盘夺冠！
+                <h3 className="text-lg sm:text-xl font-black text-white">
+                  🎉 第 {gameState.roundNumber} 局打完小结
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  场次底分: <span className="text-amber-400 font-bold font-mono">{gameState.room.baseScore} 积分</span>
-                  {gameState.multiplier > 1 && ` (终盘加倍 x${gameState.multiplier})`}
+                <p className="text-xs text-amber-300 font-bold mt-0.5">
+                  局不扣积分，剩牌张数已累加到头像！满 <span className="text-amber-200 underline">100张</span> 触发大结算！
                 </p>
               </div>
 
-              {/* 4 Players Remaining Cards Open Settlement Recap */}
+              {/* 4 Players Round Accumulation List */}
               <div className="w-full bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 text-left">
-                {gameState.players.map(p => {
-                  const isWinner = p.id === gameState.players[gameState.winnerIndex!]?.id;
-                  const isShutout = p.cards.length === 13;
-                  const isDoublePenalty = p.cards.length >= 10 && p.cards.length < 13;
+                {gameState.players.map((p, idx) => {
+                  const isWinner = idx === gameState.winnerIndex;
+                  const rawCount = p.cards ? p.cards.length : 0;
+                  const eff = getEffectiveCards(rawCount);
 
                   return (
-                    <div key={p.id} className="p-2 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col gap-1.5">
+                    <div key={p.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-1 shadow-sm">
                       <div className="flex justify-between items-center text-slate-300">
-                        <span className="font-bold flex items-center gap-1.5">
-                          <span>{p.name}</span>
+                        <span className="font-bold flex items-center gap-1.5 flex-wrap">
+                          <span className="text-white font-black text-sm">{p.name}</span>
                           {isWinner && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
-                              第一名胜出
+                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">
+                              🏆 率先出清 (0张)
                             </span>
                           )}
-                          {isShutout && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-600/30 text-rose-400 font-bold">
-                              关门三倍惩罚
-                            </span>
-                          )}
-                          {isDoublePenalty && (
-                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-400 font-bold">
-                              双倍惩罚 (≥10张)
+                          {!isWinner && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-300">
+                              本局剩{rawCount}张 (折算+{eff.effective}张)
                             </span>
                           )}
                         </span>
-                        <span className="font-mono text-amber-400 font-bold text-xs sm:text-sm">
-                          {p.score.toLocaleString()} 积分
+
+                        <span className="font-mono font-black text-amber-300 text-sm">
+                          累计剩牌: {p.accumulatedCards || 0} / 100 张
                         </span>
                       </div>
 
-                      {/* Remaining Cards */}
-                      <div className="flex items-center gap-1 overflow-x-auto py-0.5">
-                        <span className="text-[10px] text-slate-400 shrink-0">
-                          {p.cards.length === 0 ? '手牌出尽' : `剩牌(${p.cards.length}):`}
-                        </span>
-                        {p.cards.length > 0 ? (
-                          p.cards.map((card, ci) => (
-                            <span
-                              key={card.id || ci}
-                              className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-black border ${
-                                card.color === 'red'
-                                  ? 'bg-red-950/40 text-red-400 border-red-500/30'
-                                  : 'bg-slate-800 text-slate-200 border-slate-700'
-                              }`}
-                            >
-                              {SUIT_SYMBOLS[card.suit]}
-                              {card.displayRank}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-[10px] text-emerald-400 font-bold">✨ 全部出清！</span>
-                        )}
+                      {/* Progress Bar towards 100 */}
+                      <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800 my-0.5">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            (p.accumulatedCards || 0) >= 80
+                              ? 'bg-rose-500'
+                              : (p.accumulatedCards || 0) >= 50
+                              ? 'bg-amber-400'
+                              : 'bg-emerald-400'
+                          }`}
+                          style={{ width: `${Math.min(100, ((p.accumulatedCards || 0) / 100) * 100)}%` }}
+                        />
                       </div>
                     </div>
                   );
                 })}
               </div>
 
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs w-full text-center font-bold">
+                📢 下一局（第 {gameState.roundNumber + 1} 局）由本局胜出者【{gameState.players[gameState.winnerIndex ?? 0]?.name}】优先领牌首出！
+              </div>
+
               {/* Action Buttons */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full">
                 <button
                   onClick={onBackToLobby}
                   className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm cursor-pointer transition-all"
@@ -1271,17 +1278,93 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   返回大厅
                 </button>
                 <button
-                  onClick={onChangeTable || onStartNewGame}
-                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 font-bold text-xs sm:text-sm cursor-pointer transition-all flex items-center justify-center gap-1"
+                  onClick={onStartNewGame}
+                  className="py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1"
                 >
-                  <Shuffle className="w-3.5 h-3.5" />
-                  <span>换桌对战</span>
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>▶️ 继续下一局 (第 {gameState.roundNumber + 1} 局)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 2. MATCH SETTLEMENT MODAL (场大结算 - 满100张触发四舍五入大结算) */}
+        {(gameState.phase === 'MATCH_SETTLEMENT' || gameState.phase === 'GAME_OVER') && (
+          <div className="absolute inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 border-2 border-amber-500 rounded-3xl max-w-lg w-full p-4 sm:p-5 text-center shadow-2xl flex flex-col items-center gap-3 max-h-[92vh] overflow-y-auto custom-scrollbar">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-amber-500/30">
+                <Trophy className="w-8 h-8" />
+              </div>
+
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-white">
+                  🏆 第 {gameState.matchNumber || 1} 场总结算 (四舍五入到十位)
+                </h3>
+                <p className="text-xs text-amber-300 font-bold mt-0.5">
+                  累计剩牌满 100 张比赛结束！采用 <span className="text-white underline">四舍五入法 (如 84➔80, 85➔90)</span> 两两对减精计算分！
+                </p>
+              </div>
+
+              {/* 4 Players Final Match Settlement Table */}
+              <div className="w-full bg-slate-950/80 rounded-2xl p-3 border border-slate-800 text-xs space-y-2 text-left">
+                {(() => {
+                  const matchSettlements = calculateMatchSettlement(
+                    gameState.players,
+                    gameState.room.baseScore
+                  );
+
+                  return gameState.players.map((p, idx) => {
+                    const st = matchSettlements[idx];
+
+                    return (
+                      <div key={p.id} className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-1 shadow-sm">
+                        <div className="flex justify-between items-center text-slate-300">
+                          <span className="font-bold flex items-center gap-1.5 flex-wrap">
+                            <span className="text-white font-black text-sm">{p.name}</span>
+                            <span className="text-[10px] px-2 py-0.2 rounded-full bg-slate-800 text-amber-300 font-mono">
+                              累计: {st.accumulatedCards}张 ➔ 四舍五入: <strong className="text-white font-black">{st.roundedCards}张</strong>
+                            </span>
+                          </span>
+
+                          <span
+                            className={`font-mono font-black text-sm ${
+                              st.coinChange > 0
+                                ? 'text-emerald-400'
+                                : st.coinChange < 0
+                                ? 'text-rose-400'
+                                : 'text-amber-300'
+                            }`}
+                          >
+                            {st.coinChange > 0 ? `+${st.coinChange.toLocaleString()}` : st.coinChange.toLocaleString()} 积分
+                          </span>
+                        </div>
+
+                        {/* Pairwise Formula */}
+                        <div className="text-[10px] text-slate-400 font-mono flex items-center justify-between">
+                          <span>两两对减公式: <code className="text-amber-300 font-bold">{st.formulaDesc}</code></span>
+                          <span className="text-slate-300 font-bold">最新结余: {st.finalScore.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 w-full">
+                <button
+                  onClick={onBackToLobby}
+                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm cursor-pointer transition-all"
+                >
+                  返回大厅
                 </button>
                 <button
-                  onClick={onStartNewGame}
-                  className="py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/40 cursor-pointer transition-all active:scale-95"
+                  onClick={onStartNewMatch || onStartNewGame}
+                  className="py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/40 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1"
                 >
-                  再来一局
+                  <Trophy className="w-4 h-4" />
+                  <span>🏆 开始新一场 (重置从♦2首出)</span>
                 </button>
               </div>
             </div>

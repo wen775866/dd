@@ -101,7 +101,7 @@ export function findBeatingHands(cards: Card[], prevHand: CardHand): CardHand[] 
 export function chooseLeadingCards(
   cards: Card[],
   isFirstTrick: boolean = false,
-  starterCardId: string = 'diamond-3'
+  starterCardId: string = 'diamond-2'
 ): Card[] {
   if (!cards || cards.length === 0) return [];
 
@@ -169,7 +169,7 @@ export function aiChoosePlay(
   lastValidHand: { playerId: string; hand: CardHand } | null,
   players: Player[],
   isFirstTrick: boolean = false,
-  starterCardId: string = 'diamond-3'
+  starterCardId: string = 'diamond-2'
 ): Card[] {
   // If AI is leading the trick (no last valid hand or AI is the trick leader)
   if (!lastValidHand || lastValidHand.playerId === player.id) {

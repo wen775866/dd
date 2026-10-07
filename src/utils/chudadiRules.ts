@@ -315,6 +315,141 @@ export function canBeat(prevHand: CardHand, candidateHand: CardHand): boolean {
   return false;
 }
 
+// ---------------- SETTLEMENT & MULTIPLIER ALGORITHM ----------------
+// Calculate Effective Cards count based on remaining cards multiplier rule:
+// - 0 cards: 0 (Winner)
+// - 1~7 cards: x1
+// - 8~9 cards: x2 (8->16, 9->18)
+// - 10~12 cards: x3 (10->30, 11->33, 12->36)
+// - 13 cards (全关): x4 (13->52)
+export function getEffectiveCards(rawCount: number): { effective: number; multiplier: number } {
+  if (rawCount <= 0) return { effective: 0, multiplier: 0 };
+  if (rawCount <= 7) return { effective: rawCount * 1, multiplier: 1 };
+  if (rawCount <= 9) return { effective: rawCount * 2, multiplier: 2 };
+  if (rawCount <= 12) return { effective: rawCount * 3, multiplier: 3 };
+  return { effective: 13 * 4, multiplier: 4 }; // 52
+}
+
+export interface MatchSettlementItem {
+  playerIndex: number;
+  id: string;
+  name: string;
+  accumulatedCards: number;
+  roundedCards: number;
+  scoreDelta: number; // Net score change in card units
+  coinChange: number; // scoreDelta * baseScore
+  finalScore: number;
+  formulaDesc: string; // e.g. "(60-80) + (110-80) + (30-80) = -40分"
+}
+
+// ---------------- MATCH FINAL SETTLEMENT ALGORITHM ----------------
+// Triggered when any player's accumulated cards >= 100
+// 1) Round each player's accumulated cards to nearest tens (四舍五入到十位: 84->80, 85->90)
+// 2) Calculate pairwise score difference: Delta_i = Sum_{j != i} (Rounded_j - Rounded_i)
+export function calculateMatchSettlement(
+  players: { id: string; name: string; accumulatedCards: number; score: number }[],
+  baseScore: number = 1000
+): MatchSettlementItem[] {
+  // Step 1: Round each player's accumulated cards to nearest 10
+  const roundedList = players.map(p => {
+    const acc = p.accumulatedCards || 0;
+    const rounded = Math.round(acc / 10) * 10;
+    return { acc, rounded };
+  });
+
+  // Step 2: Pairwise difference calculation
+  return players.map((p, i) => {
+    const { acc, rounded: r_i } = roundedList[i];
+    let scoreDelta = 0;
+    const terms: string[] = [];
+
+    for (let j = 0; j < players.length; j++) {
+      if (j !== i) {
+        const r_j = roundedList[j].rounded;
+        const diff = r_j - r_i;
+        scoreDelta += diff;
+        terms.push(`(${r_j}-${r_i})`);
+      }
+    }
+
+    const coinChange = scoreDelta * baseScore;
+    const finalScore = Math.max(0, p.score + coinChange);
+    const formulaDesc = `${terms.join(' + ')} = ${scoreDelta > 0 ? '+' : ''}${scoreDelta}分`;
+
+    return {
+      playerIndex: i,
+      id: p.id,
+      name: p.name,
+      accumulatedCards: acc,
+      roundedCards: r_i,
+      scoreDelta,
+      coinChange,
+      finalScore,
+      formulaDesc,
+    };
+  });
+}
+
+export interface PlayerSettlement {
+  playerIndex: number;
+  id: string;
+  name: string;
+  rawCardCount: number;
+  multiplier: number;
+  effectiveCardCount: number;
+  scoreDelta: number;
+  coinChange: number;
+  finalScore: number;
+  formulaDesc: string;
+}
+
+export function calculateSettlement(
+  players: { id: string; name: string; cards: { length: number }; score: number }[],
+  winnerIndex: number,
+  baseScore: number = 1000
+): PlayerSettlement[] {
+  // Step 1: Calculate Effective Cards for each player
+  const effList = players.map(p => {
+    const raw = p.cards ? p.cards.length : 0;
+    return getEffectiveCards(raw);
+  });
+
+  // Step 2: Pairwise score difference calculation for each player i:
+  // Delta_i = Sum_{j != i} (Effective_j - Effective_i)
+  return players.map((p, i) => {
+    const { effective: eff_i, multiplier: mult } = effList[i];
+    const rawCount = p.cards ? p.cards.length : 0;
+    let scoreDelta = 0;
+    const terms: string[] = [];
+
+    for (let j = 0; j < players.length; j++) {
+      if (j !== i) {
+        const eff_j = effList[j].effective;
+        const diff = eff_j - eff_i;
+        scoreDelta += diff;
+        terms.push(`(${eff_j}-${eff_i})`);
+      }
+    }
+
+    const coinChange = scoreDelta * baseScore;
+    const finalScore = Math.max(0, p.score + coinChange);
+    const formulaDesc = `${terms.join(' + ')} = ${scoreDelta > 0 ? '+' : ''}${scoreDelta} 分`;
+
+    return {
+      playerIndex: i,
+      id: p.id,
+      name: p.name,
+      rawCardCount: rawCount,
+      multiplier: mult,
+      effectiveCardCount: eff_i,
+      scoreDelta,
+      coinChange,
+      finalScore,
+      formulaDesc,
+    };
+  });
+}
+
 // Get readable Chinese description for any played hand
 export function getHandDescription(hand: CardHand): string {
   if (!hand) return '';

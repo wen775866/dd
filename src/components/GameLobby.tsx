@@ -38,7 +38,7 @@ export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   {
     id: 'room-chudadi',
     name: '♠️ 锄大地',
-    tag: '底分 1,000 积分 · 满4人开局 · 首出♦️3 · 关门暴击',
+    tag: '底分 1,000 积分 · 满4人开局 · 首出♦️2 · 逆时针出牌',
     baseScore: 1000,
     entryMin: 100,
     maxMultiplier: 128,
@@ -49,7 +49,7 @@ export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   {
     id: 'room-yansan',
     name: '🔥 烟三场',
-    tag: '底分 2,000 积分 · 满4人开局 · 特色烟三组合 · 3倍关门',
+    tag: '底分 2,000 积分 · 满4人开局 · 烟三特色组合 · 3倍关门',
     baseScore: 2000,
     entryMin: 2000,
     maxMultiplier: 256,
@@ -376,17 +376,27 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
     });
   };
 
-  // Launch Room Game when 4/4 Ready
-  const handleStartCustomRoomGame = () => {
+  // Fill all empty seats with bots instantly and start
+  const handleFillAllBotsAndStart = () => {
     if (!waitingRoom) return;
-    const readySeats = waitingRoom.seats.filter(s => s.playerName !== '空位' && s.ready);
-    if (readySeats.length < 4) {
-      sounds.playPass();
-      alert('房间必须凑齐 4 位玩家（可邀请电脑填补）才可以发牌开局！');
-      return;
-    }
-
     sounds.playCoins();
+
+    const updatedSeats = [...waitingRoom.seats];
+    const shuffled = [...MATCH_BOT_POOL].sort(() => Math.random() - 0.5);
+
+    for (let i = 1; i < 4; i++) {
+      if (updatedSeats[i].playerName === '空位') {
+        const bot = shuffled[i - 1];
+        updatedSeats[i] = {
+          position: ['bottom', 'left', 'top', 'right'][i] as any,
+          playerName: bot.name,
+          avatar: bot.avatar,
+          isHost: false,
+          isAI: true,
+          ready: true,
+        };
+      }
+    }
 
     const roomPreset: RoomConfig = {
       id: waitingRoom.mode,
@@ -401,9 +411,9 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
     };
 
     const matchedBots = [
-      { name: waitingRoom.seats[1].playerName, avatar: waitingRoom.seats[1].avatar },
-      { name: waitingRoom.seats[2].playerName, avatar: waitingRoom.seats[2].avatar },
-      { name: waitingRoom.seats[3].playerName, avatar: waitingRoom.seats[3].avatar },
+      { name: updatedSeats[1].playerName, avatar: updatedSeats[1].avatar },
+      { name: updatedSeats[2].playerName, avatar: updatedSeats[2].avatar },
+      { name: updatedSeats[3].playerName, avatar: updatedSeats[3].avatar },
     ];
 
     onSelectRoom(roomPreset, matchedBots);
@@ -959,14 +969,24 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
                       {/* Action for Seat */}
                       {isEmpty ? (
-                        <button
-                          onClick={() => handleAddBotToSeat(idx)}
-                          className="p-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[10px] font-bold cursor-pointer shrink-0 flex items-center gap-0.5 border border-amber-500/40"
-                          title="加电脑人偶填补"
-                        >
-                          <Bot className="w-3 h-3" />
-                          <span>加AI</span>
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => handleAddBotToSeat(idx)}
+                            className="p-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[10px] font-bold cursor-pointer flex items-center gap-0.5 border border-amber-500/40"
+                            title="加电脑人偶填补"
+                          >
+                            <Bot className="w-3 h-3" />
+                            <span>➕加AI</span>
+                          </button>
+                          <button
+                            onClick={copyRoomCodeToClipboard}
+                            className="p-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[10px] font-bold cursor-pointer flex items-center gap-0.5 border border-emerald-500/40"
+                            title="复制邀请口令给真人好友"
+                          >
+                            <UserPlus className="w-3 h-3" />
+                            <span>➕邀请</span>
+                          </button>
+                        </div>
                       ) : (
                         idx !== 0 && (
                           <button
@@ -986,21 +1006,31 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
             {/* Launch Game or Invite Button */}
             <div className="pt-2 border-t border-slate-800 space-y-2">
-              <button
-                onClick={handleStartCustomRoomGame}
-                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 cursor-pointer hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>凑齐 4 人，立即发牌开局</span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={copyRoomCodeToClipboard}
+                  className="py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs cursor-pointer border border-amber-500/40 flex items-center justify-center gap-1"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>{copiedCodeSuccess ? '已复制房号' : '邀请真人好友'}</span>
+                </button>
+
+                <button
+                  onClick={handleFillAllBotsAndStart}
+                  className="py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs shadow-xl shadow-emerald-500/30 cursor-pointer hover:brightness-110 active:scale-95 flex items-center justify-center gap-1"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>⚡ 一键全员补满开局</span>
+                </button>
+              </div>
 
               <div className="flex justify-between items-center text-[10px] text-slate-400">
-                <span>空位可随时点击【加AI】自动填满</span>
+                <span>空位可直接【➕邀请】或【⚡一键补满人机】</span>
                 <button
                   onClick={() => setWaitingRoom(null)}
                   className="text-slate-400 hover:text-slate-200 underline cursor-pointer"
                 >
-                  离开房间
+                  解散/离开房间
                 </button>
               </div>
             </div>
@@ -1031,7 +1061,8 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 <p>• 必须满 <strong className="text-amber-300">4 位玩家</strong> 才可以发牌开局，每人分得 13 张手牌。</p>
                 <p>• 点数大小：<strong className="text-amber-300">2 &gt; A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3</strong>（老二最大）。</p>
                 <p>• 花色大小：<strong className="text-amber-300">♠黑桃 &gt; ♥红桃 &gt; ♣草花 &gt; ♦方块</strong>。</p>
-                <p>• 首局首出：持有 <strong className="text-amber-300">♦3 (方块3)</strong> 的玩家优先首出，且首出必须包含♦3。</p>
+                <p>• 首局首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 的玩家优先首出，首出牌型中必须包含♦2。</p>
+                <p>• 出牌顺序：四个玩家的出牌顺序为 <strong className="text-emerald-300">逆时针轮流</strong> (南➔东➔北➔西)。</p>
               </div>
 
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
@@ -1040,11 +1071,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 <p>• 五张牌型压制顺序：<strong className="text-emerald-300">同花顺 &gt; 铁支 (四带一) &gt; 葫芦 (三带二) &gt; 同花 &gt; 顺子</strong>。</p>
               </div>
 
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <h4 className="font-bold text-amber-400 mb-1">3. 烟三场特色与积分关门</h4>
-                <p>• 烟三场提升底分与翻倍暴击率！</p>
-                <p>• 剩 10~12 张牌：<strong className="text-rose-400">双倍积分惩罚</strong>。</p>
-                <p>• 剩 13 张未出一张：<strong className="text-rose-500 font-bold">三倍关门暴击 (39倍底分)</strong>！</p>
+              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
+                <h4 className="font-bold text-amber-400 mb-1">3. 剩牌折算倍数与两两对减结算</h4>
+                <p>• 只要有任意 1 位玩家手牌打完，局即结束并开始算分。</p>
+                <p>• <strong className="text-amber-300">剩 1~7 张牌</strong>：原张数 (1倍)。</p>
+                <p>• <strong className="text-orange-400">剩 8~9 张牌</strong>：翻 2 倍 (8张➔16张，9张➔18张)。</p>
+                <p>• <strong className="text-rose-400">剩 10~12 张牌</strong>：翻 3 倍 (10张➔30张，11张➔33张，12张➔36张)。</p>
+                <p>• <strong className="text-red-500 font-bold">剩 13 张牌 (全关未出)</strong>：翻 4 倍 (13张➔52张)！</p>
+                <p>• <strong className="text-emerald-300">两两对减算法</strong>：每位玩家与其余三位玩家按折算张数进行两两相减累加，多退少补，完全公平保值（如北胜出0张，东1，南2，西5，北赢得1+2+5=8分，东获得-1+1+4=4分，南0分，西-12分）。</p>
               </div>
             </div>
 

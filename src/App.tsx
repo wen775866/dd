@@ -75,7 +75,14 @@ export default function App() {
 
   // Create initial GameState for Big Two (锄大地)
   const initGame = useCallback(
-    (room: RoomConfig, prevPlayers?: Player[], round = 1, overrideBots?: { name: string; avatar: string }[]): GameState => {
+    (
+      room: RoomConfig,
+      prevPlayers?: Player[],
+      round = 1,
+      overrideBots?: { name: string; avatar: string }[],
+      lastWinnerIdx?: number | null,
+      matchNum = 1
+    ): GameState => {
       const rawDeck = shuffleDeck(createDeck());
       const p0Cards = sortCards(rawDeck.slice(0, 13));
       const p1Cards = sortCards(rawDeck.slice(13, 26));
@@ -87,17 +94,18 @@ export default function App() {
       const p2Score = prevPlayers?.[2]?.score ?? room.baseScore * 50;
       const p3Score = prevPlayers?.[3]?.score ?? room.baseScore * 50;
 
-      let bot1 = overrideBots?.[0] || { name: prevPlayers?.[1]?.name || '西家·智多星', avatar: prevPlayers?.[1]?.avatar || '🤖' };
+      let bot1 = overrideBots?.[0] || { name: prevPlayers?.[1]?.name || '东家·常胜猫仙', avatar: prevPlayers?.[1]?.avatar || '🐱' };
       let bot2 = overrideBots?.[1] || { name: prevPlayers?.[2]?.name || '北家·雀圣霸主', avatar: prevPlayers?.[2]?.avatar || '👑' };
-      let bot3 = overrideBots?.[2] || { name: prevPlayers?.[3]?.name || '东家·常胜猫仙', avatar: prevPlayers?.[3]?.avatar || '🐱' };
+      let bot3 = overrideBots?.[2] || { name: prevPlayers?.[3]?.name || '西家·智多星', avatar: prevPlayers?.[3]?.avatar || '🤖' };
 
       if (!prevPlayers && !overrideBots) {
         const shuffledBots = [...BOT_CHARACTERS].sort(() => Math.random() - 0.5);
-        bot1 = shuffledBots[0];
-        bot2 = shuffledBots[1];
-        bot3 = shuffledBots[2];
+        bot1 = { name: `东家·${shuffledBots[0].name.split('·')[1] || '巧手'}`, avatar: shuffledBots[0].avatar };
+        bot2 = { name: `北家·${shuffledBots[1].name.split('·')[1] || '霸主'}`, avatar: shuffledBots[1].avatar };
+        bot3 = { name: `西家·${shuffledBots[2].name.split('·')[1] || '智星'}`, avatar: shuffledBots[2].avatar };
       }
 
+      // Seating order counter-clockwise: 0=Bottom(南家), 1=Right(东家), 2=Top(北家), 3=Left(西家)
       const players: Player[] = [
         {
           id: 'player-0',
@@ -107,6 +115,7 @@ export default function App() {
           score: p0Score,
           avatar: userProfile.avatar,
           position: 'bottom',
+          accumulatedCards: prevPlayers?.[0]?.accumulatedCards || 0,
         },
         {
           id: 'player-1',
@@ -115,7 +124,8 @@ export default function App() {
           isAI: true,
           score: p1Score,
           avatar: bot1.avatar,
-          position: 'left',
+          position: 'right', // 逆时针第一家: 东家
+          accumulatedCards: prevPlayers?.[1]?.accumulatedCards || 0,
         },
         {
           id: 'player-2',
@@ -124,7 +134,8 @@ export default function App() {
           isAI: true,
           score: p2Score,
           avatar: bot2.avatar,
-          position: 'top',
+          position: 'top', // 逆时针第二家: 北家
+          accumulatedCards: prevPlayers?.[2]?.accumulatedCards || 0,
         },
         {
           id: 'player-3',
@@ -133,19 +144,31 @@ export default function App() {
           isAI: true,
           score: p3Score,
           avatar: bot3.avatar,
-          position: 'right',
+          position: 'left', // 逆时针第三家: 西家
+          accumulatedCards: prevPlayers?.[3]?.accumulatedCards || 0,
         },
       ];
 
-      // Find player holding diamond-3 (3♦) to lead the first trick
-      const starterCardId = 'diamond-3';
+      // Round Starter Logic:
+      // - Round 1 of a Match: Player holding diamond-2 (方块2) goes first, must play a hand with diamond-2!
+      // - Round 2+ of a Match: Player who won the previous round leads the first trick of the new round!
+      let starterCardId = '';
+      let isFirstTrick = false;
       let starterPlayerIdx = 0;
 
-      for (let i = 0; i < 4; i++) {
-        if (players[i].cards.some(c => c.id === starterCardId)) {
-          starterPlayerIdx = i;
-          break;
+      if (round === 1) {
+        starterCardId = 'diamond-2';
+        isFirstTrick = true;
+        for (let i = 0; i < 4; i++) {
+          if (players[i].cards.some(c => c.id === 'diamond-2')) {
+            starterPlayerIdx = i;
+            break;
+          }
         }
+      } else {
+        starterCardId = '';
+        isFirstTrick = false;
+        starterPlayerIdx = typeof lastWinnerIdx === 'number' && lastWinnerIdx >= 0 ? lastWinnerIdx : 0;
       }
 
       return {
@@ -154,12 +177,14 @@ export default function App() {
         players,
         currentPlayerIndex: starterPlayerIdx,
         starterCardId,
-        isFirstTrick: true,
+        isFirstTrick,
         lastValidHand: null,
         passCount: 0,
         trickLeaderIndex: starterPlayerIdx,
         history: [],
         winnerIndex: null,
+        lastRoundWinnerIndex: typeof lastWinnerIdx === 'number' ? lastWinnerIdx : null,
+        matchNumber: matchNum,
         roundNumber: round,
         multiplier: 1,
       };
@@ -172,13 +197,15 @@ export default function App() {
     room: CHUDADI_ROOM_PRESETS[0],
     players: [],
     currentPlayerIndex: 0,
-    starterCardId: 'diamond-3',
+    starterCardId: 'diamond-2',
     isFirstTrick: true,
     lastValidHand: null,
     passCount: 0,
     trickLeaderIndex: 0,
     history: [],
     winnerIndex: null,
+    lastRoundWinnerIndex: null,
+    matchNumber: 1,
     roundNumber: 1,
     multiplier: 1,
   }));
@@ -186,7 +213,7 @@ export default function App() {
   // Enter room from lobby
   const handleSelectRoom = (room: RoomConfig, matchedBots?: { name: string; avatar: string }[]) => {
     setCurrentRoom(room);
-    const newGame = initGame(room, undefined, 1, matchedBots);
+    const newGame = initGame(room, undefined, 1, matchedBots, null, 1);
     setGameState(newGame);
 
     for (let i = 0; i < 4; i++) {
@@ -194,10 +221,23 @@ export default function App() {
     }
   };
 
-  // Start new round
+  // Continue to Next Round in the same match (keeps accumulated cards, last round winner leads!)
   const handleStartNewGame = () => {
     const nextRound = gameState.roundNumber + 1;
-    const newGame = initGame(currentRoom, gameState.players, nextRound);
+    const lastWinner = gameState.winnerIndex;
+    const newGame = initGame(currentRoom, gameState.players, nextRound, undefined, lastWinner, gameState.matchNumber);
+    setGameState(newGame);
+
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => sounds.playDeal(), i * 90);
+    }
+  };
+
+  // Start a Brand New Match (reset accumulated cards to 0, start with diamond-2!)
+  const handleStartNewMatch = () => {
+    const resetPlayers = gameState.players.map(p => ({ ...p, accumulatedCards: 0 }));
+    const nextMatchNum = gameState.matchNumber + 1;
+    const newGame = initGame(currentRoom, resetPlayers, 1, undefined, null, nextMatchNum);
     setGameState(newGame);
 
     for (let i = 0; i < 4; i++) {
@@ -267,6 +307,7 @@ export default function App() {
           gameState={gameState}
           onUpdateState={handleUpdateGameState}
           onStartNewGame={handleStartNewGame}
+          onStartNewMatch={handleStartNewMatch}
           onChangeTable={handleChangeTable}
           onBackToLobby={handleBackToLobby}
           soundEnabled={soundEnabled}

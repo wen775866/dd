@@ -42,6 +42,7 @@ export interface Player {
   score: number;       // 金币 / 积分
   avatar: string;
   position: 'bottom' | 'left' | 'top' | 'right'; // 4 玩家方位
+  accumulatedCards: number; // 累计剩牌张数 (整场累加，满100张大结算)
   rankTitle?: string;
   lastActionText?: string;
 }
@@ -50,6 +51,8 @@ export type GamePhase =
   | 'LOBBY'             // 游戏大厅
   | 'DEALING'           // 洗牌发牌
   | 'PLAYING'           // 出牌对战
+  | 'ROUND_SUMMARY'     // 局小结 (打完一局累加剩牌张数)
+  | 'MATCH_SETTLEMENT'  // 场大结算 (满100张四舍五入大结算)
   | 'GAME_OVER';        // 结算
 
 export interface RoomConfig {
@@ -90,16 +93,18 @@ export interface GameState {
   room: RoomConfig;
   players: Player[];           // 4 玩家
   currentPlayerIndex: number;  // 当前出牌玩家 (0, 1, 2, 3)
-  starterCardId: string;       // 首出必备牌 (如方块3: "diamond-3")
-  isFirstTrick: boolean;       // 是否是首局首出
+  starterCardId: string;       // 首出必备牌 (如第1局为 "diamond-2"，之后为上一局赢家)
+  isFirstTrick: boolean;       // 是否是该局首出
   lastValidHand: {
     playerId: string;
     hand: CardHand;
   } | null;
-  passCount: number;           // 连续 Pass 计数 (达到 3 时领牌者重新任意出牌)
-  trickLeaderIndex: number;    // 当前轮的领牌玩家
+  passCount: number;           // 连续 Pass 计数
+  trickLeaderIndex: number;    // 当前轮领牌玩家
   history: PlayHistoryItem[];
-  winnerIndex: number | null;
-  roundNumber: number;
-  multiplier: number;          // 结算加倍乘数 (若出2清牌x2，铁支/同花顺清牌x4)
+  winnerIndex: number | null;  // 本局胜利玩家
+  lastRoundWinnerIndex: number | null; // 上局胜利玩家 (优先获得下一局发牌权)
+  matchNumber: number;         // 第几场 (重置于 100 张大结算后)
+  roundNumber: number;         // 第几局
+  multiplier: number;
 }
