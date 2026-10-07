@@ -41,27 +41,44 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-          cache: 'gradle'
 
-      - name: Initialize / Sync Android Platform
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ensure Android Platform & gradlew
         run: |
-          if [ ! -d "android" ]; then
-            echo "Android directory not found in repository. Initializing Capacitor Android..."
+          # If android directory or gradlew is missing, cleanly re-add platform
+          if [ ! -f "android/gradlew" ]; then
+            echo "android/gradlew not found in repo. Creating fresh Android project..."
+            rm -rf android
             npx cap add android
           fi
-          
+
           # Sync web distribution to Android project
           npx cap sync android
-          
-          # Re-apply brand icons to Android mipmap folders
+
+          # Re-apply brand icons
           node scripts/generate-pwa-icons.js
+
+          # If gradlew still missing for any reason, generate it using gradle wrapper
+          if [ ! -f "android/gradlew" ]; then
+            echo "Generating gradle wrapper..."
+            cd android
+            gradle wrapper || true
+            cd ..
+          fi
+
+          # Grant execution permission
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+          fi
 
       - name: Configure Android Immersive Landscape & Keystore
         run: |
-          # 1. Ensure package folder exists
+          # 1. Package folder
           mkdir -p android/app/src/main/java/com/game/yansan
           
-          # 2. Ensure immersive MainActivity.java
+          # 2. Immersive Sticky MainActivity.java
           cat << 'EOF' > android/app/src/main/java/com/game/yansan/MainActivity.java
           package com.game.yansan;
 
@@ -154,15 +171,14 @@ jobs:
             echo "Release keystore created successfully."
           fi
 
-          # 5. Ensure gradlew has executable permission
-          if [ -f "android/gradlew" ]; then
-            chmod +x android/gradlew
-          fi
-
       - name: Build Debug and Release APKs
         run: |
           cd android
-          ./gradlew assembleDebug assembleRelease --stacktrace
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug assembleRelease --stacktrace
+          else
+            gradle assembleDebug assembleRelease --stacktrace
+          fi
 
       - name: Organize Output APK Files
         run: |
