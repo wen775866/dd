@@ -81,6 +81,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   const { theme, toggleTheme, themeConfig } = useAppTheme();
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [speechBubble, setSpeechBubble] = useState<{ [playerId: string]: string }>({});
+  const [passStatuses, setPassStatuses] = useState<{ [playerId: string]: { text: string; timestamp: number } }>({});
   const [countdown, setCountdown] = useState<number>(20);
 
   // Advanced interactive features
@@ -155,6 +156,20 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [gameState.currentPlayerIndex, gameState.phase, isAutoPlay]);
+
+  // Clear pass status for active player when their turn starts so avatar image restores
+  useEffect(() => {
+    if (gameState.phase === 'PLAYING') {
+      const curPlayer = gameState.players[gameState.currentPlayerIndex];
+      if (curPlayer && passStatuses[curPlayer.id]) {
+        setPassStatuses(prev => {
+          const next = { ...prev };
+          delete next[curPlayer.id];
+          return next;
+        });
+      }
+    }
+  }, [gameState.currentPlayerIndex, gameState.phase]);
 
   // Timeout action for human
   const handleTimeoutAction = () => {
@@ -428,6 +443,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   const executePlay = (playerIdx: number, cards: Card[], hand: CardHand) => {
     const player = gameState.players[playerIdx];
 
+    // Clear pass status for this player when they play cards
+    setPassStatuses(prev => {
+      if (!prev[player.id]) return prev;
+      const next = { ...prev };
+      delete next[player.id];
+      return next;
+    });
+
     // Play card sound & Voice speech
     sounds.playCard();
     sounds.speakHand(hand.type, cards, !!gameState.lastValidHand, player.id);
@@ -443,8 +466,6 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       ...player,
       cards: remainingCards,
     };
-
-    showBubble(player.id, getHandDescription(hand));
 
     // Alarm warnings
     if (remainingCards.length === 2) {
@@ -479,8 +500,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   const executePass = (playerIdx: number) => {
     const player = gameState.players[playerIdx];
     const passText = voiceEngine.getActionVoiceLine('PASS');
-    showBubble(player.id, passText);
     sounds.speak(passText, player.id);
+
+    // Record '要不起' or '过' on player's avatar frame
+    const passLabel = gameState.lastValidHand ? '要不起' : '过';
+    setPassStatuses(prev => ({
+      ...prev,
+      [player.id]: { text: passLabel, timestamp: Date.now() },
+    }));
 
     const newPassCount = gameState.passCount + 1;
     let nextLastValid = gameState.lastValidHand;
@@ -493,6 +520,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       if (typeof nextLeader === 'number') {
         nextTurn = nextLeader;
       }
+      setTimeout(() => {
+        setPassStatuses({});
+      }, 1200);
     }
 
     onUpdateState({
@@ -677,21 +707,22 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           }}
         />
 
-        {/* TOP BAR: Room Name, Multiplier, Actions */}
-        <div 
-          className={`relative z-10 flex items-center justify-between gap-2 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
-            theme === 'deep-green'
-              ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
-              : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
-          }`}
-        >
-          <div className="flex items-center gap-2">
+        {/* TOP HEADER: Split into Left Floating Bar, Center Top Player Avatar (北家), Right Floating Bar */}
+        <div className="relative z-10 flex items-center justify-between gap-2 w-full px-1.5 sm:px-3 py-1 shrink-0">
+          {/* Top-Left Floating Info Bar */}
+          <div 
+            className={`flex items-center gap-1.5 sm:gap-2 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
+                : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
+            }`}
+          >
             <button
               onClick={() => {
                 sounds.playClick();
                 onBackToLobby();
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
                 theme === 'deep-green'
                   ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-emerald-200 border-emerald-400/50'
                   : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-cyan-200 border-cyan-400/50'
@@ -714,28 +745,65 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </span>
 
             <span className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1 font-mono">
-              <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+              <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
               <span>底分 {gameState.room.baseScore}</span>
             </span>
           </div>
 
-          {/* Center Banner: Starter Card & Order Reminder */}
-          {gameState.isFirstTrick ? (
-            <div className="hidden md:flex items-center gap-1.5 bg-amber-500/20 px-3 py-0.5 rounded-full border border-amber-400/50 text-amber-300 text-xs font-bold animate-pulse">
-              <span>♦2 (方块2) 先出！需带♦2牌型 🔄 逆时针出牌</span>
+          {/* Center-Top Player: 北家 (Identical size and structure to West & East avatars!) */}
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              {speechBubble[botTop.id] && (
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
+                  <Radio className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                  <span>{speechBubble[botTop.id]}</span>
+                </div>
+              )}
+              <div
+                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
+                  activeVoicePlayer === botTop.id
+                    ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
+                    : gameState.currentPlayerIndex === 2
+                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
+                    : theme === 'deep-green'
+                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
+                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
+                }`}
+              >
+                {passStatuses[botTop.id] ? (
+                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
+                    <span>{passStatuses[botTop.id].text}</span>
+                  </div>
+                ) : (
+                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
+                )}
+              </div>
+              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
+                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
+              }`}>
+                北家
+              </span>
             </div>
-          ) : (
-            <div className={`hidden md:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${
-              theme === 'deep-green'
-                ? 'bg-[#0f402c]/90 border-emerald-400/40 text-emerald-200'
-                : 'bg-[#0f3f5f]/90 border-cyan-400/40 text-cyan-200'
-            }`}>
-              <span>🔄 逆时针出牌顺序 (南➔东➔北➔西)</span>
-            </div>
-          )}
 
-          {/* Right Action Bar */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="text-center mt-1.5">
+              <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botTop.name}</div>
+              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
+                <span>{botTop.cards.length <= 2 && '🚨 '}手牌 {botTop.cards.length} 张</span>
+                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botTop.accumulatedCards || 0}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top-Right Floating Controls Bar */}
+          <div 
+            className={`flex items-center gap-1 sm:gap-2 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
+                : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
+            }`}
+          >
             {/* Eye-Friendly Theme Toggle */}
             <button
               onClick={() => {
@@ -821,10 +889,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
         </div>
 
-        {/* 4-PLAYER ARENA: Left (西家), Top (北家), Right (东家), Center Table */}
+        {/* 4-PLAYER ARENA: Left (西家), Center Table, Right (东家) */}
         <div className="relative z-10 grid grid-cols-12 gap-1 sm:gap-2 items-center my-auto py-1">
           {/* Left Player: 西家 */}
-          <div className="col-span-2 sm:col-span-3 flex flex-col items-center">
+          <div className="col-span-3 flex flex-col items-center">
             <div className="relative">
               {speechBubble[botLeft.id] && (
                 <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
@@ -833,17 +901,23 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
               )}
               <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative ${
+                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
                   activeVoicePlayer === botLeft.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
                     : gameState.currentPlayerIndex === 3
-                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-amber-500/20'
+                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
                     : theme === 'deep-green'
                     ? 'border-emerald-500/60 bg-[#0f402c]/80'
                     : 'border-cyan-500/60 bg-[#0f3f5f]/80'
                 }`}
               >
-                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
+                {passStatuses[botLeft.id] ? (
+                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
+                    <span>{passStatuses[botLeft.id].text}</span>
+                  </div>
+                ) : (
+                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
+                )}
               </div>
               <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
                 theme === 'deep-green'
@@ -869,53 +943,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
           </div>
 
-          {/* Center Battle Field & Top Player (北家) */}
-          <div className="col-span-8 sm:col-span-6 flex flex-col items-center justify-between min-h-[160px] px-1">
-            {/* Top Player: 北家 */}
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`relative flex items-center gap-2 px-3 py-1 rounded-full border shadow ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c]/80 border-emerald-400/40'
-                  : 'bg-[#0f3f5f]/80 border-cyan-400/40'
-              }`}>
-                {speechBubble[botTop.id] && (
-                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
-                    <Radio className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                    <span>{speechBubble[botTop.id]}</span>
-                  </div>
-                )}
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center border ${
-                    gameState.currentPlayerIndex === 2 
-                      ? 'border-amber-400 bg-amber-500/30' 
-                      : theme === 'deep-green'
-                      ? 'border-emerald-400 bg-[#165a3d]'
-                      : 'border-cyan-400 bg-[#165882]'
-                  }`}
-                >
-                  <Bot className="w-4 h-4 text-amber-300" />
-                </div>
-                <span className="text-xs font-bold text-slate-100">{botTop.name} (北家)</span>
-                <span className="text-xs font-mono font-bold text-emerald-200">
-                  手牌 {botTop.cards.length} 张
-                </span>
-                <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 rounded border border-amber-500/30">
-                  累计 {botTop.accumulatedCards || 0}
-                </span>
-              </div>
-            </div>
-
+          {/* Center Battle Field */}
+          <div className="col-span-6 flex flex-col items-center justify-center min-h-[140px] px-1">
             {/* Current Active Trick Cards on Felt Table */}
             {gameState.lastValidHand ? (
               <div className="flex flex-col items-center gap-1.5 my-auto">
-                <div className="text-[11px] font-bold text-amber-300 bg-black/40 px-3 py-0.5 rounded-full border border-amber-400/40 shadow-lg flex items-center gap-1">
-                  <span>
-                    {gameState.players.find(p => p.id === gameState.lastValidHand?.playerId)?.name} 打出
-                  </span>
-                  <span>·</span>
-                  <span className="text-white font-black">【{getHandDescription(gameState.lastValidHand.hand)}】</span>
-                </div>
-
                 <div className="flex items-center justify-center gap-1 flex-wrap">
                   {gameState.lastValidHand.hand.cards.map((c, i) => (
                     <SvgCard
@@ -941,7 +973,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
 
           {/* Right Player: 东家 */}
-          <div className="col-span-2 sm:col-span-3 flex flex-col items-center">
+          <div className="col-span-3 flex flex-col items-center">
             <div className="relative">
               {speechBubble[botRight.id] && (
                 <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
@@ -950,17 +982,23 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
               )}
               <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative ${
+                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
                   activeVoicePlayer === botRight.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
                     : gameState.currentPlayerIndex === 1
-                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-amber-500/20'
+                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
                     : theme === 'deep-green'
                     ? 'border-emerald-500/60 bg-[#0f402c]/80'
                     : 'border-cyan-500/60 bg-[#0f3f5f]/80'
                 }`}
               >
-                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
+                {passStatuses[botRight.id] ? (
+                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
+                    <span>{passStatuses[botRight.id].text}</span>
+                  </div>
+                ) : (
+                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
+                )}
               </div>
               <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
                 theme === 'deep-green'
@@ -1000,7 +1038,23 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           <div className="flex items-center justify-between w-full px-2 sm:px-4 h-9 sm:h-10 shrink-0 select-none">
             {/* Left: Player Identity & Sort Switch */}
             <div className="flex items-center gap-1.5 text-xs text-white">
-              <User className="w-3.5 h-3.5 text-amber-300" />
+              <div
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center border transition-all relative overflow-hidden shrink-0 ${
+                  gameState.currentPlayerIndex === 0
+                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.9)] animate-pulse scale-105 bg-red-500/20'
+                    : theme === 'deep-green'
+                    ? 'border-emerald-400/50 bg-[#0f402c]'
+                    : 'border-cyan-400/50 bg-[#0f3f5f]'
+                }`}
+              >
+                {passStatuses['player-0'] ? (
+                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-[10px] sm:text-xs flex items-center justify-center animate-in zoom-in-75 duration-150">
+                    <span>{passStatuses['player-0'].text}</span>
+                  </div>
+                ) : (
+                  <User className="w-4 h-4 text-amber-300" />
+                )}
+              </div>
               <span className="font-bold text-slate-100">{human.name} (南家)</span>
               <button
                 onClick={() => {
