@@ -41,12 +41,12 @@ export const SvgCard: React.FC<SvgCardProps> = ({
     return (
       <div
         onClick={onClick}
-        className={`relative rounded-lg overflow-hidden shadow-md border border-slate-300/40 select-none bg-slate-900 ${sizeClasses} ${className}`}
+        className={`relative rounded-[3px] overflow-hidden shadow-md border border-slate-400/40 select-none bg-slate-900 ${sizeClasses} ${className}`}
       >
         <img
           src={CARD_BACK_IMAGE}
           alt="Card Back"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-[3px]"
           loading="eager"
         />
       </div>
@@ -58,9 +58,9 @@ export const SvgCard: React.FC<SvgCardProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`relative rounded-lg select-none transition-all duration-150 cursor-pointer ${sizeClasses} ${
+      className={`relative rounded-[3px] overflow-hidden select-none transition-all duration-150 cursor-pointer ${sizeClasses} ${
         isSelected
-          ? '-translate-y-4 ring-3 ring-amber-400 shadow-xl shadow-amber-500/40 brightness-105 scale-105 z-20'
+          ? '-translate-y-4 ring-2 ring-amber-400 shadow-xl shadow-amber-500/40 brightness-105 scale-105 z-20'
           : 'hover:-translate-y-1.5 shadow-md hover:shadow-lg'
       } ${className}`}
     >
@@ -83,12 +83,12 @@ export const SvgCard: React.FC<SvgCardProps> = ({
           src={imageSrc}
           alt={`${card.suit} ${card.rank}`}
           onError={() => setImgError(true)}
-          className="w-full h-full object-contain rounded-lg drop-shadow-sm pointer-events-none"
+          className="w-full h-full object-contain rounded-[3px] drop-shadow-sm pointer-events-none"
           loading="eager"
         />
       ) : (
         /* Graceful Fallback if image fails to render */
-        <div className="w-full h-full rounded-lg bg-white border border-slate-300 p-1 flex flex-col justify-between shadow-inner">
+        <div className="w-full h-full rounded-[3px] bg-white border border-slate-300 p-1 flex flex-col justify-between shadow-inner">
           <div className="flex items-center justify-between">
             <span
               className={`text-xs sm:text-sm font-black ${

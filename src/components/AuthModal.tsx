@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authStore, UserAccount } from '../utils/authStore';
 import { sounds } from '../utils/audio';
+import { useAppTheme } from '../utils/themeContext';
 import {
   ShieldCheck,
   UserPlus,
@@ -179,23 +180,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrorMsg('');
   };
 
+  const { theme } = useAppTheme();
+
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 select-none">
-      <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl text-slate-100 relative flex flex-col max-h-[94vh]">
+      <div 
+        className={`border-2 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl relative flex flex-col max-h-[92vh] transition-colors ${
+          theme === 'deep-green'
+            ? 'bg-[#145339] border-emerald-400/70 text-emerald-50'
+            : 'bg-[#144f75] border-cyan-400/70 text-cyan-50'
+        }`}
+      >
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 p-3 sm:p-4 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
+        <div 
+          className={`p-3 sm:p-4 border-b flex items-center justify-between shrink-0 ${
+            theme === 'deep-green'
+              ? 'bg-[#0e3b28]/95 border-emerald-400/30'
+              : 'bg-[#0e3752]/95 border-cyan-400/30'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-lg text-slate-950 font-black shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 flex items-center justify-center shadow-lg text-slate-950 font-black shrink-0">
               <ShieldCheck className="w-5 h-5 text-slate-950" />
             </div>
             <div>
-              <h3 className="font-black text-sm sm:text-base text-emerald-200 flex items-center gap-1.5">
+              <h3 className="font-black text-sm sm:text-base text-amber-300 flex items-center gap-1.5">
                 <span>锄大地账号系统</span>
-                <span className="text-[10px] px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+                <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
                   TG Bot 授权防护
                 </span>
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-emerald-400/80">
+              <p className="text-[10px] sm:text-[11px] text-white/80">
                 支持 Telegram Bot 授权注册与 6位密码登录
               </p>
             </div>
@@ -206,14 +221,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               sounds.playClick();
               onClose();
             }}
-            className="w-7 h-7 rounded-full bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 p-1 shrink-0">
+        <div 
+          className={`flex border-b p-1 shrink-0 ${
+            theme === 'deep-green'
+              ? 'bg-[#0a2e1f]/90 border-emerald-400/20'
+              : 'bg-[#0a2b40]/90 border-cyan-400/20'
+          }`}
+        >
           <button
             type="button"
             onClick={() => {
@@ -223,8 +244,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'LOGIN'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <LogIn className="w-4 h-4" />
@@ -240,8 +261,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             }}
             className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'REGISTER'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <UserPlus className="w-4 h-4" />
@@ -252,8 +273,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Modal Body */}
         <div className="p-3 sm:p-4 overflow-y-auto space-y-3 flex-1 min-h-0 custom-scrollbar">
           {errorMsg && (
-            <div className="p-2.5 rounded-2xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-start gap-2 shadow-lg animate-pulse">
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="p-2.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-start gap-2 shadow-lg animate-pulse">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <div className="leading-tight font-medium">{errorMsg}</div>
             </div>
           )}
@@ -262,8 +283,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* ================= REGISTER FORM ================= */
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               {/* TG Authorized Phone Requirement Notice */}
-              <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-[10px] sm:text-[11px] text-emerald-300/90 flex items-center gap-2">
-                <Bot className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div 
+                className={`p-2 rounded-xl border text-[10px] sm:text-[11px] flex items-center gap-2 ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0e3b28]/95 border-emerald-400/40 text-emerald-100'
+                    : 'bg-[#0e3752]/95 border-cyan-400/40 text-cyan-100'
+                }`}
+              >
+                <Bot className="w-4 h-4 text-amber-300 shrink-0" />
                 <span>
                   <b>授权规则：</b>仅 Telegram Bot 授权的手机号可进行注册。无需真实短信验证码。
                 </span>
@@ -274,12 +301,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <div className="space-y-2.5">
                   {/* Phone Input with TG Check Button */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+                    <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center justify-between">
                       <span className="flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                        <Phone className="w-3.5 h-3.5 text-amber-300" />
                         授权手机号
                       </span>
-                      <span className="text-[10px] text-slate-400">例: 13800138000</span>
+                      <span className="text-[10px] text-white/60">例: 13800138000</span>
                     </label>
                     <div className="flex gap-1.5">
                       <div className="relative flex-1">
@@ -289,7 +316,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           placeholder="输入手机号"
                           value={phone}
                           onChange={handlePhoneChange}
-                          className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono"
+                          className={`w-full rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-white/40 outline-none font-mono border ${
+                            theme === 'deep-green'
+                              ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                              : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                          }`}
                         />
                       </div>
 
@@ -297,12 +328,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         type="button"
                         onClick={() => handleCheckPhone(phone)}
                         disabled={isCheckingPhone || !phone}
-                        className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer disabled:opacity-50 transition-all shrink-0 flex items-center gap-1"
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-300 border cursor-pointer disabled:opacity-50 transition-all shrink-0 flex items-center gap-1 ${
+                          theme === 'deep-green'
+                            ? 'bg-[#0e3b28] border-emerald-400/50 hover:bg-[#155b3c]'
+                            : 'bg-[#0e3752] border-cyan-400/50 hover:bg-[#155b85]'
+                        }`}
                       >
                         {isCheckingPhone ? (
                           <span className="animate-spin">⏳</span>
                         ) : (
-                          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                         )}
                         <span>检查授权</span>
                       </button>
@@ -312,13 +347,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {phoneAuthStatus.checked && (
                       <div className="mt-1">
                         {phoneAuthStatus.isAuthorized ? (
-                          <div className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 rounded-lg px-2 py-0.5 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                          <div 
+                            className={`text-[10px] rounded-lg px-2 py-0.5 flex items-center gap-1 border ${
+                              theme === 'deep-green'
+                                ? 'bg-[#0e3b28] border-emerald-400 text-emerald-200'
+                                : 'bg-[#0e3752] border-cyan-400 text-cyan-200'
+                            }`}
+                          >
+                            <CheckCircle2 className="w-3 h-3 text-amber-300 shrink-0" />
                             <span>{phoneAuthStatus.message}</span>
                           </div>
                         ) : (
-                          <div className="text-[10px] text-red-300 bg-red-950/60 border border-red-500/40 rounded-lg px-2 py-0.5 flex items-start gap-1">
-                            <AlertCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                          <div className="text-[10px] text-rose-300 bg-rose-950/80 border border-rose-500/40 rounded-lg px-2 py-0.5 flex items-start gap-1">
+                            <AlertCircle className="w-3 h-3 text-rose-400 shrink-0 mt-0.5" />
                             <span>
                               ❌ 未获授权！请在 Telegram Bot 中发送{' '}
                               <code className="text-amber-300 bg-black/40 px-1 rounded">
@@ -333,8 +374,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   {/* Nickname Input */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5 text-amber-400" />
+                    <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center gap-1">
+                      <User className="w-3.5 h-3.5 text-amber-300" />
                       游戏昵称
                     </label>
                     <input
@@ -346,7 +387,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setNickname(e.target.value);
                         setErrorMsg('');
                       }}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-slate-500 outline-none"
+                      className={`w-full rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-white/40 outline-none border ${
+                        theme === 'deep-green'
+                          ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                          : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                      }`}
                     />
                   </div>
                 </div>
@@ -356,12 +401,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <div className="grid grid-cols-2 gap-2">
                     {/* Password Input */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center justify-between">
                         <span className="flex items-center gap-1">
-                          <Lock className="w-3 h-3 text-cyan-400" />
+                          <Lock className="w-3 h-3 text-amber-300" />
                           6位密码
                         </span>
-                        <span className="text-[9px] font-mono text-slate-400">{password.length}/6位</span>
+                        <span className="text-[9px] font-mono text-white/60">{password.length}/6位</span>
                       </label>
                       <input
                         type="password"
@@ -369,14 +414,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         placeholder="6位密码"
                         value={password}
                         onChange={handlePasswordChange}
-                        className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-wider"
+                        className={`w-full rounded-xl px-2 py-1.5 text-xs text-white placeholder-white/40 outline-none font-mono tracking-wider border ${
+                          theme === 'deep-green'
+                            ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                            : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                        }`}
                       />
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
-                        <KeyRound className="w-3 h-3 text-indigo-400" />
+                      <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center gap-1">
+                        <KeyRound className="w-3 h-3 text-amber-300" />
                         确认密码
                       </label>
                       <input
@@ -385,17 +434,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         placeholder="再次输入"
                         value={confirmPassword}
                         onChange={e => setConfirmPassword(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-2 py-1.5 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-wider"
+                        className={`w-full rounded-xl px-2 py-1.5 text-xs text-white placeholder-white/40 outline-none font-mono tracking-wider border ${
+                          theme === 'deep-green'
+                            ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                            : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                        }`}
                       />
                     </div>
                   </div>
 
                   {/* Avatar Selector */}
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                    <label className="block text-[11px] font-bold text-amber-200 mb-1">
                       选择形象头像
                     </label>
-                    <div className="grid grid-cols-5 gap-1 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+                    <div 
+                      className={`grid grid-cols-5 gap-1 p-1.5 rounded-2xl border ${
+                        theme === 'deep-green'
+                          ? 'bg-[#0e3b28]/95 border-emerald-400/30'
+                          : 'bg-[#0e3752]/95 border-cyan-400/30'
+                      }`}
+                    >
                       {AVATAR_OPTIONS.map(av => (
                         <button
                           key={av}
@@ -406,8 +465,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                           }}
                           className={`h-8 rounded-xl text-lg flex items-center justify-center transition-all cursor-pointer ${
                             selectedAvatar === av
-                              ? 'bg-gradient-to-tr from-amber-500 to-yellow-300 shadow-md ring-2 ring-white text-slate-950 scale-105'
-                              : 'bg-slate-900 hover:bg-slate-800 text-white'
+                              ? 'bg-gradient-to-tr from-amber-400 to-yellow-300 shadow-md ring-2 ring-amber-300 text-slate-950 scale-105'
+                              : 'bg-black/30 hover:bg-black/50 text-white'
                           }`}
                         >
                           {av}
@@ -421,7 +480,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 font-black text-xs sm:text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2 mt-1"
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:brightness-105 font-black text-xs sm:text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2 mt-1"
               >
                 {loading ? (
                   <span>正在提交注册...</span>
@@ -437,8 +496,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             /* ================= LOGIN FORM ================= */
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center gap-1">
+                  <Phone className="w-3.5 h-3.5 text-amber-300" />
                   账号 (手机号或昵称)
                 </label>
                 <input
@@ -449,17 +508,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     setPhone(e.target.value);
                     setErrorMsg('');
                   }}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none"
+                  className={`w-full rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/40 outline-none border ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                      : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center justify-between">
+                <label className="block text-[11px] font-bold text-amber-200 mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-cyan-400" />
+                    <Lock className="w-3.5 h-3.5 text-amber-300" />
                     登录密码 (6位数)
                   </span>
-                  <span className="text-[10px] text-slate-400 font-mono">6 位数不限大小写</span>
+                  <span className="text-[10px] text-white/60 font-mono">6 位数不限大小写</span>
                 </label>
                 <input
                   type="password"
@@ -467,26 +530,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   placeholder="输入 6 位密码"
                   value={password}
                   onChange={handlePasswordChange}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none font-mono tracking-widest"
+                  className={`w-full rounded-xl px-3 py-2.5 text-xs text-white placeholder-white/40 outline-none font-mono tracking-widest border ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90 border-emerald-400/40 focus:border-amber-300'
+                      : 'bg-[#0e3752]/90 border-cyan-400/40 focus:border-amber-300'
+                  }`}
                 />
               </div>
 
               {/* Quick Demo Credentials */}
-              <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="text-[10px] font-bold text-slate-400 flex items-center justify-between">
+              <div 
+                className={`p-3 rounded-2xl border space-y-2 ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0e3b28]/95 border-emerald-400/40'
+                    : 'bg-[#0e3752]/95 border-cyan-400/40'
+                }`}
+              >
+                <div className="text-[10px] font-bold text-amber-300 flex items-center justify-between">
                   <span>💡 快速测试账号：</span>
-                  <span>点击自动填入</span>
+                  <span className="text-white/60">点击自动填入</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => fillDemoAccount('13800138000', 'admin8')}
-                    className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-left transition-colors cursor-pointer"
+                    className={`p-2 rounded-xl text-left transition-colors cursor-pointer border ${
+                      theme === 'deep-green'
+                        ? 'bg-[#114732] border-emerald-400/50 hover:bg-[#185e42]'
+                        : 'bg-[#12476b] border-cyan-400/50 hover:bg-[#185c8a]'
+                    }`}
                   >
-                    <div className="text-xs font-bold text-emerald-300 flex items-center gap-1">
+                    <div className="text-xs font-bold text-amber-300 flex items-center gap-1">
                       <span>👑 锄神大司马</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    <div className="text-[10px] text-white/70 font-mono mt-0.5">
                       13800138000 / admin8
                     </div>
                   </button>
@@ -494,12 +571,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => fillDemoAccount('18888888888', '123456')}
-                    className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-left transition-colors cursor-pointer"
+                    className={`p-2 rounded-xl text-left transition-colors cursor-pointer border ${
+                      theme === 'deep-green'
+                        ? 'bg-[#114732] border-emerald-400/50 hover:bg-[#185e42]'
+                        : 'bg-[#12476b] border-cyan-400/50 hover:bg-[#185c8a]'
+                    }`}
                   >
                     <div className="text-xs font-bold text-amber-300 flex items-center gap-1">
                       <span>⭐ 赌圣阿星</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                    <div className="text-[10px] text-white/70 font-mono mt-0.5">
                       18888888888 / 123456
                     </div>
                   </button>
@@ -509,7 +590,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:brightness-110 font-black text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:brightness-105 font-black text-sm text-slate-950 shadow-lg cursor-pointer transition-all active:scale-98 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <span>正在登录...</span>
@@ -525,12 +606,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Footer info */}
-        <div className="bg-slate-950 p-3 border-t border-slate-800/80 text-[10px] text-slate-400 flex items-center justify-between px-4">
-          <span className="flex items-center gap-1 text-slate-400">
-            <HelpCircle className="w-3 h-3 text-emerald-400" />
-            没有授权？在 TG Bot 中输入 <code className="text-emerald-300">/auth 手机号</code> 授权
+        <div 
+          className={`p-3 border-t text-[10px] flex items-center justify-between px-4 ${
+            theme === 'deep-green'
+              ? 'bg-[#0a2e1f]/90 border-emerald-400/30 text-white/70'
+              : 'bg-[#0a2b40]/90 border-cyan-400/30 text-white/70'
+          }`}
+        >
+          <span className="flex items-center gap-1 text-white/80">
+            <HelpCircle className="w-3 h-3 text-amber-300" />
+            没有授权？在 TG Bot 中输入 <code className="text-amber-300">/auth 手机号</code> 授权
           </span>
-          <span className="text-slate-500 font-mono">v2.5 TG Edition</span>
+          <span className="text-amber-300/80 font-mono">v2.5 TG Edition</span>
         </div>
       </div>
     </div>

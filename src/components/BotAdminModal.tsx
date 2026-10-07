@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { authStore, UserAccount, BotConfig } from '../utils/authStore';
 import { sounds } from '../utils/audio';
+import { useAppTheme } from '../utils/themeContext';
 import {
   ShieldCheck,
   Bot,
@@ -188,23 +189,37 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
     u => u.phone.includes(userSearch.trim()) || u.nickname.includes(userSearch.trim())
   );
 
+  const { theme } = useAppTheme();
+
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-lg z-50 flex items-center justify-center p-2 sm:p-4 select-none">
-      <div className="bg-slate-900 border-2 border-amber-500/60 rounded-3xl w-full max-w-4xl h-[92vh] max-h-[700px] overflow-hidden shadow-2xl text-slate-100 flex flex-col relative">
+      <div 
+        className={`border-2 rounded-3xl w-full max-w-4xl h-[92vh] max-h-[700px] overflow-hidden shadow-2xl relative flex flex-col transition-colors ${
+          theme === 'deep-green'
+            ? 'bg-[#145339] border-emerald-400/70 text-emerald-50'
+            : 'bg-[#144f75] border-cyan-400/70 text-cyan-50'
+        }`}
+      >
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-amber-950/90 via-slate-900 to-slate-950 p-4 border-b border-amber-500/40 flex items-center justify-between shrink-0">
+        <div 
+          className={`p-3.5 sm:p-4 border-b flex items-center justify-between shrink-0 ${
+            theme === 'deep-green'
+              ? 'bg-[#0e3b28]/95 border-emerald-400/30'
+              : 'bg-[#0e3752]/95 border-cyan-400/30'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 flex items-center justify-center text-slate-950 font-black shadow-lg">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-300 flex items-center justify-center text-slate-950 font-black shadow-lg">
               <Bot className="w-6 h-6 text-slate-950" />
             </div>
             <div>
-              <h3 className="font-black text-lg text-amber-200 flex items-center gap-2">
+              <h3 className="font-black text-lg text-amber-300 flex items-center gap-2">
                 <span>Telegram Bot 管理员控制台</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
                   Super Admin
                 </span>
               </h3>
-              <p className="text-[11px] text-amber-400/80">
+              <p className="text-[11px] text-white/80">
                 管理 TG Bot 授权手机号、玩家账号、6位密码与机器人指令
               </p>
             </div>
@@ -215,14 +230,20 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
               sounds.playClick();
               onClose();
             }}
-            className="w-9 h-9 rounded-full bg-slate-800/80 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center text-white/80 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 bg-slate-950/90 p-1.5 shrink-0 gap-1 overflow-x-auto">
+        <div 
+          className={`flex border-b p-1.5 shrink-0 gap-1 overflow-x-auto ${
+            theme === 'deep-green'
+              ? 'bg-[#0a2e1f]/90 border-emerald-400/20'
+              : 'bg-[#0a2b40]/90 border-cyan-400/20'
+          }`}
+        >
           <button
             onClick={() => {
               sounds.playClick();
@@ -230,8 +251,8 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
             }}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'PHONES'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <PhoneCall className="w-4 h-4" />
@@ -245,8 +266,8 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
             }}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'USERS'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -260,8 +281,8 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
             }}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'SIMULATOR'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <Terminal className="w-4 h-4" />
@@ -275,8 +296,8 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
             }}
             className={`px-3 py-2 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'CONFIG'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-amber-400 text-slate-950 shadow font-black'
+                : 'text-white/70 hover:text-white'
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -285,7 +306,13 @@ export const BotAdminModal: React.FC<BotAdminModalProps> = ({
         </div>
 
         {/* Tab Content Container */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-slate-900/60">
+        <div 
+          className={`flex-1 overflow-y-auto p-3 sm:p-4 space-y-3.5 ${
+            theme === 'deep-green'
+              ? 'bg-[#0e3b28]/60'
+              : 'bg-[#0e3752]/60'
+          }`}
+        >
           {/* ================= TAB 1: AUTHORIZED PHONES ================= */}
           {activeTab === 'PHONES' && (
             <div className="space-y-4">

@@ -17,6 +17,7 @@ import {
   findBeatingHands,
 } from '../utils/chudadiAI';
 import { sounds } from '../utils/audio';
+import { useAppTheme } from '../utils/themeContext';
 import { SvgCard } from './SvgCard';
 import {
   Play,
@@ -39,6 +40,7 @@ import {
   Radio,
   AlertTriangle,
   Zap,
+  Palette,
 } from 'lucide-react';
 import { voiceEngine, DIALECT_OPTIONS, VoiceDialect, ChatMessage } from '../utils/voiceSystem';
 
@@ -76,10 +78,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   soundEnabled,
   onToggleSound,
 }) => {
+  const { theme, toggleTheme, themeConfig } = useAppTheme();
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [speechBubble, setSpeechBubble] = useState<{ [playerId: string]: string }>({});
   const [countdown, setCountdown] = useState<number>(20);
-  const [specialEffectBanner, setSpecialEffectBanner] = useState<{ text: string; sub?: string } | null>(null);
 
   // Advanced interactive features
   const [hintIndex, setHintIndex] = useState<number>(0);
@@ -430,24 +432,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     sounds.playCard();
     sounds.speakHand(hand.type, cards, !!gameState.lastValidHand, player.id);
 
-    // Visual celebration banner for special 5-card hands
-    if (hand.type === 'STRAIGHT_FLUSH') {
+    // Play bomb sound effect for big hands without popping up banner
+    if (hand.type === 'STRAIGHT_FLUSH' || hand.type === 'FOUR_OF_A_KIND') {
       sounds.playBomb();
-      setSpecialEffectBanner({ text: '💣 同花顺！', sub: '霸气登顶横扫全场！' });
-      setTimeout(() => setSpecialEffectBanner(null), 1800);
-    } else if (hand.type === 'FOUR_OF_A_KIND') {
-      sounds.playBomb();
-      setSpecialEffectBanner({ text: '💥 铁支 (四带一)！', sub: '强力绝杀！' });
-      setTimeout(() => setSpecialEffectBanner(null), 1600);
-    } else if (hand.type === 'FULL_HOUSE') {
-      setSpecialEffectBanner({ text: '🏠 葫芦！', sub: '三带一对！' });
-      setTimeout(() => setSpecialEffectBanner(null), 1400);
-    } else if (hand.type === 'FLUSH') {
-      setSpecialEffectBanner({ text: '🌸 同花连连！' });
-      setTimeout(() => setSpecialEffectBanner(null), 1200);
-    } else if (hand.type === 'STRAIGHT') {
-      setSpecialEffectBanner({ text: '🌈 顺子长龙！' });
-      setTimeout(() => setSpecialEffectBanner(null), 1200);
     }
 
     const remainingCards = player.cards.filter(c => !cards.some(tc => tc.id === c.id));
@@ -673,29 +660,42 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       className="w-full h-full flex flex-col justify-between p-1 sm:p-2 select-none"
     >
       {/* Tabletop Outer Border */}
-      <div className="relative w-full h-full rounded-2xl sm:rounded-3xl border-2 sm:border-6 border-amber-950/90 bg-gradient-to-b from-[#0a3520] via-[#0d4a2d] to-[#072615] p-2 sm:p-3 shadow-2xl overflow-hidden flex flex-col justify-between">
+      <div 
+        className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-2 sm:border-6 shadow-2xl overflow-hidden flex flex-col justify-between transition-colors duration-300 p-2 sm:p-3 ${
+          theme === 'deep-green'
+            ? 'border-[#0e3b28] bg-gradient-to-b from-[#186443] via-[#23855a] to-[#155b3c]'
+            : 'border-[#0d344d] bg-gradient-to-b from-[#18608f] via-[#237eb5] to-[#14537c]'
+        }`}
+      >
         {/* Felt Glow Accent */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(52,211,153,0.18)_0%,rgba(4,38,18,0.85)_75%)] pointer-events-none" />
-
-        {/* Banner Celebrations */}
-        {specialEffectBanner && (
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 z-40 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 font-black text-xl sm:text-3xl px-8 py-3 rounded-full shadow-2xl border-4 border-white animate-in zoom-in-75 duration-200 flex flex-col items-center">
-            <span>{specialEffectBanner.text}</span>
-            {specialEffectBanner.sub && (
-              <span className="text-xs sm:text-sm font-bold text-slate-900 mt-0.5">{specialEffectBanner.sub}</span>
-            )}
-          </div>
-        )}
+        <div 
+          className="absolute inset-0 pointer-events-none transition-all duration-300"
+          style={{
+            background: theme === 'deep-green'
+              ? 'radial-gradient(ellipse at center, rgba(52,211,153,0.18) 0%, rgba(16,69,47,0.3) 85%)'
+              : 'radial-gradient(ellipse at center, rgba(56,189,248,0.18) 0%, rgba(16,63,94,0.3) 85%)'
+          }}
+        />
 
         {/* TOP BAR: Room Name, Multiplier, Actions */}
-        <div className="relative z-10 flex items-center justify-between gap-2 bg-black/55 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-2xl border border-emerald-500/30">
+        <div 
+          className={`relative z-10 flex items-center justify-between gap-2 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
+            theme === 'deep-green'
+              ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
+              : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
+          }`}
+        >
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 sounds.playClick();
                 onBackToLobby();
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all cursor-pointer"
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-emerald-200 border-emerald-400/50'
+                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-cyan-200 border-cyan-400/50'
+              }`}
             >
               <Home className="w-3.5 h-3.5 text-amber-400" />
               <span>大厅</span>
@@ -705,7 +705,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               🔨 {gameState.room.name}
             </span>
 
-            <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-amber-500/30">
+            <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border ${
+              theme === 'deep-green'
+                ? 'bg-[#0f402c]/90 text-amber-300 border-emerald-400/40'
+                : 'bg-[#0f3f5f]/90 text-amber-300 border-cyan-400/40'
+            }`}>
               第 {gameState.matchNumber || 1} 场 · 第 {gameState.roundNumber || 1} 局
             </span>
 
@@ -721,13 +725,34 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               <span>♦2 (方块2) 先出！需带♦2牌型 🔄 逆时针出牌</span>
             </div>
           ) : (
-            <div className="hidden md:flex items-center gap-1.5 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30 text-emerald-300 text-[11px] font-bold">
+            <div className={`hidden md:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${
+              theme === 'deep-green'
+                ? 'bg-[#0f402c]/90 border-emerald-400/40 text-emerald-200'
+                : 'bg-[#0f3f5f]/90 border-cyan-400/40 text-cyan-200'
+            }`}>
               <span>🔄 逆时针出牌顺序 (南➔东➔北➔西)</span>
             </div>
           )}
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Eye-Friendly Theme Toggle */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                toggleTheme();
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border shadow ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] border-emerald-400/60 text-emerald-200'
+                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] border-cyan-400/60 text-cyan-200'
+              }`}
+              title="切换养眼护眼主题 (翡翠草绿 / 湖水湛蓝)"
+            >
+              <Palette className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">{theme === 'deep-green' ? '翡翠绿' : '湖水蓝'}</span>
+            </button>
+
             {/* Walkie-Talkie Hold-to-Talk Button */}
             <button
               onPointerDown={handleStartRecord}
@@ -735,7 +760,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
                 isRecording
                   ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-400'
-                  : 'bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-500/70 text-amber-300 shadow'
+                  : theme === 'deep-green'
+                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] border border-emerald-400/70 text-amber-300 shadow'
+                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] border border-cyan-400/70 text-amber-300 shadow'
               }`}
               title="按住对讲机直接说话"
             >
@@ -746,7 +773,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             {/* Quick Chat */}
             <button
               onClick={() => setShowChatModal(true)}
-              className="p-1.5 rounded-lg bg-emerald-950/80 border border-emerald-600/80 text-amber-300 hover:text-white text-xs cursor-pointer transition-colors shadow flex items-center gap-1"
+              className={`p-1.5 rounded-lg border text-amber-300 hover:text-white text-xs cursor-pointer transition-colors shadow flex items-center gap-1 ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c]/90 border-emerald-400/60'
+                  : 'bg-[#0f3f5f]/90 border-cyan-400/60'
+              }`}
               title="快捷短语与语音对讲"
             >
               <MessageSquare className="w-4 h-4" />
@@ -760,7 +791,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               onClick={onToggleSound}
               className={`p-1.5 rounded-lg border text-xs cursor-pointer shadow transition-all ${
                 soundEnabled
-                  ? 'bg-emerald-950 border-emerald-700 text-emerald-300'
+                  ? theme === 'deep-green'
+                    ? 'bg-[#0f402c] border-emerald-400 text-emerald-200'
+                    : 'bg-[#0f3f5f] border-cyan-400 text-cyan-200'
                   : 'bg-slate-900 border-slate-800 text-slate-500'
               }`}
               title={soundEnabled ? '静音' : '开音效'}
@@ -776,8 +809,10 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               }}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
                 isAutoPlay
-                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse'
-                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse ring-2 ring-amber-300 font-black'
+                  : theme === 'deep-green'
+                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-emerald-100 border border-emerald-400/60'
+                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-cyan-100 border border-cyan-400/60'
               }`}
             >
               <Bot className="w-3.5 h-3.5" />
@@ -802,20 +837,26 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   activeVoicePlayer === botLeft.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
                     : gameState.currentPlayerIndex === 3
-                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-emerald-900'
-                    : 'border-emerald-700/80 bg-slate-950/70'
+                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-amber-500/20'
+                    : theme === 'deep-green'
+                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
+                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
                 }`}
               >
-                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400 drop-shadow" />
+                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
               </div>
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full bg-slate-800 text-emerald-300 border border-emerald-500/40">
+              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
+                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
+              }`}>
                 西家
               </span>
             </div>
 
             <div className="text-center mt-2">
               <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botLeft.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5 flex items-center justify-center gap-1">
+              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
                 <span>{botLeft.cards.length <= 2 && '🚨 '}手牌 {botLeft.cards.length} 张</span>
                 <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botLeft.accumulatedCards || 0}</span>
               </div>
@@ -832,7 +873,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           <div className="col-span-8 sm:col-span-6 flex flex-col items-center justify-between min-h-[160px] px-1">
             {/* Top Player: 北家 */}
             <div className="flex items-center gap-2 mb-2">
-              <div className="relative flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-emerald-500/40">
+              <div className={`relative flex items-center gap-2 px-3 py-1 rounded-full border shadow ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c]/80 border-emerald-400/40'
+                  : 'bg-[#0f3f5f]/80 border-cyan-400/40'
+              }`}>
                 {speechBubble[botTop.id] && (
                   <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
                     <Radio className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
@@ -841,13 +886,17 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 )}
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center border ${
-                    gameState.currentPlayerIndex === 2 ? 'border-amber-400 bg-amber-500/20' : 'border-emerald-600 bg-slate-900'
+                    gameState.currentPlayerIndex === 2 
+                      ? 'border-amber-400 bg-amber-500/30' 
+                      : theme === 'deep-green'
+                      ? 'border-emerald-400 bg-[#165a3d]'
+                      : 'border-cyan-400 bg-[#165882]'
                   }`}
                 >
-                  <Bot className="w-4 h-4 text-emerald-300" />
+                  <Bot className="w-4 h-4 text-amber-300" />
                 </div>
-                <span className="text-xs font-bold text-slate-200">{botTop.name} (北家)</span>
-                <span className="text-xs font-mono font-bold text-emerald-400">
+                <span className="text-xs font-bold text-slate-100">{botTop.name} (北家)</span>
+                <span className="text-xs font-mono font-bold text-emerald-200">
                   手牌 {botTop.cards.length} 张
                 </span>
                 <span className="text-xs font-mono font-bold text-amber-300 bg-amber-950/80 px-1.5 rounded border border-amber-500/30">
@@ -859,12 +908,12 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             {/* Current Active Trick Cards on Felt Table */}
             {gameState.lastValidHand ? (
               <div className="flex flex-col items-center gap-1.5 my-auto">
-                <div className="text-[11px] font-bold text-amber-300 bg-black/60 px-3 py-0.5 rounded-full border border-amber-500/30 shadow-lg flex items-center gap-1">
+                <div className="text-[11px] font-bold text-amber-300 bg-black/40 px-3 py-0.5 rounded-full border border-amber-400/40 shadow-lg flex items-center gap-1">
                   <span>
                     {gameState.players.find(p => p.id === gameState.lastValidHand?.playerId)?.name} 打出
                   </span>
                   <span>·</span>
-                  <span className="text-emerald-300">{getHandDescription(gameState.lastValidHand.hand)}</span>
+                  <span className="text-white font-black">【{getHandDescription(gameState.lastValidHand.hand)}】</span>
                 </div>
 
                 <div className="flex items-center justify-center gap-1 flex-wrap">
@@ -879,7 +928,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="my-auto text-center text-emerald-300/70 text-xs border-2 border-dashed border-emerald-500/30 px-6 py-3 rounded-2xl bg-black/25">
+              <div className={`my-auto text-center text-xs border-2 border-dashed px-6 py-2.5 rounded-2xl ${
+                theme === 'deep-green'
+                  ? 'text-emerald-100/90 border-emerald-300/40 bg-[#0f402c]/40'
+                  : 'text-cyan-100/90 border-cyan-300/40 bg-[#0f3f5f]/40'
+              }`}>
                 {gameState.isFirstTrick
                   ? '♦2 (方块2) 首出！首出牌型中必须包含♦2 (逆时针出牌)'
                   : '桌面无牌，轮到领牌者任意出牌'}
@@ -901,20 +954,26 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   activeVoicePlayer === botRight.id
                     ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
                     : gameState.currentPlayerIndex === 1
-                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-emerald-900'
-                    : 'border-emerald-700/80 bg-slate-950/70'
+                    ? 'border-amber-400 ring-4 ring-amber-400/40 scale-105 bg-amber-500/20'
+                    : theme === 'deep-green'
+                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
+                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
                 }`}
               >
-                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400 drop-shadow" />
+                <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
               </div>
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full bg-slate-800 text-emerald-300 border border-emerald-500/40">
+              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
+                theme === 'deep-green'
+                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
+                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
+              }`}>
                 东家
               </span>
             </div>
 
             <div className="text-center mt-2">
               <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botRight.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 mt-0.5 flex items-center justify-center gap-1">
+              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
                 <span>{botRight.cards.length <= 2 && '🚨 '}手牌 {botRight.cards.length} 张</span>
                 <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botRight.accumulatedCards || 0}</span>
               </div>
@@ -928,8 +987,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           </div>
         </div>
 
-        {/* BOTTOM SECTION: Human Actions & 13 Card Hand Fan */}
-        <div className="relative z-20 flex flex-col items-center bg-black/75 backdrop-blur-md rounded-t-3xl pt-1.5 sm:pt-2 border-t-2 border-x-2 border-emerald-500/35 overflow-hidden -mb-2 sm:-mb-3 w-full">
+        {/* BOTTOM SECTION: Human Actions & 13 Card Hand Fan (Border-free, Tabletop Felt matching background, Fixed stable height) */}
+        <div className="relative z-20 flex flex-col items-center w-full -mb-2 sm:-mb-3 bg-transparent">
           {speechBubble['player-0'] && (
             <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-2xl border-2 border-white z-40 animate-bounce flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
@@ -937,28 +996,32 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
           )}
 
-          {/* Action Buttons Row & Info */}
-          <div className="flex items-center justify-between w-full px-3 py-1 bg-black/40 border-b border-emerald-900/40">
-            {/* Left: Player Identity */}
-            <div className="flex items-center gap-1.5 text-xs text-slate-300">
-              <User className="w-3.5 h-3.5 text-emerald-400" />
+          {/* Action Buttons Row & Info: Fixed constant height to prevent any border/height shifts */}
+          <div className="flex items-center justify-between w-full px-2 sm:px-4 h-9 sm:h-10 shrink-0 select-none">
+            {/* Left: Player Identity & Sort Switch */}
+            <div className="flex items-center gap-1.5 text-xs text-white">
+              <User className="w-3.5 h-3.5 text-amber-300" />
               <span className="font-bold text-slate-100">{human.name} (南家)</span>
               <button
                 onClick={() => {
                   sounds.playClick();
                   setSortByPattern(prev => !prev);
                 }}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 cursor-pointer text-[10px] font-bold ml-1"
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full border cursor-pointer text-[10px] font-bold ml-1 shadow-sm ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-amber-300 border-emerald-400/50'
+                    : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-amber-300 border-cyan-400/50'
+                }`}
               >
                 <SlidersHorizontal className="w-2.5 h-2.5 text-amber-400" />
                 <span>{sortByPattern ? '按点数' : '按大小'}</span>
               </button>
             </div>
 
-            {/* Center: Action Buttons */}
-            <div className="flex items-center gap-2">
-              {isHumanCurrent && gameState.phase === 'PLAYING' && (
-                <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Center: Action Buttons or Thinking Pill */}
+            <div className="flex items-center justify-center h-full">
+              {isHumanCurrent && gameState.phase === 'PLAYING' ? (
+                <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in zoom-in-95 duration-150">
                   {/* Timer Circle */}
                   <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono shadow-md border-2 border-yellow-200">
                     {countdown}
@@ -968,7 +1031,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   {gameState.lastValidHand && gameState.lastValidHand.playerId !== 'player-0' && (
                     <button
                       onClick={handleHumanPass}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer transition-all border border-slate-700"
+                      className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all border shadow ${
+                        theme === 'deep-green'
+                          ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-slate-100 border-emerald-400/50'
+                          : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-slate-100 border-cyan-400/50'
+                      }`}
                     >
                       不出
                     </button>
@@ -977,7 +1044,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   {/* Hint Button */}
                   <button
                     onClick={handleHumanHint}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 text-xs font-black cursor-pointer shadow-lg active:scale-95"
+                    className="flex items-center gap-1 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 text-xs font-black cursor-pointer shadow-lg active:scale-95"
                   >
                     <Lightbulb className="w-3.5 h-3.5 fill-current" />
                     <span>提示</span>
@@ -987,7 +1054,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   {selectedCardIds.length > 0 && (
                     <button
                       onClick={() => setSelectedCardIds([])}
-                      className="px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-amber-200 text-xs font-bold cursor-pointer transition-all"
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all border shadow ${
+                        theme === 'deep-green'
+                          ? 'bg-[#185e42]/90 hover:bg-[#207553] text-amber-200 border-emerald-400/50'
+                          : 'bg-[#185c8a]/90 hover:bg-[#2072a8] text-amber-200 border-cyan-400/50'
+                      }`}
                     >
                       重选
                     </button>
@@ -997,12 +1068,12 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   <button
                     onClick={handleHumanPlay}
                     disabled={selectedCardIds.length === 0}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xl transition-all cursor-pointer ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-black shadow-xl transition-all cursor-pointer ${
                       canPlaySelectedHand
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 shadow-emerald-500/40 scale-105 active:scale-100 ring-2 ring-emerald-300'
+                        ? 'bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-400 hover:brightness-110 text-slate-950 shadow-emerald-500/50 scale-105 active:scale-100 ring-2 ring-white'
                         : selectedCardIds.length > 0
-                        ? 'bg-amber-600/90 text-white hover:bg-amber-500 active:scale-95'
-                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                        ? 'bg-amber-600 text-white hover:bg-amber-500 active:scale-95 shadow'
+                        : 'bg-[#0f402c]/60 text-emerald-200/50 cursor-not-allowed border border-emerald-500/30'
                     }`}
                   >
                     <Play className="w-3.5 h-3.5" />
@@ -1011,18 +1082,22 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                     </span>
                   </button>
                 </div>
-              )}
-
-              {!isHumanCurrent && gameState.phase !== 'GAME_OVER' && (
-                <div className="text-xs text-emerald-300/80 font-bold py-0.5 animate-pulse flex items-center gap-1.5">
-                  <Bot className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{currentPlayer?.name} 正在思考中...</span>
+              ) : !isHumanCurrent && gameState.phase !== 'GAME_OVER' ? (
+                <div className={`text-xs font-bold px-3 py-1 rounded-full border shadow-sm flex items-center gap-1.5 ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0f402c]/80 border-emerald-400/40 text-amber-300'
+                    : 'bg-[#0f3f5f]/80 border-cyan-400/40 text-amber-300'
+                }`}>
+                  <Bot className="w-3.5 h-3.5 text-cyan-300 animate-spin" />
+                  <span>{currentPlayer?.name || '其他玩家'} 正在思考中...</span>
                 </div>
+              ) : (
+                <div className="h-6" />
               )}
             </div>
 
             {/* Right: Scores & Cards Count */}
-            <div className="flex items-center gap-2 text-[11px] text-slate-300">
+            <div className="flex items-center gap-2 text-[11px] text-emerald-50">
               <span>
                 手牌 <strong className="text-white font-mono">{human.cards.length}</strong> 张
               </span>
@@ -1030,7 +1105,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 累计 <strong className="font-mono">{human.accumulatedCards || 0}</strong>/100张
               </span>
               <span>
-                积分 <strong className="text-amber-400 font-mono">{human.score.toLocaleString()}</strong>
+                积分 <strong className="text-amber-300 font-mono">{human.score.toLocaleString()}</strong>
               </span>
             </div>
           </div>
@@ -1068,17 +1143,29 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
         {/* Quick Chat Modal - Optimized for Landscape */}
         {showChatModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-slate-900 border-2 border-emerald-500/60 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 select-none">
+            <div 
+              className={`border-2 rounded-3xl max-w-xl w-full p-3 sm:p-3.5 shadow-2xl flex flex-col gap-2.5 animate-in zoom-in-95 duration-150 max-h-[92vh] overflow-hidden transition-colors ${
+                theme === 'deep-green'
+                  ? 'bg-[#145339] border-emerald-400/70 text-emerald-50'
+                  : 'bg-[#144f75] border-cyan-400/70 text-cyan-50'
+              }`}
+            >
+              <div className="flex items-center justify-between border-b border-white/15 pb-2 shrink-0">
                 <div className="flex items-center gap-1.5">
-                  <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
+                  <div 
+                    className={`flex p-1 rounded-xl border ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0a2e1f]/90 border-emerald-400/20'
+                        : 'bg-[#0a2b40]/90 border-cyan-400/20'
+                    }`}
+                  >
                     <button
                       onClick={() => setChatTab('phrases')}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         chatTab === 'phrases'
-                          ? 'bg-emerald-600 text-white shadow'
-                          : 'text-slate-400 hover:text-slate-200'
+                          ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow font-black'
+                          : 'text-white/70 hover:text-white'
                       }`}
                     >
                       💬 快捷短语
@@ -1087,8 +1174,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                       onClick={() => setChatTab('history')}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
                         chatTab === 'history'
-                          ? 'bg-emerald-600 text-white shadow'
-                          : 'text-slate-400 hover:text-slate-200'
+                          ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow font-black'
+                          : 'text-white/70 hover:text-white'
                       }`}
                     >
                       <Mic className="w-3 h-3" />
@@ -1098,8 +1185,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                       onClick={() => setChatTab('dialect')}
                       className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         chatTab === 'dialect'
-                          ? 'bg-amber-500 text-slate-950 shadow'
-                          : 'text-slate-400 hover:text-slate-200'
+                          ? 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow font-black'
+                          : 'text-white/70 hover:text-white'
                       }`}
                     >
                       🌐 方言配音
@@ -1108,7 +1195,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                 </div>
                 <button
                   onClick={() => setShowChatModal(false)}
-                  className="text-slate-400 hover:text-white p-1.5 rounded-lg cursor-pointer"
+                  className="text-white/70 hover:text-white p-1.5 rounded-lg cursor-pointer transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1116,7 +1203,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
               {chatTab === 'phrases' && (
                 <div className="flex flex-col gap-2 flex-1 min-h-0">
-                  <div className="flex items-center justify-around bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
+                  <div 
+                    className={`flex items-center justify-around p-1.5 rounded-2xl border shrink-0 ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/95 border-emerald-400/30'
+                        : 'bg-[#0e3752]/95 border-cyan-400/30'
+                    }`}
+                  >
                     {CHAT_EMOJIS.map((emoji, idx) => (
                       <button
                         key={idx}
@@ -1131,7 +1224,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                     ))}
                   </div>
 
-                  <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 shrink-0">
+                  <div 
+                    className={`flex items-center gap-1.5 p-1.5 rounded-2xl border shrink-0 ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/95 border-emerald-400/30'
+                        : 'bg-[#0e3752]/95 border-cyan-400/30'
+                    }`}
+                  >
                     <input
                       type="text"
                       value={customChatText}
@@ -1144,7 +1243,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                         }
                       }}
                       placeholder="输入文本，真人语音自动播报..."
-                      className="flex-1 bg-transparent px-2.5 py-1 text-xs text-white placeholder-slate-500 focus:outline-none"
+                      className="flex-1 bg-transparent px-2.5 py-1 text-xs text-white placeholder-white/40 focus:outline-none"
                     />
                     <button
                       onClick={() => {
@@ -1155,13 +1254,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                         }
                       }}
                       disabled={!customChatText.trim()}
-                      className="p-2 rounded-xl text-xs font-bold bg-amber-500 text-slate-950 shadow cursor-pointer disabled:opacity-50"
+                      className="p-2 rounded-xl text-xs font-bold bg-amber-400 text-slate-950 shadow cursor-pointer disabled:opacity-50"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1.5 flex-1 overflow-y-auto pr-1">
+                  <div className="grid grid-cols-2 gap-1.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                     {CHAT_PHRASES.map((phrase, idx) => (
                       <button
                         key={idx}
@@ -1169,13 +1268,17 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                           handleSendChat(phrase);
                           setShowChatModal(false);
                         }}
-                        className="text-left px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between group"
+                        className={`text-left px-2.5 py-1.5 rounded-xl border text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between group ${
+                          theme === 'deep-green'
+                            ? 'bg-[#0e3b28]/80 hover:bg-[#114732] border-emerald-400/30'
+                            : 'bg-[#0e3752]/80 hover:bg-[#12476b] border-cyan-400/30'
+                        }`}
                       >
                         <span className="flex items-center gap-1.5 truncate">
                           <Radio className="w-3 h-3 text-amber-400 shrink-0" />
                           <span className="truncate">{phrase}</span>
                         </span>
-                        <span className="text-[10px] text-amber-400 opacity-0 group-hover:opacity-100 shrink-0">
+                        <span className="text-[10px] text-amber-300 opacity-0 group-hover:opacity-100 shrink-0 font-bold">
                           播报➔
                         </span>
                       </button>
@@ -1186,12 +1289,20 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
               {chatTab === 'history' && (
                 <div className="flex flex-col gap-2.5 flex-1 min-h-0">
-                  <div className="p-2 bg-slate-950 rounded-2xl border border-emerald-500/40 flex flex-col items-center gap-1.5 shrink-0">
+                  <div 
+                    className={`p-2 rounded-2xl border flex flex-col items-center gap-1.5 shrink-0 ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/95 border-emerald-400/40'
+                        : 'bg-[#0e3752]/95 border-cyan-400/40'
+                    }`}
+                  >
                     <button
                       onPointerDown={handleStartRecord}
                       onPointerUp={handleStopRecord}
                       className={`w-full py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        isRecording ? 'bg-red-600 text-white animate-pulse' : 'bg-emerald-600 text-white shadow'
+                        isRecording 
+                          ? 'bg-rose-600 text-white animate-pulse' 
+                          : 'bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 shadow'
                       }`}
                     >
                       <Mic className="w-4 h-4" />
@@ -1199,12 +1310,19 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                     </button>
                   </div>
 
-                  <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
+                  <div className="space-y-1.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
                     {chatMessages.length === 0 ? (
-                      <div className="text-center py-4 text-slate-500 text-xs">暂无语音记录，按住对讲说话！</div>
+                      <div className="text-center py-4 text-white/50 text-xs">暂无语音记录，按住对讲说话！</div>
                     ) : (
                       chatMessages.map(msg => (
-                        <div key={msg.id} className="p-2 rounded-xl bg-slate-800/70 text-xs text-slate-200">
+                        <div 
+                          key={msg.id} 
+                          className={`p-2 rounded-xl text-xs text-white border ${
+                            theme === 'deep-green'
+                              ? 'bg-[#0e3b28]/80 border-emerald-400/30'
+                              : 'bg-[#0e3752]/80 border-cyan-400/30'
+                          }`}
+                        >
                           <span className="font-bold text-amber-300">{msg.senderName}: </span>
                           <span>{msg.content}</span>
                         </div>
@@ -1215,7 +1333,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               )}
 
               {chatTab === 'dialect' && (
-                <div className="flex-1 overflow-y-auto pr-1">
+                <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar">
                   <div className="grid grid-cols-2 gap-2">
                     {DIALECT_OPTIONS.map(d => {
                       const isActive = voiceEngine.dialect === d.id;
@@ -1226,18 +1344,22 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                             voiceEngine.setDialect(d.id);
                             sounds.speak(`已切换为${d.label}！`);
                           }}
-                          className={`p-2 rounded-xl border text-left flex items-center justify-between ${
-                            isActive ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow' : 'bg-slate-950 border-slate-800 text-slate-400'
+                          className={`p-2 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                            isActive 
+                              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow font-black' 
+                              : theme === 'deep-green'
+                              ? 'bg-[#0e3b28]/80 border-emerald-400/30 text-white hover:border-emerald-300'
+                              : 'bg-[#0e3752]/80 border-cyan-400/30 text-white hover:border-cyan-300'
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate">
                             <span className="text-base">{d.icon}</span>
                             <div className="truncate">
-                              <div className="font-bold text-xs text-white truncate">{d.label}</div>
-                              <div className="text-[9px] text-slate-400 truncate">{d.desc}</div>
+                              <div className={`font-bold text-xs truncate ${isActive ? 'text-slate-950' : 'text-white'}`}>{d.label}</div>
+                              <div className={`text-[9px] truncate ${isActive ? 'text-slate-800' : 'text-white/60'}`}>{d.desc}</div>
                             </div>
                           </div>
-                          <span className="text-[10px] text-amber-400 shrink-0">{isActive ? '当前' : '选择'}</span>
+                          <span className={`text-[10px] font-bold shrink-0 ${isActive ? 'text-slate-950' : 'text-amber-300'}`}>{isActive ? '当前' : '选择'}</span>
                         </button>
                       );
                     })}
@@ -1250,11 +1372,17 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
         {/* 1. ROUND SUMMARY FULL-SCREEN VIEW (局小结 - 全屏横屏战绩面板，永不遮挡裁剪) */}
         {gameState.phase === 'ROUND_SUMMARY' && (
-          <div className="absolute inset-0 bg-gradient-to-b from-[#060e1d] via-[#09152b] to-[#040810] z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200">
+          <div 
+            className={`absolute inset-0 z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200 transition-colors duration-300 ${
+              theme === 'deep-green'
+                ? 'bg-gradient-to-b from-[#114732] via-[#165a3f] to-[#0e3b29]'
+                : 'bg-gradient-to-b from-[#12476b] via-[#165680] to-[#0e3855]'
+            }`}
+          >
             {/* Top Header Bar */}
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 px-1 shrink-0">
+            <div className="flex items-center justify-between border-b border-emerald-400/30 pb-2 px-1 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shadow-md">
+                <div className="w-8 h-8 rounded-full bg-emerald-400/20 border border-emerald-400 flex items-center justify-center text-emerald-200 shadow-md">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
@@ -1276,7 +1404,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl px-3 py-1 text-right flex items-center gap-2">
                 <Crown className="w-5 h-5 text-amber-400 shrink-0" />
                 <div className="text-left">
-                  <div className="text-[10px] text-slate-400 leading-tight">本局头游获胜者</div>
+                  <div className="text-[10px] text-slate-300 leading-tight">本局头游获胜者</div>
                   <div className="text-xs sm:text-sm font-black text-amber-300 truncate">
                     {gameState.players[gameState.winnerIndex ?? 0]?.name}
                   </div>
@@ -1300,14 +1428,18 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                       key={p.id}
                       className={`rounded-2xl border p-2.5 sm:p-3 flex flex-col justify-between relative transition-all shadow-xl overflow-hidden ${
                         isWinner
-                          ? 'bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 border-amber-400/80 ring-2 ring-amber-400/30'
+                          ? 'bg-gradient-to-b from-amber-900/60 via-[#185e42] to-[#0f402c] border-amber-400/90 ring-2 ring-amber-400/40'
                           : isHuman
-                          ? 'bg-gradient-to-b from-slate-900 to-slate-950 border-emerald-500/50'
-                          : 'bg-slate-900/90 border-slate-800'
+                          ? theme === 'deep-green'
+                            ? 'bg-gradient-to-b from-[#185e42] to-[#0f402c] border-emerald-400/70'
+                            : 'bg-gradient-to-b from-[#185c8a] to-[#0f3f5f] border-cyan-400/70'
+                          : theme === 'deep-green'
+                          ? 'bg-[#145339]/90 border-emerald-500/50'
+                          : 'bg-[#144f75]/90 border-cyan-500/50'
                       }`}
                     >
                       {/* Top Rank / Seat Indicator */}
-                      <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/60 shrink-0">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-emerald-900/50 shrink-0">
                         <div className="flex items-center gap-1.5 truncate">
                           <span className="text-base sm:text-lg">{p.avatar}</span>
                           <div className="truncate">
@@ -1319,7 +1451,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                                 </span>
                               )}
                             </div>
-                            <div className="text-[9px] text-slate-400 font-mono">
+                            <div className="text-[9px] text-emerald-200/70 font-mono">
                               {['南家', '东家', '北家', '西家'][idx]}
                             </div>
                           </div>
@@ -1337,7 +1469,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                                 ? 'bg-red-500/30 text-red-300 border border-red-500/50'
                                 : eff.multiplier >= 2
                                 ? 'bg-amber-500/30 text-amber-300 border border-amber-500/50'
-                                : 'bg-slate-800 text-slate-300'
+                                : 'bg-slate-800/80 text-slate-300'
                             }`}
                           >
                             {eff.multiplier > 1 ? `${eff.multiplier}倍关门` : '正常1倍'}
@@ -1355,19 +1487,19 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                             <div className="text-xs sm:text-sm font-black text-amber-300">
                               率先清空手牌！
                             </div>
-                            <div className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 rounded-lg px-2 py-0.5">
+                            <div className="text-[10px] text-emerald-300 font-bold bg-emerald-950/80 border border-emerald-500/40 rounded-lg px-2 py-0.5">
                               🚩 获第 {gameState.roundNumber + 1} 局首出权
                             </div>
                           </>
                         ) : (
                           <>
-                            <div className="text-[11px] text-slate-300">
+                            <div className="text-[11px] text-slate-200">
                               本局剩牌: <strong className="text-white font-black text-sm">{rawCount}</strong> 张
                             </div>
-                            <div className="text-xs font-black text-amber-400 bg-amber-950/40 border border-amber-500/30 rounded-xl px-2.5 py-1">
+                            <div className="text-xs font-black text-amber-300 bg-amber-950/60 border border-amber-500/40 rounded-xl px-2.5 py-1">
                               折算增加: <span className="text-base font-mono">+{eff.effective}</span> 张
                             </div>
-                            <div className="text-[9px] text-slate-400">
+                            <div className="text-[9px] text-amber-200/80">
                               {rawCount >= 13
                                 ? '⚠️ 13张全关 (4倍惩罚)'
                                 : rawCount >= 10
@@ -1381,16 +1513,16 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                       </div>
 
                       {/* Bottom Gauge: Progress towards 100 accumulated cards */}
-                      <div className="pt-1.5 border-t border-slate-800/60 shrink-0 space-y-1">
+                      <div className="pt-1.5 border-t border-emerald-900/50 shrink-0 space-y-1">
                         <div className="flex justify-between items-center text-[10px] font-mono">
-                          <span className="text-slate-400">累计总剩牌:</span>
+                          <span className="text-slate-300">累计总剩牌:</span>
                           <span
                             className={`font-black text-xs ${
                               accCards >= 80
                                 ? 'text-red-400'
                                 : accCards >= 50
                                 ? 'text-amber-300'
-                                : 'text-emerald-400'
+                                : 'text-emerald-300'
                             }`}
                           >
                             {accCards} / 100 张
@@ -1398,7 +1530,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div className="w-full bg-[#031d14] rounded-full h-2 overflow-hidden border border-emerald-900/80">
                           <div
                             className={`h-full transition-all duration-500 rounded-full ${
                               accCards >= 80
@@ -1411,7 +1543,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                           />
                         </div>
 
-                        <div className="flex justify-between items-center text-[9px] text-slate-400">
+                        <div className="flex justify-between items-center text-[9px] text-slate-300">
                           <span>
                             {accCards >= 100
                               ? '🚨 已达100张大结算'
@@ -1429,16 +1561,20 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
 
             {/* Bottom Rules Tip & Action Bar */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 px-1 gap-2 shrink-0">
+            <div className="flex items-center justify-between pt-2 border-t border-emerald-500/30 px-1 gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <button
                   onClick={onBackToLobby}
-                  className="px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold text-xs cursor-pointer transition-all flex items-center gap-1.5 border border-slate-700"
+                  className={`px-3 py-2 rounded-xl font-bold text-xs cursor-pointer transition-all flex items-center gap-1.5 border ${
+                    theme === 'deep-green'
+                      ? 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border-emerald-700/60'
+                      : 'bg-cyan-950/80 hover:bg-cyan-900 text-cyan-200 border-cyan-700/60'
+                  }`}
                 >
-                  <Home className="w-3.5 h-3.5 text-slate-400" />
+                  <Home className="w-3.5 h-3.5 text-amber-400" />
                   <span>返回大厅</span>
                 </button>
-                <div className="hidden sm:flex text-[11px] text-slate-400 items-center gap-1">
+                <div className="hidden sm:flex text-[11px] text-emerald-200/80 items-center gap-1">
                   <span>📢 下一局由【{gameState.players[gameState.winnerIndex ?? 0]?.name}】优先领牌首出！</span>
                 </div>
               </div>
@@ -1457,9 +1593,15 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
 
         {/* 2. MATCH SETTLEMENT FULL-SCREEN VIEW (场大结算 - 满100张四舍五入大结算面板) */}
         {(gameState.phase === 'MATCH_SETTLEMENT' || gameState.phase === 'GAME_OVER') && (
-          <div className="absolute inset-0 bg-gradient-to-b from-[#120803] via-[#1a0e05] to-[#0a0502] z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200">
+          <div 
+            className={`absolute inset-0 z-50 flex flex-col justify-between p-2 sm:p-3 md:p-4 text-white select-none overflow-hidden animate-in fade-in zoom-in-98 duration-200 transition-colors duration-300 ${
+              theme === 'deep-green'
+                ? 'bg-gradient-to-b from-[#0a2318] via-[#0e3b29] to-[#041910]'
+                : 'bg-gradient-to-b from-[#082030] via-[#0d3650] to-[#041624]'
+            }`}
+          >
             {/* Top Header Bar */}
-            <div className="flex items-center justify-between border-b border-amber-900/60 pb-2 px-1 shrink-0">
+            <div className="flex items-center justify-between border-b border-amber-600/40 pb-2 px-1 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/30">
                   <Trophy className="w-5 h-5" />

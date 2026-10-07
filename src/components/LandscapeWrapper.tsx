@@ -1,4 +1,5 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
+import { useAppTheme } from '../utils/themeContext';
 
 interface LandscapeContextType {
   isLandscape: boolean;
@@ -17,6 +18,7 @@ interface LandscapeWrapperProps {
 }
 
 export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) => {
+  const { theme, themeConfig } = useAppTheme();
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
     width: typeof window !== 'undefined' ? window.innerWidth : 1000,
     height: typeof window !== 'undefined' ? window.innerHeight : 600,
@@ -63,9 +65,14 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
     ? 'translate(-50%, -50%) rotate(90deg)'
     : 'translate(-50%, -50%) rotate(0deg)';
 
+  const bgStyleColor = theme === 'deep-green' ? '#114732' : '#12476b';
+
   return (
     <LandscapeContext.Provider value={{ isLandscape: true, isRotated: isPortrait }}>
-      <div className="fixed inset-0 w-screen h-screen bg-[#050b14] overflow-hidden select-none">
+      <div 
+        style={{ backgroundColor: bgStyleColor }}
+        className="fixed inset-0 w-screen h-screen overflow-hidden select-none transition-colors duration-300"
+      >
         {/* Responsive Landscape Canvas (90° on portrait, 0° on landscape) */}
         <div
           style={{
@@ -77,8 +84,9 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
             transform: rotationTransform,
             transformOrigin: 'center center',
             overflow: 'hidden',
+            backgroundColor: bgStyleColor,
           }}
-          className="bg-slate-950 flex flex-col justify-between relative shadow-2xl"
+          className={`${themeConfig.bgClass} flex flex-col justify-between relative shadow-2xl transition-colors duration-300`}
         >
           {/* Main Game Interface (Lobby / Tabletop) */}
           {children}
@@ -87,3 +95,4 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
     </LandscapeContext.Provider>
   );
 };
+

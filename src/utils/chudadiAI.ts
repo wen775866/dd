@@ -15,13 +15,13 @@
  *    - 10~12张: 3倍
  *    - 13张: 4倍 (全关/大关)
  * 
- * AI 宗师级战术特性：
- * - 全局最优手牌拆解 (Hand Partitioning / 动态规划与贪心回溯评估)
- * - 保护整牌，杜绝乱拆顺子、同花、俘虏、四带一
- * - 终局必胜路线规划 (Guaranteed Win Path / 控场连出)
- * - 警报拦截与顶大机制 (下家报单/报双顶大，防止下家溜牌包赔)
- * - 避关控分意识 (13张全关及10张3倍警戒，优先解关保命)
- * - 领牌精准控场 (起手清弱牌/五张大牌压制/残局逼牌)
+ * 宗师级战术特性：
+ * - 全局最优手牌拆解 (Multi-branch Hand Partitioning & Dynamic Evaluation)
+ * - 残局必胜与连出规划 (Endgame Exact Solver & Walk-off Sequence)
+ * - 报单一/报双顶大防范 (Next Player & Threat Matrix Defenses, 杜绝送牌包赔)
+ * - 首出 ♦2 最优组牌 (优先组五张/对子/三条快速甩牌)
+ * - 避关保命意识 (10~13张大关警戒与快速减负)
+ * - 智能跟牌与适度放行 (Smart Pass & 保护整牌)
  */
 
 import { Card, CardHand, HandType, Player } from '../types/game';
@@ -153,10 +153,11 @@ export function findAllFiveCardCombos(cards: Card[]): CardHand[] {
     suitGroups[c.suit].push(c);
   }
 
-  // A. 四带一 (Four of a Kind)
+  // A. 四带一 (Four of a Kind: 4 cards of same rank + 1 kicker)
   for (const rStr of Object.keys(rankGroups)) {
     const quad = rankGroups[Number(rStr)];
     if (quad.length === 4) {
+      // 优先配最小的散牌单张
       for (const single of sorted) {
         if (single.rankValue !== Number(rStr)) {
           addHandIfValid([...quad, single]);
@@ -171,7 +172,6 @@ export function findAllFiveCardCombos(cards: Card[]): CardHand[] {
 
   for (const t of tripsRanks) {
     const tripCards = rankGroups[t];
-    // 三条的所有3张选法
     const tripCombos = getCombinations(tripCards, 3);
     for (const tc of tripCombos) {
       for (const p of pairsRanks) {
@@ -190,7 +190,6 @@ export function findAllFiveCardCombos(cards: Card[]): CardHand[] {
   for (const s of Object.keys(suitGroups)) {
     const sCards = suitGroups[s];
     if (sCards.length >= 5) {
-      // 5张组合
       const combos = getCombinations(sCards, 5);
       for (const c of combos) {
         addHandIfValid(c);
@@ -201,9 +200,9 @@ export function findAllFiveCardCombos(cards: Card[]): CardHand[] {
   // D. 顺子 (Straight)
   // 点数序列定义 (按照规则定义的所有可能顺子组合)
   const straightSequences = [
-    [2, 3, 4, 5, 14], // A-2-3-4-5 (最大)
-    [9, 10, 11, 12, 13], // 9-10-J-Q-K (第二大)
-    [10, 11, 12, 13, 14], // 10-J-Q-K-A
+    [2, 3, 4, 5, 14], // A-2-3-4-5 (最大, 权重 100)
+    [9, 10, 11, 12, 13], // 9-10-J-Q-K (第二大, 权重 90)
+    [10, 11, 12, 13, 14], // 10-J-Q-K-A (权重 85)
     [8, 9, 10, 11, 12], // 8-9-10-J-Q
     [7, 8, 9, 10, 11], // 7-8-9-10-J
     [6, 7, 8, 9, 10], // 6-7-8-9-10
@@ -215,7 +214,6 @@ export function findAllFiveCardCombos(cards: Card[]): CardHand[] {
 
   for (const seq of straightSequences) {
     if (seq.every(r => rankGroups[r] && rankGroups[r].length > 0)) {
-      // 取各点数的牌组合生成顺子
       const c0 = rankGroups[seq[0]];
       const c1 = rankGroups[seq[1]];
       const c2 = rankGroups[seq[2]];
@@ -262,11 +260,11 @@ export interface HandStructure {
   unpairedSingles: Card[];
   totalTurns: number;       // 需要几手牌出完
   controlScore: number;     // 大牌控场分 (♠A, 其它A, K, 顺子/俘虏/同花顺)
-  brokenScore: number;      // 牌型完整度评分 (越高代表牌型越整齐、散牌越少)
+  brokenScore: number;      // 牌型完整度评分
 }
 
 /**
- * 智能拆解手牌结构，寻找出牌手数最少、散牌最少的最优组合
+ * 智能拆解手牌结构，寻找出牌手数最少、散牌最少、控场最优的组合
  */
 export function partitionHand(cards: Card[]): HandStructure {
   if (!cards || cards.length === 0) {
@@ -283,7 +281,7 @@ export function partitionHand(cards: Card[]): HandStructure {
   let bestHands: CardHand[] = [];
   let bestUnpaired: Card[] = [];
   let bestTurns = 999;
-  let bestScore = -9999;
+  let bestScore = -99999;
 
   // 1. 提取所有五张牌型候选
   const allFive = findAllFiveCardCombos(sorted);
@@ -293,10 +291,11 @@ export function partitionHand(cards: Card[]): HandStructure {
   for (const f of allFive) {
     candidateBranches.push([f]);
   }
-  // 如果牌数多，尝试两个不冲突的五张组合
+
+  // 如果手牌多，尝试两个不冲突的五张组合
   if (sorted.length >= 10 && allFive.length >= 2) {
-    for (let i = 0; i < Math.min(allFive.length, 6); i++) {
-      for (let j = i + 1; j < Math.min(allFive.length, 8); j++) {
+    for (let i = 0; i < Math.min(allFive.length, 8); i++) {
+      for (let j = i + 1; j < Math.min(allFive.length, 10); j++) {
         const h1 = allFive[i];
         const h2 = allFive[j];
         const set1 = new Set(h1.cards.map(c => c.id));
@@ -343,21 +342,23 @@ export function partitionHand(cards: Card[]): HandStructure {
     const turns = currentHands.length;
 
     // 评估该结构评分：
-    // 基础分 100
-    // 手数惩罚：每多一手 -25 分
-    // 散牌惩罚：每张小于 10 的单张 -15 分；小于 6 的单张额外 -10 分
-    // 大牌奖励：♠A +40分, 其余A +20分, K +10分, 俘虏/同花/顺子/同花顺 +25分
-    let score = 200 - turns * 25;
+    // 手数惩罚：每多一手 -30 分
+    // 散牌惩罚：每张 <= 9 的散牌 -20 分；<= 5 的极弱单张额外 -15 分
+    // 大牌奖励：♠A +50分, 其它A +25分, K +12分, 俘虏/同花/顺子 +30分, 同花顺 +60分
+    let score = 300 - turns * 30;
 
     for (const s of currentSingles) {
-      if (s.rankValue <= 5) score -= 25;
-      else if (s.rankValue <= 9) score -= 15;
-      else if (s.rankValue >= 14) score += 20; // 单张 A
+      if (s.rankValue <= 5) score -= 35;
+      else if (s.rankValue <= 9) score -= 20;
+      else if (s.rankValue === 14) score += 25; // 单张 A
     }
 
     for (const h of currentHands) {
-      if (h.categoryWeight >= 10) score += 20; // 五张整牌
-      if (h.cards.some(c => c.id === 'spade-A')) score += 35; // 牌皇 ♠A
+      if (h.categoryWeight === 50) score += 60; // 同花顺
+      else if (h.categoryWeight === 40) score += 45; // 四带一
+      else if (h.categoryWeight === 30) score += 35; // 俘虏
+      else if (h.categoryWeight >= 10) score += 25; // 顺子/同花
+      if (h.cards.some(c => c.id === 'spade-A')) score += 50; // 牌皇 ♠A
     }
 
     if (score > bestScore || (score === bestScore && turns < bestTurns)) {
@@ -371,8 +372,8 @@ export function partitionHand(cards: Card[]): HandStructure {
   // 大牌控场分
   let controlScore = 0;
   for (const c of cards) {
-    if (c.id === 'spade-A') controlScore += 50;
-    else if (c.rankValue === 14) controlScore += 30; // A
+    if (c.id === 'spade-A') controlScore += 60;
+    else if (c.rankValue === 14) controlScore += 35; // A
     else if (c.rankValue === 13) controlScore += 15; // K
   }
 
@@ -386,28 +387,41 @@ export function partitionHand(cards: Card[]): HandStructure {
 }
 
 // ----------------------------------------------------
-// 3. 终局与控场判定策略 (Endgame & Control Engine)
+// 3. 终局必胜与绝对控场判定引擎 (Endgame & Walk-Off Solver)
 // ----------------------------------------------------
 
 /**
  * 检查玩家是否具备一杆清台/必胜全控路线
  */
-function checkWinningSequence(cards: Card[]): CardHand[] | null {
+function checkWinningSequence(cards: Card[], anyOpponentAlert: boolean = false): CardHand[] | null {
   if (!cards || cards.length === 0) return null;
 
-  // 1. 如果整副手牌刚好可以作为一个合法牌型一次性出完
+  // 1. 如果整副手牌刚好可以作为一个合法牌型一次性出完 (1步绝杀)
   const wholeHand = analyzeHand(cards);
   if (wholeHand) {
     return [wholeHand];
   }
 
-  // 2. 如果手牌只有2手牌，且其中一手拥有全场绝对霸权 (如 ♠A 或 顶配同花顺/俘虏)
+  // 2. 如果手牌拆解后只有 2 手牌
   const partition = partitionHand(cards);
   if (partition.hands.length === 2) {
     const hasSpadeA = cards.some(c => c.id === 'spade-A');
+    
+    // 如果拥有 ♠A (全场最大单张牌皇)
     if (hasSpadeA) {
-      // 可以先发非 ♠A 的一手，再用 ♠A 控回，再清空！
-      return partition.hands;
+      const spadeAHand = partition.hands.find(h => h.cards.some(c => c.id === 'spade-A'));
+      const otherHand = partition.hands.find(h => !h.cards.some(c => c.id === 'spade-A'));
+
+      if (spadeAHand && otherHand) {
+        // 如果有对手报单或报双（处于危险警报阶段）:
+        // 必须先发 ♠A 确保拿到绝对领牌权，再出另一手清空！
+        // 绝不能先发小牌让对手溜走！
+        if (anyOpponentAlert) {
+          return [spadeAHand, otherHand];
+        }
+        // 如果安全局势，先出非 ♠A 的一手，再用 ♠A 控回清台
+        return [otherHand, spadeAHand];
+      }
     }
   }
 
@@ -433,13 +447,14 @@ export function chooseLeadingCards(
   if (isFirstTrick) {
     const starterCard = sorted.find(c => c.id === starterCardId);
     if (starterCard) {
-      // 1. 优先出包含 ♦2 的强力五张 (顺子 A2345, 23456, 同花, 俘虏)
+      // 1. 优先出包含 ♦2 的强力五张 (顺子 A2345, 23456, 同花, 俘虏) 一举甩掉5张牌！
       const fiveCombos = findAllFiveCardCombos(sorted).filter(h =>
         h.cards.some(c => c.id === starterCardId)
       );
       if (fiveCombos.length > 0) {
-        // 优先出顺子或同花（ categoryWeight 小的顺子先出，消耗多张手牌 ）
-        return fiveCombos[0].cards;
+        // 优先出顺子或同花（categoryWeight 小的顺子先出，消耗多张手牌）
+        const sortedCombos = fiveCombos.sort((a, b) => a.categoryWeight - b.categoryWeight);
+        return sortedCombos[0].cards;
       }
 
       // 2. 包含 ♦2 的三条
@@ -458,16 +473,12 @@ export function chooseLeadingCards(
     }
   }
 
-  // 检查是否有一杆清台必胜打法
-  const winSeq = checkWinningSequence(cards);
-  if (winSeq && winSeq.length > 0) {
-    // 优先出第一手
-    return winSeq[0].cards;
-  }
-
   // 分析下家及全场对手剩余手牌状态
   const nextPlayer = getNextPlayer(players, selfPlayerId);
   const nextCardCount = nextPlayer ? (nextPlayer.cards ? nextPlayer.cards.length : 13) : 13;
+  const isNextPlayerWarning1 = nextCardCount === 1;
+  const isNextPlayerWarning2 = nextCardCount === 2;
+
   const anyOpponentWarning1 = players.some(
     p => p.id !== selfPlayerId && p.cards && p.cards.length === 1
   );
@@ -475,53 +486,82 @@ export function chooseLeadingCards(
     p => p.id !== selfPlayerId && p.cards && p.cards.length === 2
   );
 
+  // 检查是否有一杆清台必胜打法
+  const winSeq = checkWinningSequence(cards, isNextPlayerWarning1 || isNextPlayerWarning2 || anyOpponentWarning1);
+  if (winSeq && winSeq.length > 0) {
+    return winSeq[0].cards;
+  }
+
   const partition = partitionHand(cards);
   const { hands, unpairedSingles } = partition;
 
-  // ----------------- 警报应对策略 -----------------
-  // 1. 如果下家只剩 1 张牌 (或有对手报单)：绝对不能出小单张！
-  if (anyOpponentWarning1) {
-    // A. 优先出五张牌型 (顺子/同花/俘虏)，对手极难要得起
+  // ----------------- 警报应对策略 (Alert Defense) -----------------
+  
+  // 1. 【下家剩 1 张牌 (下家报单)】：生死关头，绝不出小单张，防止包赔！
+  if (isNextPlayerWarning1) {
+    // A. 优先出五张牌型 (顺子/同花/俘虏)，下家只剩1张牌必无法接牌
     const fiveHands = hands.filter(h => h.categoryWeight >= 10);
     if (fiveHands.length > 0) {
       return fiveHands[0].cards;
     }
 
-    // B. 其次出对子 (对子可彻底封死剩单张的玩家)
+    // B. 其次出对子 (对子彻底封死下家单张)
     const pairHands = hands.filter(h => h.type === 'PAIR');
     if (pairHands.length > 0) {
       return pairHands[0].cards;
     }
 
-    // C. 再次出三条
+    // C. 出三条
     const tripHands = hands.filter(h => h.type === 'TRIPLE');
     if (tripHands.length > 0) {
       return tripHands[0].cards;
     }
 
-    // D. 如果手里全都是单张，出最大单张 (A 或 K) 顶大，绝不出小单张给对手送分！
+    // D. 若手里全是单张，必须出最大单张 (♠A 或 其它A/K) 顶大，绝不出小单张送分！
     return [sorted[sorted.length - 1]];
   }
 
-  // 2. 如果下家只剩 2 张牌 (报双)：尽量避免发小对子
-  if (anyOpponentWarning2) {
+  // 2. 【任意对手剩 1 张牌 (报单)】：尽量出多张牌型绕过对手
+  if (anyOpponentWarning1) {
     const fiveHands = hands.filter(h => h.categoryWeight >= 10);
     if (fiveHands.length > 0) {
       return fiveHands[0].cards;
     }
 
-    // 优先发小单张让对手拆双
-    if (unpairedSingles.length > 0) {
-      return [unpairedSingles[0]];
+    const pairHands = hands.filter(h => h.type === 'PAIR');
+    if (pairHands.length > 0) {
+      return pairHands[0].cards;
     }
 
-    // 出三条
     const tripHands = hands.filter(h => h.type === 'TRIPLE');
     if (tripHands.length > 0) {
       return tripHands[0].cards;
     }
 
-    // 发大对子压制
+    // 若只能出单张，出最大单张顶住
+    return [sorted[sorted.length - 1]];
+  }
+
+  // 3. 【下家只剩 2 张牌 (下家报双)】：避免发出小对子！
+  if (isNextPlayerWarning2) {
+    // A. 优先出五张牌型
+    const fiveHands = hands.filter(h => h.categoryWeight >= 10);
+    if (fiveHands.length > 0) {
+      return fiveHands[0].cards;
+    }
+
+    // B. 发小单张让下家无法出对
+    if (unpairedSingles.length > 0) {
+      return [unpairedSingles[0]];
+    }
+
+    // C. 发三条
+    const tripHands = hands.filter(h => h.type === 'TRIPLE');
+    if (tripHands.length > 0) {
+      return tripHands[0].cards;
+    }
+
+    // D. 若只能出对子，出最大对子压制
     const pairHands = hands.filter(h => h.type === 'PAIR');
     if (pairHands.length > 0) {
       return pairHands[pairHands.length - 1].cards;
@@ -529,6 +569,7 @@ export function chooseLeadingCards(
   }
 
   // ----------------- 常规最优领牌策略 -----------------
+
   // 1. 如果手牌中有成型的五张牌型 (顺子、同花、俘虏)，领出低权重的五张牌迅速消减5张手牌
   const fiveHands = hands.filter(h => h.categoryWeight >= 10);
   if (fiveHands.length > 0) {
@@ -539,7 +580,7 @@ export function chooseLeadingCards(
     }
   }
 
-  // 2. 优先清理手牌中的弱单张 (点数 <= 9 的散牌)
+  // 2. 优先清理手牌中的弱单张 (点数 <= 9 的散牌，借大牌控回)
   const lowSingles = unpairedSingles.filter(c => c.rankValue <= 9);
   if (lowSingles.length > 0) {
     return [lowSingles[0]];
@@ -612,15 +653,14 @@ export function chooseBeatingMove(
   // 当下家报单 (剩1张) 且上家出单张时，我方为上家与下家之间的唯一屏障：
   // 必须使用我方最大单张 (顶大) 压制，绝不给下家过小单张的机会！
   if (prevHand.type === 'SINGLE' && isNextPlayerWarning1) {
-    // 选出最大单张压制
     const highestSingle = beatingCandidates[beatingCandidates.length - 1];
     return highestSingle.cards;
   }
 
-  // 如果任意对手剩1张牌，且当前打出的是单张，非下家也积极拦截
+  // 如果任意对手剩1张牌，且当前打出的是单张，积极顶大 (J 及以上)
   if (prevHand.type === 'SINGLE' && anyOpponentWarning1) {
     const highestSingle = beatingCandidates[beatingCandidates.length - 1];
-    if (highestSingle.primaryValue >= 11) { // J 及以上积极顶大
+    if (highestSingle.primaryValue >= 11) {
       return highestSingle.cards;
     }
   }
@@ -629,12 +669,11 @@ export function chooseBeatingMove(
   // 如果我方手牌还有 13 张 (4倍全关) 或 10~12 张 (3倍大关)，必须积极出牌跑牌解关！
   const isDangerOfMaxPenalty = selfCardCount >= 10;
   if (isDangerOfMaxPenalty) {
-    // 积极出牌，选择对整手牌破坏最小的候选出牌
     return getLeastDestructiveHand(cards, beatingCandidates, prevHand);
   }
 
   // 4. 【保护整牌与控牌评估】
-  // 对每一个候选牌型打分，选出收益最高的牌
+  // 对每一个候选牌型打分，选出综合收益最高的牌
   const partition = partitionHand(cards);
   const { unpairedSingles, hands } = partition;
 
@@ -644,7 +683,7 @@ export function chooseBeatingMove(
   for (const cand of beatingCandidates) {
     let moveScore = 0;
 
-    // A. 完美契合评分 (如果这手牌正好在最优手牌拆解中完整存在，奖励 +50 分)
+    // A. 完美契合评分 (如果这手牌正好在最优手牌拆解中完整存在，奖励 +60 分)
     const isExactCombo = hands.some(h => {
       if (h.type !== cand.type || h.cards.length !== cand.cards.length) return false;
       const hIds = h.cards.map(c => c.id).sort().join(',');
@@ -653,26 +692,22 @@ export function chooseBeatingMove(
     });
 
     if (isExactCombo) {
-      moveScore += 50;
+      moveScore += 60;
     }
 
-    // B. 散牌消耗奖励 (如果是单张，且刚好是散牌，奖励 +30 分)
+    // B. 散牌消耗奖励 (如果是单张，且刚好是散牌，奖励 +40 分)
     if (cand.type === 'SINGLE') {
       const isUnpaired = unpairedSingles.some(c => c.id === cand.cards[0].id);
       if (isUnpaired) {
-        moveScore += 30;
+        moveScore += 40;
       }
     }
 
     // C. 破坏牌型惩罚
-    // - 拆了同花顺 / 四带一 / 俘虏 / 顺子：严重扣分 (-80 分)
-    // - 拆了对子去打单张：扣分 (-20 分)
-    // - 拆了三条去打对子或单张：扣分 (-35 分)
     const brokenPenalty = calculateBrokenPenalty(cand, cards);
     moveScore -= brokenPenalty;
 
     // D. 牌面点数消耗惩罚 (越小的牌压制越划算，优先用贴近的小牌压，避免大牌浪费)
-    // 差值越小越好
     const rankGap = cand.primaryValue - prevHand.primaryValue;
     moveScore -= rankGap * 3;
 
@@ -682,14 +717,14 @@ export function chooseBeatingMove(
       if (selfCardCount > 5) {
         moveScore -= 35; // 除非必要，前期保留 ♠A 控场
       } else {
-        moveScore += 40; // 残局用 ♠A 绝杀
+        moveScore += 45; // 残局用 ♠A 绝杀
       }
     }
 
     // F. 五张牌型压制权重 (尽量用同花/顺子等低权重，少在小局浪费同花顺)
     if (cand.categoryWeight === 50) { // 同花顺
       if (prevHand.categoryWeight < 30 && selfCardCount > 6) {
-        moveScore -= 45; // 杀鸡焉用牛刀
+        moveScore -= 50; // 杀鸡焉用牛刀
       }
     }
 
@@ -722,14 +757,14 @@ function calculateBrokenPenalty(cand: CardHand, allCards: Card[]): number {
 
   // 如果拆牌导致总手数不减反增
   if (newPartition.totalTurns >= origPartition.totalTurns) {
-    penalty += 35;
+    penalty += 40;
   }
 
   // 检查是否破坏了原有的五张大牌型
   const origFiveCount = origPartition.hands.filter(h => h.categoryWeight >= 10).length;
   const newFiveCount = newPartition.hands.filter(h => h.categoryWeight >= 10).length;
   if (newFiveCount < origFiveCount) {
-    penalty += 60; // 破坏了五张成型大牌
+    penalty += 70; // 破坏了五张成型大牌
   }
 
   return penalty;

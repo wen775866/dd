@@ -13,6 +13,7 @@ import { LandscapeWrapper } from './components/LandscapeWrapper';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { AuthModal } from './components/AuthModal';
 import { BotAdminModal } from './components/BotAdminModal';
+import { ThemeProvider } from './utils/themeContext';
 
 const BOT_CHARACTERS = [
   { name: '西家·智多星', avatar: '🤖', position: 'left' as const },
@@ -289,51 +290,53 @@ export default function App() {
   };
 
   return (
-    <LandscapeWrapper>
-      {gameState.phase === 'LOBBY' ? (
-        <GameLobby
-          userProfile={userProfile}
+    <ThemeProvider>
+      <LandscapeWrapper>
+        {gameState.phase === 'LOBBY' ? (
+          <GameLobby
+            userProfile={userProfile}
+            currentUser={currentUser}
+            onSelectRoom={handleSelectRoom}
+            onUpdateCoins={handleUpdateCoins}
+            soundEnabled={soundEnabled}
+            onToggleSound={handleToggleSound}
+            onOpenAuth={handleOpenAuth}
+            onOpenAdmin={handleOpenAdmin}
+            onLogout={handleLogout}
+          />
+        ) : (
+          <TabletopGameView
+            gameState={gameState}
+            onUpdateState={handleUpdateGameState}
+            onStartNewGame={handleStartNewGame}
+            onStartNewMatch={handleStartNewMatch}
+            onChangeTable={handleChangeTable}
+            onBackToLobby={handleBackToLobby}
+            soundEnabled={soundEnabled}
+            onToggleSound={handleToggleSound}
+          />
+        )}
+
+        {/* Auth Modal (Login / TG Authorized Registration) */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          initialTab={authModalTab}
+          onSuccess={user => {
+            sounds.playCoins();
+            setShowAuthModal(false);
+          }}
+        />
+
+        {/* Telegram Bot Admin Management Modal */}
+        <BotAdminModal
+          isOpen={showAdminModal}
+          onClose={() => setShowAdminModal(false)}
           currentUser={currentUser}
-          onSelectRoom={handleSelectRoom}
-          onUpdateCoins={handleUpdateCoins}
-          soundEnabled={soundEnabled}
-          onToggleSound={handleToggleSound}
-          onOpenAuth={handleOpenAuth}
-          onOpenAdmin={handleOpenAdmin}
-          onLogout={handleLogout}
         />
-      ) : (
-        <TabletopGameView
-          gameState={gameState}
-          onUpdateState={handleUpdateGameState}
-          onStartNewGame={handleStartNewGame}
-          onStartNewMatch={handleStartNewMatch}
-          onChangeTable={handleChangeTable}
-          onBackToLobby={handleBackToLobby}
-          soundEnabled={soundEnabled}
-          onToggleSound={handleToggleSound}
-        />
-      )}
 
-      {/* Auth Modal (Login / TG Authorized Registration) */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        initialTab={authModalTab}
-        onSuccess={user => {
-          sounds.playCoins();
-          setShowAuthModal(false);
-        }}
-      />
-
-      {/* Telegram Bot Admin Management Modal */}
-      <BotAdminModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        currentUser={currentUser}
-      />
-
-      <OfflineIndicator />
-    </LandscapeWrapper>
+        <OfflineIndicator />
+      </LandscapeWrapper>
+    </ThemeProvider>
   );
 }

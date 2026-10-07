@@ -3,6 +3,7 @@ import { RoomConfig, UserProfile } from '../types/game';
 import { UserAccount } from '../utils/authStore';
 import { sounds } from '../utils/audio';
 import { voiceEngine, DIALECT_OPTIONS } from '../utils/voiceSystem';
+import { useAppTheme } from '../utils/themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
 import {
   Flame,
@@ -32,6 +33,7 @@ import {
   Trash2,
   Crown,
   Share2,
+  Palette,
 } from 'lucide-react';
 
 export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
@@ -48,13 +50,13 @@ export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
   },
   {
     id: 'room-yansan',
-    name: '🔥 烟三场',
+    name: '🔥 烟三',
     tag: '底分 2,000 积分 · 满4人开局 · 烟三特色组合 · 3倍关门',
     baseScore: 2000,
     entryMin: 2000,
     maxMultiplier: 256,
     colorTheme: 'from-amber-600 via-red-800 to-slate-950',
-    badge: '烟三热血场',
+    badge: '正宗4人桌',
     mode: 'master',
   },
 ];
@@ -111,7 +113,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onToggleSound,
   onOpenAuth,
 }) => {
-  const [showRulesModal, setShowRulesModal] = useState(false);
+  const { theme, toggleTheme, themeConfig } = useAppTheme();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showFreeBeansModal, setShowFreeBeansModal] = useState(false);
 
@@ -429,49 +431,74 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between p-1.5 sm:p-2.5 select-none bg-gradient-to-br from-[#070d1a] via-[#0a1628] to-[#040812] text-white relative overflow-hidden">
+    <div 
+      className={`w-full h-full flex flex-col justify-between p-1.5 sm:p-2.5 select-none text-white relative overflow-hidden transition-colors duration-300 ${
+        theme === 'deep-green'
+          ? 'bg-gradient-to-br from-[#124d36] via-[#1b6b4c] to-[#0f432e]'
+          : 'bg-gradient-to-br from-[#144f77] via-[#1c6d9f] to-[#104365]'
+      }`}
+    >
       {/* Background Ambient Effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.12)_0%,transparent_70%)] pointer-events-none" />
+      <div 
+        className="absolute inset-0 pointer-events-none transition-all duration-300"
+        style={{
+          background: theme === 'deep-green'
+            ? 'radial-gradient(ellipse at top, rgba(52,211,153,0.18) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse at top, rgba(56,189,248,0.18) 0%, transparent 70%)'
+        }}
+      />
       <div className="absolute -top-32 -left-32 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      {/* TOP BAR: Header & Profile */}
+      {/* TOP BAR: Header & Profile - Unified Height (h-7 sm:h-8) & Consistent Amber/Theme Text Color */}
       <div className="relative z-10 flex items-center justify-between gap-1.5 px-1 py-0.5 shrink-0">
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Avatar & Profile Capsule */}
-          <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md pl-1 pr-2.5 py-0.5 rounded-full border border-emerald-500/40 shadow-lg">
+          <div 
+            className={`h-7 sm:h-8 flex items-center gap-1.5 backdrop-blur-md pl-1 pr-2.5 rounded-full border shadow transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/50 text-amber-300'
+                : 'bg-[#134d73]/90 border-cyan-400/50 text-amber-300'
+            }`}
+          >
             <div className="relative">
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 p-0.5 shadow flex items-center justify-center">
-                <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-sm sm:text-base">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-200 p-0.5 shadow flex items-center justify-center">
+                <div className="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-xs">
                   {userProfile.avatar}
                 </div>
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 text-[7px] font-black px-1 py-0.2 rounded-full bg-emerald-600 text-white shadow ring-1 ring-white/20">
-                4人桌
+              <span className="absolute -bottom-0.5 -right-0.5 text-[6px] font-black px-1 rounded-full bg-emerald-600 text-white ring-1 ring-white/20">
+                4人
               </span>
             </div>
 
-            <div className="leading-tight">
-              <div className="font-black text-xs text-amber-200 truncate max-w-[80px] sm:max-w-[110px]">
+            <div className="flex items-center gap-1 leading-none">
+              <span className="font-bold text-xs text-amber-300 truncate max-w-[70px] sm:max-w-[100px]">
                 {userProfile.nickname}
-              </div>
-              <div className="text-[9px] text-amber-400/80 font-mono flex items-center gap-1">
-                <span>{winRate}%胜率</span>
-              </div>
+              </span>
+              <span className="text-[10px] text-amber-400/80 font-mono hidden sm:inline">
+                {winRate}%胜
+              </span>
             </div>
           </div>
 
           {/* 积分 Capsule */}
-          <div className="flex items-center gap-1 bg-black/60 backdrop-blur-md pl-2 pr-1 py-0.5 rounded-full border border-yellow-500/50 shadow">
+          <div 
+            className={`h-7 sm:h-8 flex items-center gap-1.5 backdrop-blur-md pl-2 pr-1 rounded-full border shadow transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/50 text-amber-300'
+                : 'bg-[#134d73]/90 border-cyan-400/50 text-amber-300'
+            }`}
+          >
             <div className="w-4 h-4 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-slate-950 font-black text-[9px] shadow">
               分
             </div>
-            <span className="font-mono font-black text-amber-300 text-xs sm:text-sm px-0.5">
+            <span className="font-mono font-bold text-xs text-amber-300 px-0.5">
               {userProfile.coins.toLocaleString()}
             </span>
             <button
               onClick={() => setShowFreeBeansModal(true)}
-              className="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 hover:brightness-110 flex items-center justify-center text-slate-950 font-black cursor-pointer shadow active:scale-95"
+              className="w-4 h-4 rounded-full bg-gradient-to-r from-amber-400 to-yellow-300 hover:brightness-110 flex items-center justify-center text-slate-950 font-black cursor-pointer shadow active:scale-95"
               title="免费增加积分"
             >
               <Plus className="w-3 h-3 stroke-[3]" />
@@ -479,23 +506,50 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
           </div>
 
           {/* 钻石 Badge */}
-          <div className="hidden md:flex items-center gap-1 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full border border-cyan-500/40 shadow">
-            <Gem className="w-3 h-3 text-cyan-400" />
-            <span className="font-mono font-black text-cyan-300 text-xs">
+          <div 
+            className={`h-7 sm:h-8 hidden md:flex items-center gap-1 backdrop-blur-md px-2.5 rounded-full border shadow transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/50 text-amber-300'
+                : 'bg-[#134d73]/90 border-cyan-400/50 text-amber-300'
+            }`}
+          >
+            <Gem className="w-3.5 h-3.5 text-cyan-300" />
+            <span className="font-mono font-bold text-xs text-amber-300">
               {userProfile.diamonds}
             </span>
           </div>
         </div>
 
-        {/* Right Nav Controls */}
+        {/* Right Nav Controls: Unified Height (h-7 sm:h-8) & Consistent Amber/Theme Text Color */}
         <div className="flex items-center gap-1 sm:gap-1.5">
+          {/* Eye-Friendly Theme Toggle */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              toggleTheme();
+            }}
+            className={`h-7 sm:h-8 flex items-center gap-1 px-2.5 rounded-full border text-xs font-bold text-amber-300 shadow cursor-pointer transition-all ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 hover:bg-[#185e42] border-emerald-400/50'
+                : 'bg-[#134d73]/90 hover:bg-[#185c8a] border-cyan-400/50'
+            }`}
+            title="切换养眼主题 (翡翠草绿 / 湖水湛蓝)"
+          >
+            <Palette className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">{theme === 'deep-green' ? '翡翠绿' : '湖水蓝'}</span>
+          </button>
+
           {/* Join Room Button */}
           <button
             onClick={() => {
               sounds.playClick();
               setShowJoinRoomModal(true);
             }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/50 text-xs font-bold shadow cursor-pointer transition-all"
+            className={`h-7 sm:h-8 flex items-center gap-1 px-2.5 rounded-full border text-xs font-bold text-amber-300 shadow cursor-pointer transition-all ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 hover:bg-[#185e42] border-emerald-400/50'
+                : 'bg-[#134d73]/90 hover:bg-[#185c8a] border-cyan-400/50'
+            }`}
           >
             <LogIn className="w-3.5 h-3.5 text-amber-400" />
             <span>输入房号</span>
@@ -507,10 +561,14 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-emerald-500/40 cursor-pointer shadow"
+              className={`h-7 sm:h-8 flex items-center gap-1 px-2.5 rounded-full border text-xs font-bold text-amber-300 shadow cursor-pointer transition-all ${
+                theme === 'deep-green'
+                  ? 'bg-[#134d35]/90 hover:bg-[#185e42] border-emerald-400/50'
+                  : 'bg-[#134d73]/90 hover:bg-[#185c8a] border-cyan-400/50'
+              }`}
               title={`已登录: ${currentUser.phone}`}
             >
-              <User className="w-3 h-3 text-emerald-400" />
+              <User className="w-3.5 h-3.5 text-amber-400" />
               <span className="truncate max-w-[65px]">{currentUser.nickname}</span>
             </button>
           ) : (
@@ -519,135 +577,151 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 sounds.playClick();
                 onOpenAuth('LOGIN');
               }}
-              className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:brightness-110 text-white font-bold text-xs shadow cursor-pointer transition-all border border-emerald-400/40"
+              className="h-7 sm:h-8 flex items-center gap-1 px-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 hover:brightness-110 text-slate-950 font-bold text-xs shadow cursor-pointer transition-all border border-amber-300/40"
             >
-              <ShieldCheck className="w-3 h-3 text-white" />
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-950" />
               <span>登录 / 注册</span>
             </button>
           )}
 
-          <PWAInstallButton />
-
           <button
             onClick={handleDailyCheckin}
-            className="relative hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow hover:brightness-110 cursor-pointer"
+            className={`h-7 sm:h-8 relative hidden sm:flex items-center gap-1 px-2.5 rounded-full border text-xs font-bold text-amber-300 shadow cursor-pointer transition-all ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 hover:bg-[#185e42] border-emerald-400/50'
+                : 'bg-[#134d73]/90 hover:bg-[#185c8a] border-cyan-400/50'
+            }`}
           >
-            <Coins className="w-3 h-3" />
+            <Coins className="w-3.5 h-3.5 text-amber-400" />
             <span>签到积分</span>
           </button>
 
           <button
-            onClick={() => setShowRulesModal(true)}
-            className="p-1 rounded-full bg-black/50 border border-slate-700 hover:bg-slate-800 text-amber-300 text-xs transition-all cursor-pointer shadow"
-            title="规则宝典"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-          </button>
-
-          <button
             onClick={() => setShowSettingsModal(true)}
-            className="p-1 rounded-full bg-black/50 border border-slate-700 hover:bg-slate-800 text-slate-300 text-xs transition-all cursor-pointer shadow"
+            className={`h-7 sm:h-8 w-7 sm:w-8 flex items-center justify-center rounded-full border text-amber-300 text-xs transition-all cursor-pointer shadow ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 border-emerald-400/50 hover:bg-[#185e42]'
+                : 'bg-[#134d73]/90 border-cyan-400/50 hover:bg-[#185c8a]'
+            }`}
             title="系统设置"
           >
-            <Settings className="w-3.5 h-3.5" />
+            <Settings className="w-3.5 h-3.5 text-amber-400" />
           </button>
         </div>
       </div>
 
-      {/* CENTER SECTION: Guaranteed Non-Overflow Scrollable Main Lobby */}
-      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto custom-scrollbar my-auto flex flex-col justify-center py-1">
-        <div className="text-center mb-1 sm:mb-2 shrink-0">
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-[10px] sm:text-xs font-bold shadow-inner">
-            <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-            <span>♠️ 正宗 4 人对局 · 自动匹配 / 创建私房 / 输入 6 位房号加入</span>
-          </div>
-          <h1 className="text-lg sm:text-2xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent drop-shadow-md tracking-wider flex items-center justify-center gap-1.5 mt-0.5">
-            <span>♠️ 锄大地 & 🔥 烟三场</span>
-          </h1>
-        </div>
-
-        {/* 2 GAME ROOM SECTIONS SIDE-BY-SIDE */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3.5 max-w-2xl mx-auto w-full px-1 items-stretch">
-          {CHUDADI_ROOM_PRESETS.map(room => {
+      {/* CENTER SECTION: Clean, Borderless & Spacious Floating Game Cards */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col justify-between py-2 sm:py-3">
+        {/* 2 GAME ROOM SECTIONS: Floating spacious cards with increased height, spread top & bottom */}
+        <div className="flex-1 flex flex-col justify-between gap-3 sm:gap-4 max-w-xl sm:max-w-2xl md:max-w-4xl mx-auto w-full px-1.5 sm:px-3 my-auto">
+          {CHUDADI_ROOM_PRESETS.map((room) => {
             const canEnter = userProfile.coins >= room.entryMin;
             const isChudadi = room.id === 'room-chudadi';
 
             return (
               <div
                 key={room.id}
-                className={`relative rounded-2xl p-2.5 sm:p-3.5 border-2 transition-all duration-200 flex flex-col justify-between overflow-hidden shadow-xl group ${
+                className={`relative rounded-3xl sm:rounded-4xl p-4 sm:p-5 md:p-6 transition-all duration-300 flex items-center justify-between overflow-hidden shadow-2xl min-h-[110px] sm:min-h-[130px] md:min-h-[145px] group ${
                   canEnter
-                    ? isChudadi
-                      ? 'bg-gradient-to-br from-emerald-950/90 via-slate-900/90 to-slate-950/95 border-emerald-500/60 hover:border-amber-400 hover:shadow-emerald-500/25'
-                      : 'bg-gradient-to-br from-amber-950/90 via-slate-900/90 to-slate-950/95 border-amber-500/60 hover:border-amber-300 hover:shadow-amber-500/25'
-                    : 'bg-slate-950/60 opacity-60 border-slate-800'
+                    ? theme === 'deep-green'
+                      ? 'bg-gradient-to-r from-[#145339]/95 via-[#1c6e4d]/95 to-[#124b34]/95 shadow-emerald-950/50 hover:shadow-emerald-500/20 hover:scale-[1.01]'
+                      : 'bg-gradient-to-r from-[#144f75]/95 via-[#1c6999]/95 to-[#124667]/95 shadow-cyan-950/50 hover:shadow-cyan-500/20 hover:scale-[1.01]'
+                    : 'bg-black/40 opacity-60'
                 }`}
               >
-                {/* Background Symbol */}
-                <div className="absolute -right-2 -bottom-2 opacity-10 font-black text-5xl sm:text-7xl pointer-events-none select-none text-white">
+                {/* Background Watermark Symbol */}
+                <div className="absolute right-48 sm:right-64 -bottom-6 opacity-10 font-black text-7xl sm:text-9xl pointer-events-none select-none text-white">
                   {isChudadi ? '♠️' : '🔥'}
                 </div>
 
-                {/* Top Badge & Base Score */}
-                <div className="flex items-center justify-between z-10 shrink-0">
-                  <span
-                    className={`text-[9px] sm:text-[10px] font-black px-2 py-0.2 rounded-full shadow ${
-                      isChudadi
-                        ? 'bg-gradient-to-r from-emerald-400 to-teal-300 text-slate-950'
-                        : 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950'
-                    }`}
-                  >
-                    {room.badge}
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-mono font-black text-amber-300 bg-black/50 px-1.5 py-0.2 rounded-full border border-amber-500/30">
-                    底分 {room.baseScore.toLocaleString()}
-                  </span>
-                </div>
-
-                {/* Title & Description Tag */}
-                <div className="my-1.5 sm:my-2 z-10">
-                  <h2 className="text-base sm:text-xl font-black text-amber-200 group-hover:text-white transition-colors flex items-center gap-1">
-                    <span>{room.name}</span>
-                  </h2>
-                  <p className="text-[10px] sm:text-[11px] text-slate-300 mt-0.5 line-clamp-2 leading-tight">
-                    {room.tag}
-                  </p>
-                </div>
-
-                {/* 3 Entry Action Buttons */}
-                <div className="pt-2 border-t border-slate-800/80 flex flex-col gap-1.5 z-10 shrink-0">
-                  <div className="text-[9px] sm:text-[10px] text-slate-400 font-mono flex items-center justify-between">
-                    <span>准入: <strong className="text-amber-300">{room.entryMin.toLocaleString()}</strong> 积分</span>
-                    <span className="text-emerald-400 font-bold">4人即刻开局</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {/* 1. Quick Match */}
-                    <button
-                      disabled={!canEnter}
-                      onClick={() => handleStartMatching(room)}
-                      className={`py-1.5 px-2 rounded-xl text-[10px] sm:text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                        canEnter
-                          ? isChudadi
-                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow hover:brightness-110'
-                            : 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow hover:brightness-110'
-                          : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                {/* Left Side: Large Title, Badge, Description & Rules */}
+                <div className="flex flex-col justify-center z-10 min-w-0 pr-3">
+                  <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                    {/* ENLARGED TITLE: 锄大地 in Gray, 烟三 in White */}
+                    <h2 
+                      className={`text-3xl sm:text-4xl md:text-5xl font-black tracking-wide drop-shadow transition-colors ${
+                        isChudadi 
+                          ? 'text-slate-300 group-hover:text-slate-100' 
+                          : 'text-white group-hover:text-white'
                       }`}
                     >
-                      <Play className="w-3 h-3 fill-current" />
-                      <span>⚡ 自动匹配</span>
-                    </button>
+                      {room.name}
+                    </h2>
 
-                    {/* 2. Create Custom Room */}
-                    <button
-                      disabled={!canEnter}
-                      onClick={() => openCreateRoomModal(room)}
-                      className="py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-[10px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                    <span 
+                      className={`text-[11px] sm:text-xs font-bold px-3 py-0.5 rounded-full shadow ${
+                        isChudadi 
+                          ? 'bg-slate-700/80 text-slate-200' 
+                          : 'bg-white/20 text-white'
+                      }`}
                     >
-                      <PlusCircle className="w-3 h-3 text-amber-400" />
-                      <span>➕ 创建房间</span>
-                    </button>
+                      {room.badge}
+                    </span>
+
+                    <span 
+                      className={`text-[11px] sm:text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-black/40 ${
+                        isChudadi 
+                          ? 'text-slate-300 border border-slate-600/40' 
+                          : 'text-white border border-white/40'
+                      }`}
+                    >
+                      底分 {room.baseScore.toLocaleString()}
+                    </span>
                   </div>
+
+                  <p 
+                    className={`text-xs sm:text-sm mt-1.5 line-clamp-1 leading-tight font-medium ${
+                      isChudadi ? 'text-slate-400' : 'text-white/90'
+                    }`}
+                  >
+                    {room.tag}
+                  </p>
+
+                  <div 
+                    className={`text-xs sm:text-sm font-mono flex items-center gap-4 mt-1.5 ${
+                      isChudadi ? 'text-slate-400' : 'text-white/90'
+                    }`}
+                  >
+                    <span>
+                      准入条件: <strong className={`font-black ${isChudadi ? 'text-slate-200' : 'text-white'}`}>{room.entryMin.toLocaleString()}</strong> 积分
+                    </span>
+                    <span className={`font-bold hidden sm:inline ${isChudadi ? 'text-slate-300' : 'text-white'}`}>
+                      ⚡ 满4人即开
+                    </span>
+                  </div>
+                </div>
+
+                {/* Right Side: Action Buttons */}
+                <div className="flex items-center gap-2.5 sm:gap-3.5 z-10 shrink-0">
+                  {/* 1. Quick Match Button */}
+                  <button
+                    disabled={!canEnter}
+                    onClick={() => handleStartMatching(room)}
+                    className={`py-2.5 sm:py-3 px-4 sm:px-6 rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xl active:scale-95 ${
+                      !canEnter
+                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                        : isChudadi
+                        ? 'bg-slate-700 hover:bg-slate-600 text-slate-100 shadow-slate-900/40'
+                        : 'bg-white hover:bg-slate-100 text-slate-950 shadow-white/20'
+                    }`}
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>⚡ 自动匹配</span>
+                  </button>
+
+                  {/* 2. Create Custom Room Button */}
+                  <button
+                    disabled={!canEnter}
+                    onClick={() => openCreateRoomModal(room)}
+                    className={`py-2.5 sm:py-3 px-3.5 sm:px-5 rounded-2xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-lg active:scale-95 ${
+                      isChudadi
+                        ? 'bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-slate-600/50'
+                        : 'bg-white/15 hover:bg-white/25 text-white border border-white/50'
+                    }`}
+                  >
+                    <PlusCircle className="w-4 h-4 text-current" />
+                    <span>➕ 创建房间</span>
+                  </button>
                 </div>
               </div>
             );
@@ -655,56 +729,53 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       </div>
 
-      {/* FOOTER BAR */}
-      <div className="relative z-10 flex items-center justify-between px-2 text-[9px] sm:text-[10px] text-slate-400 border-t border-slate-800/80 pt-0.5 shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>支持 自动匹配 · 6 位房号私房对战 · 语音对讲就绪</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span>v3.0.0 锄大地</span>
-        </div>
-      </div>
-
       {/* MODAL 1: AUTOMATIC MATCHING WAITING */}
       {matchingRoom && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 animate-in fade-in duration-150">
-          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl flex flex-col items-center text-center gap-3">
-            <div className="flex items-center gap-2 text-amber-300 font-black text-base sm:text-lg">
-              <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-sm w-full p-3 shadow-2xl flex flex-col items-center text-center gap-2 max-h-[82vh] overflow-hidden transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
+            <div className="flex items-center gap-2 text-amber-300 font-black text-sm sm:text-base">
+              <Loader2 className="w-4 h-4 text-amber-300 animate-spin" />
               <span>{matchingRoom.name} · 4人桌自动匹配中</span>
             </div>
 
-            <p className="text-xs text-slate-300">
+            <p className="text-[11px] text-white/90">
               正在为您寻找同好玩家，满 <strong className="text-amber-300 font-bold">4 位玩家</strong> 自动洗牌开局！
             </p>
 
             {/* 4 Seats Circle Visual */}
-            <div className="grid grid-cols-2 gap-2.5 w-full my-1">
+            <div className="grid grid-cols-2 gap-2 w-full my-0.5">
               {matchedPlayers.map((p, idx) => (
                 <div
                   key={idx}
-                  className={`p-2 rounded-2xl border flex items-center gap-2 transition-all duration-300 ${
+                  className={`p-1.5 rounded-xl flex items-center gap-2 transition-all duration-300 ${
                     p.ready
-                      ? 'bg-emerald-950/80 border-emerald-500 text-white shadow-md'
-                      : 'bg-slate-950/60 border-slate-800 text-slate-500'
+                      ? theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/95 text-white shadow'
+                        : 'bg-[#0e3752]/95 text-white shadow'
+                      : 'bg-black/25 text-white/50'
                   }`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-base shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-black/30 flex items-center justify-center text-sm shrink-0">
                     {p.avatar}
                   </div>
                   <div className="text-left leading-tight truncate">
-                    <div className="font-bold text-xs truncate">
+                    <div className="font-bold text-[11px] truncate">
                       {p.name}
                       {p.position === 'bottom' && <span className="text-[9px] text-amber-300 ml-0.5">(您)</span>}
                     </div>
-                    <div className="text-[10px] font-mono flex items-center gap-1 mt-0.5">
+                    <div className="text-[9px] font-mono flex items-center gap-1 mt-0.5">
                       {p.ready ? (
-                        <span className="text-emerald-400 font-bold flex items-center gap-0.5">
-                          <CheckCircle2 className="w-3 h-3" /> 已就座
+                        <span className="text-amber-300 font-bold flex items-center gap-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-amber-300" /> 已就座
                         </span>
                       ) : (
-                        <span className="text-slate-400 animate-pulse">寻找玩家...</span>
+                        <span className="text-white/60 animate-pulse">寻找玩家...</span>
                       )}
                     </div>
                   </div>
@@ -714,7 +785,11 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
             <button
               onClick={() => setMatchingRoom(null)}
-              className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs cursor-pointer transition-colors mt-1"
+              className={`w-full py-1.5 rounded-xl text-white/90 font-bold text-xs cursor-pointer transition-colors mt-0.5 ${
+                theme === 'deep-green'
+                  ? 'bg-[#0e3b28]/90 hover:bg-[#0e3b28]'
+                  : 'bg-[#0e3752]/90 hover:bg-[#0e3752]'
+              }`}
             >
               取消匹配
             </button>
@@ -724,45 +799,57 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
       {/* MODAL 2: CREATE CUSTOM ROOM MODAL */}
       {createModalRoom && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-lg w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
-              <h3 className="text-base font-black text-amber-300 flex items-center gap-2">
-                <PlusCircle className="w-5 h-5 text-amber-400" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-lg w-full p-3 shadow-2xl flex flex-col gap-2 max-h-[82vh] overflow-hidden transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-1.5 shrink-0">
+              <h3 className="text-sm sm:text-base font-black text-amber-300 flex items-center gap-1.5">
+                <PlusCircle className="w-4 h-4 text-amber-400" />
                 <span>创建 4 人对局房间 ({createModalRoom.name})</span>
               </h3>
               <button
                 onClick={() => setCreateModalRoom(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+                className="text-white/70 hover:text-white p-1 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs flex-1 overflow-y-auto pr-1">
-              <div className="space-y-2.5">
+            <div className="grid grid-cols-2 gap-2 text-xs flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
+              <div className="space-y-2">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">房间名称</label>
+                  <label className="block text-amber-200 mb-1 font-bold text-[11px]">房间名称</label>
                   <input
                     type="text"
                     value={customRoomName}
                     onChange={e => setCustomRoomName(e.target.value)}
                     placeholder="请输入房间名称..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-bold text-xs focus:outline-none focus:border-amber-500"
+                    className={`w-full rounded-xl px-2.5 py-1.5 text-white font-bold text-xs focus:outline-none ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/90 focus:ring-1 focus:ring-amber-300'
+                        : 'bg-[#0e3752]/90 focus:ring-1 focus:ring-amber-300'
+                    }`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">底分选择</label>
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <label className="block text-amber-200 mb-1 font-bold text-[11px]">底分选择</label>
+                  <div className="grid grid-cols-3 gap-1">
                     {[1000, 2000, 5000].map(score => (
                       <button
                         key={score}
                         onClick={() => setCustomBaseScore(score)}
-                        className={`py-1.5 rounded-xl font-bold text-[11px] border transition-all cursor-pointer ${
+                        className={`py-1 rounded-xl font-bold text-[10px] transition-all cursor-pointer ${
                           customBaseScore === score
-                            ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-amber-400 text-slate-950 shadow font-black'
+                            : theme === 'deep-green'
+                            ? 'bg-[#0e3b28]/90 text-emerald-100 hover:bg-[#155b3c]'
+                            : 'bg-[#0e3752]/90 text-cyan-100 hover:bg-[#155b85]'
                         }`}
                       >
                         底分 {score}
@@ -772,29 +859,39 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">房间口令密码 (选填)</label>
+                  <label className="block text-amber-200 mb-1 font-bold text-[11px]">房间口令密码 (选填)</label>
                   <input
                     type="text"
                     maxLength={6}
                     value={customPasscode}
                     onChange={e => setCustomPasscode(e.target.value)}
-                    placeholder="为空即为公开，填密码则仅好友可入"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                    placeholder="为空即公开，填密码仅好友可入"
+                    className={`w-full rounded-xl px-2.5 py-1.5 text-white font-mono text-xs focus:outline-none ${
+                      theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/90 focus:ring-1 focus:ring-amber-300'
+                        : 'bg-[#0e3752]/90 focus:ring-1 focus:ring-amber-300'
+                    }`}
                   />
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[10px] text-slate-400 leading-relaxed">
+                <div 
+                  className={`p-2 rounded-xl text-[10px] leading-relaxed ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90 text-emerald-100'
+                      : 'bg-[#0e3752]/90 text-cyan-100'
+                  }`}
+                >
                   💡 创建成功后将生成 <strong className="text-amber-300">6 位专属房号</strong>，可直接复制发送给好友一键加入！
                 </div>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-800 shrink-0">
+            <div className="pt-1.5 border-t border-white/10 shrink-0">
               <button
                 onClick={handleConfirmCreateRoom}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs sm:text-sm cursor-pointer shadow-lg hover:brightness-110 active:scale-98"
+                className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow hover:brightness-105 active:scale-98"
               >
                 🚀 生成 6 位房号并进入房间
               </button>
@@ -803,13 +900,19 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* MODAL 3: JOIN ROOM BY 6-DIGIT CODE - Optimized Horizontal Layout */}
+      {/* MODAL 3: JOIN ROOM BY 6-DIGIT CODE */}
       {showJoinRoomModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-lg w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 shrink-0">
-              <h3 className="text-sm sm:text-base font-black text-emerald-300 flex items-center gap-2">
-                <LogIn className="w-4 h-4 text-emerald-400" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-lg w-full p-3 shadow-2xl flex flex-col gap-2 max-h-[82vh] overflow-hidden transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-1 shrink-0">
+              <h3 className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
+                <LogIn className="w-4 h-4 text-amber-400" />
                 <span>输入 6 位数字房号加入房间</span>
               </h3>
               <button
@@ -817,28 +920,30 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                   setShowJoinRoomModal(false);
                   setJoinErrorMsg('');
                 }}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                className="text-white/70 hover:text-white p-1 cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 items-center flex-1 min-h-0">
+            <div className="grid grid-cols-2 gap-2 items-center flex-1 min-h-0">
               {/* Left Column: PIN Display & Quick Action */}
-              <div className="flex flex-col items-center justify-center text-center space-y-2">
-                <p className="text-[11px] text-slate-300">
+              <div className="flex flex-col items-center justify-center text-center space-y-1.5">
+                <p className="text-[11px] text-white/90">
                   请输入 6 位数字好友房间号：
                 </p>
 
                 {/* 6-Digit PIN Display */}
-                <div className="flex items-center justify-center gap-1.5 my-1">
+                <div className="flex items-center justify-center gap-1 my-0.5">
                   {Array.from({ length: 6 }).map((_, idx) => (
                     <div
                       key={idx}
-                      className={`w-7 h-9 sm:w-8 sm:h-10 rounded-xl border-2 flex items-center justify-center font-mono font-black text-base sm:text-lg ${
+                      className={`w-6 h-8 sm:w-7 sm:h-9 rounded-lg flex items-center justify-center font-mono font-black text-sm sm:text-base transition-all ${
                         joinRoomCodeInput[idx]
-                          ? 'bg-emerald-950 border-emerald-400 text-amber-300 shadow-md'
-                          : 'bg-slate-950 border-slate-800 text-slate-600'
+                          ? theme === 'deep-green'
+                            ? 'bg-[#0e3b28] text-amber-300 shadow'
+                            : 'bg-[#0e3752] text-amber-300 shadow'
+                          : 'bg-black/30 text-white/30'
                       }`}
                     >
                       {joinRoomCodeInput[idx] || '•'}
@@ -847,7 +952,9 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 </div>
 
                 {joinErrorMsg && (
-                  <div className="text-[11px] text-rose-400 font-bold">{joinErrorMsg}</div>
+                  <div className="text-[10px] text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded-lg">
+                    {joinErrorMsg}
+                  </div>
                 )}
 
                 <button
@@ -856,14 +963,18 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                     setJoinRoomCodeInput(sampleCode);
                     handleConfirmJoinRoom(sampleCode);
                   }}
-                  className="text-[11px] text-amber-400 hover:underline cursor-pointer font-bold mt-1 bg-amber-950/40 border border-amber-500/30 rounded-lg px-2.5 py-1"
+                  className={`text-[10px] text-amber-300 hover:text-amber-200 cursor-pointer font-bold rounded-lg px-2 py-0.5 transition-all ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90'
+                      : 'bg-[#0e3752]/90'
+                  }`}
                 >
                   ⚡ 一键体验示例好友房 (888888)
                 </button>
               </div>
 
               {/* Right Column: Numpad Keyboard */}
-              <div className="grid grid-cols-3 gap-1.5 max-w-[210px] mx-auto w-full">
+              <div className="grid grid-cols-3 gap-1 max-w-[200px] mx-auto w-full">
                 {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((num, i) => (
                   <button
                     key={i}
@@ -881,10 +992,12 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                         }
                       }
                     }}
-                    className={`py-1.5 sm:py-2 rounded-xl font-mono font-bold text-xs sm:text-sm cursor-pointer transition-all active:scale-95 ${
+                    className={`py-1 rounded-lg font-mono font-bold text-xs cursor-pointer transition-all active:scale-95 ${
                       num === 'C' || num === '⌫'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-slate-950 border border-slate-800 hover:border-emerald-500 text-amber-200 shadow'
+                        ? 'bg-black/30 text-white/80 hover:bg-black/50'
+                        : theme === 'deep-green'
+                        ? 'bg-[#0e3b28]/90 text-amber-300 hover:bg-[#155b3c]'
+                        : 'bg-[#0e3752]/90 text-amber-300 hover:bg-[#155b85]'
                     }`}
                   >
                     {num}
@@ -896,44 +1009,56 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* MODAL 4: ROOM WAITING LOBBY (房间等待大厅 - Landscape Optimized) */}
+      {/* MODAL 4: ROOM WAITING LOBBY (房间等待大厅) */}
       {waitingRoom && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4 animate-in zoom-in-95 duration-150">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 max-h-[94vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-xl w-full p-3 shadow-2xl flex flex-col gap-2 max-h-[82vh] overflow-hidden transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
             {/* Header with Room Code */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 shrink-0">
-              <div className="flex items-center gap-2 truncate">
-                <Crown className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="flex items-center justify-between border-b border-white/10 pb-1 shrink-0">
+              <div className="flex items-center gap-1.5 truncate">
+                <Crown className="w-4 h-4 text-amber-400 shrink-0" />
                 <div className="truncate">
-                  <h3 className="text-sm sm:text-base font-black text-amber-300 truncate">
+                  <h3 className="text-xs sm:text-sm font-black text-amber-300 truncate">
                     {waitingRoom.roomName}
                   </h3>
-                  <div className="text-[10px] text-slate-400 font-mono">
-                    底分: <strong className="text-amber-400">{waitingRoom.baseScore.toLocaleString()}</strong> 积分 · 房主: {waitingRoom.hostName}
+                  <div className="text-[10px] text-white/80 font-mono">
+                    底分: <strong className="text-amber-300">{waitingRoom.baseScore.toLocaleString()}</strong> 积分 · 房主: {waitingRoom.hostName}
                   </div>
                 </div>
               </div>
 
               {/* Prominent 6-Digit Room Code Box */}
-              <div className="flex items-center gap-2 bg-gradient-to-r from-amber-950 via-slate-950 to-amber-950 border border-amber-500/60 rounded-xl px-3 py-1 shadow shrink-0">
+              <div 
+                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 shadow shrink-0 ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0e3b28]/95'
+                    : 'bg-[#0e3752]/95'
+                }`}
+              >
                 <div className="text-right">
-                  <div className="text-[9px] text-amber-400/80 font-bold">房号:</div>
-                  <div className="text-base sm:text-lg font-mono font-black text-amber-200 tracking-wider">
+                  <div className="text-[8px] text-amber-300/80 font-bold">房号:</div>
+                  <div className="text-sm font-mono font-black text-amber-200 tracking-wider">
                     {waitingRoom.code}
                   </div>
                 </div>
                 <button
                   onClick={copyRoomCodeToClipboard}
-                  className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-bold text-[10px] shadow hover:brightness-110 cursor-pointer active:scale-95 flex items-center gap-1"
+                  className="p-1 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-bold text-[9px] shadow hover:brightness-105 cursor-pointer active:scale-95 flex items-center gap-0.5"
                 >
-                  {copiedCodeSuccess ? <Check className="w-3.5 h-3.5 text-slate-950" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedCodeSuccess ? <Check className="w-3 h-3 text-slate-950" /> : <Copy className="w-3 h-3" />}
                   <span>{copiedCodeSuccess ? '已复制' : '复制'}</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setWaitingRoom(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer shrink-0"
+                className="text-white/70 hover:text-white p-1 rounded-lg cursor-pointer shrink-0 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -941,38 +1066,42 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
             {/* 4 Seats Grid in 4 Columns or 2x2 */}
             <div className="flex-1 min-h-0 flex flex-col justify-center">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 pb-1 shrink-0">
+              <div className="flex items-center justify-between text-[10px] font-bold text-white/90 pb-0.5 shrink-0">
                 <span>4 人桌座位状态:</span>
-                <span className="text-emerald-400 font-mono">
+                <span className="text-amber-300 font-mono">
                   {waitingRoom.seats.filter(s => s.playerName !== '空位').length} / 4 人已就绪
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 {waitingRoom.seats.map((seat, idx) => {
                   const isEmpty = seat.playerName === '空位';
 
                   return (
                     <div
                       key={idx}
-                      className={`p-2 rounded-2xl border flex flex-col justify-between gap-1.5 transition-all ${
+                      className={`p-1.5 rounded-xl flex flex-col justify-between gap-1 transition-all ${
                         isEmpty
-                          ? 'bg-slate-950/50 border-slate-800 text-slate-500'
+                          ? 'bg-black/20 text-white/40'
                           : seat.isHost
-                          ? 'bg-amber-950/60 border-amber-500/80 text-white shadow'
-                          : 'bg-emerald-950/60 border-emerald-500/80 text-white shadow'
+                          ? theme === 'deep-green'
+                            ? 'bg-[#0e3b28]/95 text-white shadow'
+                            : 'bg-[#0e3752]/95 text-white shadow'
+                          : theme === 'deep-green'
+                          ? 'bg-[#0e3b28]/95 text-white shadow'
+                          : 'bg-[#0e3752]/95 text-white shadow'
                       }`}
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <div className="w-7 h-7 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-sm shrink-0">
+                      <div className="flex items-center gap-1 truncate">
+                        <div className="w-6 h-6 rounded-full bg-black/30 flex items-center justify-center text-xs shrink-0">
                           {seat.avatar}
                         </div>
                         <div className="leading-tight truncate">
-                          <div className="font-bold text-[11px] truncate flex items-center gap-0.5">
+                          <div className="font-bold text-[10px] truncate flex items-center gap-0.5">
                             <span className="truncate">{seat.playerName}</span>
-                            {seat.isHost && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
+                            {seat.isHost && <Crown className="w-2.5 h-2.5 text-amber-400 shrink-0" />}
                           </div>
-                          <div className="text-[9px] text-slate-400 font-mono">
+                          <div className="text-[8px] text-white/60 font-mono">
                             {seat.isHost ? '房主' : seat.isAI ? '电脑人偶' : isEmpty ? '待入座' : '玩家'}
                           </div>
                         </div>
@@ -980,30 +1109,34 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
                       {/* Action for Seat */}
                       {isEmpty ? (
-                        <div className="flex items-center gap-1 w-full pt-1 border-t border-slate-800/60">
+                        <div className="flex items-center gap-1 w-full pt-0.5 border-t border-white/10">
                           <button
                             onClick={() => handleAddBotToSeat(idx)}
-                            className="flex-1 py-1 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[9px] font-bold cursor-pointer flex items-center justify-center gap-0.5 border border-amber-500/40"
+                            className="flex-1 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-[8px] font-bold cursor-pointer flex items-center justify-center gap-0.5"
                             title="加电脑人偶填补"
                           >
-                            <Bot className="w-3 h-3" />
+                            <Bot className="w-2.5 h-2.5" />
                             <span>加AI</span>
                           </button>
                           <button
                             onClick={copyRoomCodeToClipboard}
-                            className="flex-1 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 text-[9px] font-bold cursor-pointer flex items-center justify-center gap-0.5 border border-emerald-500/40"
+                            className={`flex-1 py-0.5 rounded text-[8px] font-bold cursor-pointer flex items-center justify-center gap-0.5 ${
+                              theme === 'deep-green'
+                                ? 'bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30'
+                                : 'bg-cyan-500/20 text-cyan-200 hover:bg-cyan-500/30'
+                            }`}
                             title="复制邀请口令给真人好友"
                           >
-                            <UserPlus className="w-3 h-3" />
+                            <UserPlus className="w-2.5 h-2.5" />
                             <span>邀请</span>
                           </button>
                         </div>
                       ) : (
                         idx !== 0 && (
-                          <div className="pt-1 border-t border-slate-800/60 flex justify-end">
+                          <div className="pt-0.5 border-t border-white/10 flex justify-end">
                             <button
                               onClick={() => handleKickSeat(idx)}
-                              className="px-2 py-0.5 rounded-md bg-rose-950 text-rose-400 hover:bg-rose-900 text-[9px] cursor-pointer"
+                              className="px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 hover:bg-rose-900 text-[8px] cursor-pointer"
                               title="请出房间"
                             >
                               请离
@@ -1018,30 +1151,34 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
             </div>
 
             {/* Launch Game or Invite Button */}
-            <div className="pt-2 border-t border-slate-800 space-y-1.5 shrink-0">
-              <div className="grid grid-cols-2 gap-2">
+            <div className="pt-1.5 border-t border-white/10 space-y-1 shrink-0">
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
                   onClick={copyRoomCodeToClipboard}
-                  className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs cursor-pointer border border-amber-500/40 flex items-center justify-center gap-1.5"
+                  className={`py-1.5 rounded-xl text-amber-300 font-bold text-xs cursor-pointer flex items-center justify-center gap-1 transition-all ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90 hover:bg-[#0e3b28]'
+                      : 'bg-[#0e3752]/90 hover:bg-[#0e3752]'
+                  }`}
                 >
-                  <Share2 className="w-3.5 h-3.5" />
+                  <Share2 className="w-3 h-3 text-amber-400" />
                   <span>{copiedCodeSuccess ? '已复制房号' : '邀请真人好友'}</span>
                 </button>
 
                 <button
                   onClick={handleFillAllBotsAndStart}
-                  className="py-2 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/30 cursor-pointer hover:brightness-110 active:scale-95 flex items-center justify-center gap-1.5"
+                  className="py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 font-black text-xs shadow cursor-pointer hover:brightness-105 active:scale-95 flex items-center justify-center gap-1"
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <Play className="w-3 h-3 fill-current text-slate-950" />
                   <span>⚡ 一键全员补满开局</span>
                 </button>
               </div>
 
-              <div className="flex justify-between items-center text-[10px] text-slate-400 px-1">
+              <div className="flex justify-between items-center text-[9px] text-white/70 px-0.5">
                 <span>空位可直接【邀请】或【⚡一键补满开局】</span>
                 <button
                   onClick={() => setWaitingRoom(null)}
-                  className="text-slate-400 hover:text-slate-200 underline cursor-pointer"
+                  className="text-white/80 hover:text-white underline cursor-pointer"
                 >
                   解散/离开房间
                 </button>
@@ -1051,74 +1188,28 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* 规则宝典 Modal - Landscape Optimized */}
-      {showRulesModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-slate-900 border-2 border-amber-500/80 rounded-3xl max-w-xl w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-2.5 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
-              <h3 className="text-sm sm:text-base font-black text-amber-300 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-400" />
-                <span>♠️ 锄大地 & 烟三 规则宝典</span>
-              </h3>
-              <button
-                onClick={() => setShowRulesModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-300 leading-relaxed flex-1 overflow-y-auto pr-1 custom-scrollbar">
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <h4 className="font-bold text-amber-400 mb-0.5">1. 4人桌基础牌值</h4>
-                <p>• 必须满 <strong className="text-amber-300">4 位玩家</strong> 发牌开局，每人 13 张牌。</p>
-                <p>• 点数：<strong className="text-amber-300">A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3 &gt; 2</strong>（A最大，2最小）。</p>
-                <p>• 花色：<strong className="text-amber-300">♠黑桃 &gt; ♥红桃 &gt; ♣草花 &gt; ♦方块</strong>。</p>
-                <p>• 首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 优先首出，且首出牌型必含♦2。</p>
-                <p>• 顺序：<strong className="text-emerald-300">逆时针轮流出牌</strong>。</p>
-              </div>
-
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <h4 className="font-bold text-amber-400 mb-0.5">2. 牌型与压制</h4>
-                <p>• 牌型：<strong className="text-emerald-300">单张、对子、三条、四带一、五张牌</strong>（无纯四张）。</p>
-                <p>• 五张大小：<strong className="text-emerald-300">同花顺 &gt; 四带一 &gt; 俘虏 &gt; 同花 &gt; 顺子</strong>。</p>
-                <p>• 顺子顺序：<strong className="text-amber-300">A2345 最大</strong>，<strong className="text-amber-300">9 10 J Q K 第二大</strong>。</p>
-                <p>• 同花按花色压制：<strong className="text-amber-300">黑桃 &gt; 红桃 &gt; 梅花 &gt; 方块</strong>。</p>
-              </div>
-
-              <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-                <h4 className="font-bold text-amber-400 mb-0.5">3. 剩牌折算与对减</h4>
-                <p>• 任意 1 人出完即当局结束。</p>
-                <p>• <strong className="text-amber-300">剩 1~7 张</strong>：1倍。</p>
-                <p>• <strong className="text-orange-400">剩 8~9 张</strong>：2倍 (8➔16, 9➔18)。</p>
-                <p>• <strong className="text-rose-400">剩 10~12 张</strong>：3倍 (10➔30, 11➔33)。</p>
-                <p>• <strong className="text-red-500 font-bold">剩 13 张全关</strong>：4倍 (13➔52)！</p>
-                <p>• <strong className="text-emerald-300">满100张大结算</strong>：四舍五入到十位，四家两两对减计算！</p>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800 shrink-0">
-              <button
-                onClick={() => setShowRulesModal(false)}
-                className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110"
-              >
-                我知道了，去开局
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 免费充能补积分 Modal */}
       {showFreeBeansModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3">
-          <div className="bg-slate-900 border-2 border-emerald-500/80 rounded-3xl max-w-xs w-full p-4 shadow-2xl flex flex-col items-center text-center gap-2.5 animate-in zoom-in-95 duration-150">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300">
-              <Coins className="w-6 h-6" />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-xs w-full p-3 shadow-2xl flex flex-col items-center text-center gap-2 animate-in zoom-in-95 duration-150 transition-colors max-h-[82vh] overflow-hidden ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
+            <div 
+              className={`w-9 h-9 rounded-full flex items-center justify-center text-amber-300 shadow ${
+                theme === 'deep-green'
+                  ? 'bg-[#0e3b28]'
+                  : 'bg-[#0e3752]'
+              }`}
+            >
+              <Coins className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-amber-300">积分补充站</h3>
-              <p className="text-xs text-slate-400 mt-0.5">积分不足？即刻免费补充 5,000 救急积分！</p>
+              <h3 className="text-sm font-black text-amber-300">积分补充站</h3>
+              <p className="text-[11px] text-white/90 mt-0.5">积分不足？即刻免费补充 5,000 救急积分！</p>
             </div>
             <button
               onClick={() => {
@@ -1126,7 +1217,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 onUpdateCoins(userProfile.coins + 5000);
                 setShowFreeBeansModal(false);
               }}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs cursor-pointer shadow-lg hover:brightness-110"
+              className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 font-black text-xs cursor-pointer shadow hover:brightness-105"
             >
               免费领取 5,000 积分
             </button>
@@ -1134,49 +1225,127 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </div>
       )}
 
-      {/* 系统设置 Modal - Landscape Optimized */}
+      {/* 系统设置 Modal - Borderless, Low Height, Scrollable Body, Never Clipped */}
       {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl max-w-md w-full p-3 sm:p-4 shadow-2xl flex flex-col gap-3 animate-in zoom-in-95 duration-150 max-h-[94vh] overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
-              <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-2 select-none">
+          <div 
+            className={`rounded-2xl max-w-xl w-full p-2.5 sm:p-3 shadow-2xl flex flex-col gap-1.5 animate-in zoom-in-95 duration-150 max-h-[80vh] overflow-hidden transition-colors ${
+              theme === 'deep-green'
+                ? 'bg-[#145339] text-emerald-50'
+                : 'bg-[#144f75] text-cyan-50'
+            }`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-1 shrink-0">
+              <h3 className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1.5">
                 <Settings className="w-4 h-4 text-amber-400" />
                 <span>系统设置</span>
               </h3>
               <button
                 onClick={() => setShowSettingsModal(false)}
-                className="text-slate-400 hover:text-white p-1 cursor-pointer"
+                className="text-white/70 hover:text-white p-0.5 rounded-lg cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5 text-xs text-slate-300 flex-1 overflow-y-auto pr-1">
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="flex items-center gap-1.5">
-                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>出牌与背景音效</span>
-                </span>
-                <button
-                  onClick={onToggleSound}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                    soundEnabled ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'
+            {/* Scrollable 2-Column Responsive Body */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
+              {/* Left Column: Basic Controls */}
+              <div className="space-y-1">
+                {/* Sound Switch */}
+                <div 
+                  className={`flex items-center justify-between p-1.5 rounded-xl ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90'
+                      : 'bg-[#0e3752]/90'
                   }`}
                 >
-                  {soundEnabled ? '已开启' : '已静音'}
-                </button>
+                  <span className="flex items-center gap-1 text-white/95 font-bold text-[11px]">
+                    <Volume2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>出牌音效</span>
+                  </span>
+                  <button
+                    onClick={onToggleSound}
+                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                      soundEnabled 
+                        ? 'bg-amber-400 text-slate-950 shadow font-black' 
+                        : 'bg-black/30 text-white/50'
+                    }`}
+                  >
+                    {soundEnabled ? '已开启' : '已静音'}
+                  </button>
+                </div>
+
+                {/* Theme Switcher */}
+                <div 
+                  className={`flex items-center justify-between p-1.5 rounded-xl ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90'
+                      : 'bg-[#0e3752]/90'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 text-white/95 font-bold text-[11px]">
+                    <Palette className="w-3.5 h-3.5 text-amber-400" />
+                    <span>养眼主题</span>
+                  </span>
+                  <button
+                    onClick={() => {
+                      sounds.playClick();
+                      toggleTheme();
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold cursor-pointer transition-all ${
+                      theme === 'deep-green'
+                        ? 'bg-[#186443] text-emerald-100 shadow'
+                        : 'bg-[#18608f] text-cyan-100 shadow'
+                    }`}
+                  >
+                    {theme === 'deep-green' ? '🌿 翡翠草绿' : '🌊 湖水湛蓝'}
+                  </button>
+                </div>
+
+                {/* Screen Orientation Info */}
+                <div 
+                  className={`flex items-center justify-between p-1.5 rounded-xl ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90'
+                      : 'bg-[#0e3752]/90'
+                  }`}
+                >
+                  <span className="text-white/95 font-bold text-[11px]">横屏锁定</span>
+                  <span className="text-amber-300 font-mono font-bold text-[10px]">固定 90° 横屏</span>
+                </div>
+
+                {/* PWA App Install */}
+                <div 
+                  className={`flex items-center justify-between p-1.5 rounded-xl ${
+                    theme === 'deep-green'
+                      ? 'bg-[#0e3b28]/90'
+                      : 'bg-[#0e3752]/90'
+                  }`}
+                >
+                  <span className="text-white/95 font-bold text-[11px]">PWA 独立桌面</span>
+                  <PWAInstallButton variant="compact" />
+                </div>
               </div>
 
-              {/* Voice Dialect Picker */}
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              {/* Right Column: Voice Dialect Picker */}
+              <div 
+                className={`p-1.5 rounded-xl space-y-1 ${
+                  theme === 'deep-green'
+                    ? 'bg-[#0e3b28]/90'
+                    : 'bg-[#0e3752]/90'
+                }`}
+              >
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 font-bold text-amber-300">
+                  <span className="flex items-center gap-1 font-bold text-amber-300 text-[11px]">
                     <Mic className="w-3.5 h-3.5 text-amber-400" />
-                    <span>真人配音风格</span>
+                    <span>真人方言配音风格</span>
                   </span>
-                  <span className="text-[10px] text-slate-400">方言选音</span>
+                  <span className="text-[9px] text-white/60">实时选音</span>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
+
+                <div className="grid grid-cols-2 gap-1 max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
                   {DIALECT_OPTIONS.map(d => {
                     const isActive = voiceEngine.dialect === d.id;
                     return (
@@ -1186,38 +1355,35 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                           voiceEngine.setDialect(d.id);
                           sounds.speak(`已切换为${d.label}！`);
                         }}
-                        className={`p-1.5 rounded-lg border text-left flex items-center gap-1.5 transition-all cursor-pointer ${
+                        className={`p-1 rounded-lg text-left flex items-center gap-1 transition-all cursor-pointer ${
                           isActive
-                            ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+                            ? 'bg-amber-400 text-slate-950 shadow font-black'
+                            : theme === 'deep-green'
+                            ? 'bg-[#114732]/80 text-white/80 hover:bg-[#186443]'
+                            : 'bg-[#12476b]/80 text-white/80 hover:bg-[#18608f]'
                         }`}
                       >
-                        <span className="text-sm">{d.icon}</span>
+                        <span className="text-xs">{d.icon}</span>
                         <div className="truncate">
-                          <div className="font-bold text-[11px] text-white">{d.label}</div>
-                          <div className="text-[9px] text-slate-400 truncate">{d.desc}</div>
+                          <div className={`font-bold text-[10px] truncate ${isActive ? 'text-slate-950' : 'text-white'}`}>
+                            {d.label}
+                          </div>
+                          <div className={`text-[8px] truncate ${isActive ? 'text-slate-800' : 'text-white/60'}`}>
+                            {d.desc}
+                          </div>
                         </div>
                       </button>
                     );
                   })}
                 </div>
               </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
-                <span>屏幕横屏模式</span>
-                <span className="text-amber-400 font-bold">固定 90° 横屏 (已启用)</span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
-                <span>PWA 独立桌面应用</span>
-                <PWAInstallButton variant="compact" />
-              </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-800 shrink-0">
+            {/* Footer */}
+            <div className="pt-1 border-t border-white/10 shrink-0">
               <button
                 onClick={() => setShowSettingsModal(false)}
-                className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold cursor-pointer"
+                className="w-full py-1.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 hover:brightness-105 text-slate-950 text-xs font-black cursor-pointer shadow"
               >
                 保存并关闭
               </button>
