@@ -173,20 +173,25 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     );
   };
 
-  const handleCardPointerDown = (cardId: string) => {
-    isPointerDownRef.current = true;
+  const handleCardClick = (cardId: string, e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
     toggleSelectCard(cardId);
   };
 
+  const handleCardPointerDown = (cardId: string) => {
+    isPointerDownRef.current = true;
+    swipedCardsRef.current = new Set([cardId]);
+  };
+
   const handleCardPointerEnter = (cardId: string) => {
-    if (isPointerDownRef.current) {
+    if (isPointerDownRef.current && !swipedCardsRef.current.has(cardId)) {
+      swipedCardsRef.current.add(cardId);
       toggleSelectCard(cardId);
     }
   };
 
   const handleTouchStart = (cardId: string) => {
     swipedCardsRef.current = new Set([cardId]);
-    toggleSelectCard(cardId);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -631,6 +636,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     ? sortCardsByRank(human.cards)
     : sortCards(human.cards);
 
+  // Real-time analysis of player's currently selected cards
+  const selectedCardsList = human.cards.filter(c => selectedCardIds.includes(c.id));
+  const analyzedSelectedHand = selectedCardsList.length > 0 ? analyzeHand(selectedCardsList) : null;
+  const canPlaySelectedHand =
+    analyzedSelectedHand !== null &&
+    (!gameState.isFirstTrick || !gameState.starterCardId || selectedCardsList.some(c => c.id === gameState.starterCardId)) &&
+    (!gameState.lastValidHand || gameState.lastValidHand.playerId === human.id || canBeat(gameState.lastValidHand.hand, analyzedSelectedHand));
+
   return (
     <div
       onClick={(e) => {
@@ -961,18 +974,22 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                     </button>
                   )}
 
-                  {/* Play Button */}
+                  {/* Play Button with live hand recognition */}
                   <button
                     onClick={handleHumanPlay}
                     disabled={selectedCardIds.length === 0}
-                    className={`flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-black shadow-xl transition-all cursor-pointer ${
-                      selectedCardIds.length > 0
-                        ? 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 hover:brightness-110 text-white shadow-emerald-950/60 scale-105 active:scale-100'
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xl transition-all cursor-pointer ${
+                      canPlaySelectedHand
+                        ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:brightness-110 text-slate-950 shadow-emerald-500/40 scale-105 active:scale-100 ring-2 ring-emerald-300'
+                        : selectedCardIds.length > 0
+                        ? 'bg-amber-600/90 text-white hover:bg-amber-500 active:scale-95'
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                     }`}
                   >
                     <Play className="w-3.5 h-3.5" />
-                    <span>出牌 ({selectedCardIds.length})</span>
+                    <span>
+                      {analyzedSelectedHand ? getHandDescription(analyzedSelectedHand) : `出牌 (${selectedCardIds.length})`}
+                    </span>
                   </button>
                 </div>
               )}
@@ -1012,6 +1029,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   <div
                     key={card.id}
                     data-card-id={card.id}
+                    onClick={(e) => handleCardClick(card.id, e)}
                     onPointerDown={() => handleCardPointerDown(card.id)}
                     onPointerEnter={() => handleCardPointerEnter(card.id)}
                     onTouchStart={() => handleTouchStart(card.id)}
@@ -1021,7 +1039,6 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                       card={card}
                       isSelected={isSelected}
                       size="lg"
-                      className="pointer-events-none"
                     />
                   </div>
                 );
