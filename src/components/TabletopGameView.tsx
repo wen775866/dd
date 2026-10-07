@@ -476,11 +476,14 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     let nextLeader = gameState.trickLeaderIndex;
 
     // When 3 players pass in a row, the remaining leader gets free lead!
+    let nextTurn = (playerIdx + 1) % 4;
     if (newPassCount >= 3) {
       nextLastValid = null;
+      if (typeof nextLeader === 'number') {
+        nextTurn = nextLeader;
+      }
     }
 
-    const nextTurn = (playerIdx + 1) % 4;
     onUpdateState({
       ...gameState,
       currentPlayerIndex: nextTurn,

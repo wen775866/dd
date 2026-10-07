@@ -26,6 +26,7 @@ export const SUIT_VALUES: Record<Suit, number> = {
 };
 
 export const RANK_DISPLAY: Record<string, string> = {
+  '2': '2',
   '3': '3',
   '4': '4',
   '5': '5',
@@ -38,10 +39,12 @@ export const RANK_DISPLAY: Record<string, string> = {
   'Q': 'Q',
   'K': 'K',
   'A': 'A',
-  '2': '2',
 };
 
+// 按照用户设计的全新规则：A最大，2最小
+// 2(2) < 3(3) < 4(4) < 5(5) < 6(6) < 7(7) < 8(8) < 9(9) < 10(10) < J(11) < Q(12) < K(13) < A(14)
 export const RANK_VALUES: Record<string, number> = {
+  '2': 2,
   '3': 3,
   '4': 4,
   '5': 5,
@@ -54,13 +57,12 @@ export const RANK_VALUES: Record<string, number> = {
   'Q': 12,
   'K': 13,
   'A': 14,
-  '2': 15,
 };
 
-// Create a standard 52-card deck for Big Two
+// Create a standard 52-card deck
 export function createDeck(): Card[] {
   const suits: Suit[] = ['diamond', 'club', 'heart', 'spade'];
-  const ranks = ['3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A', '2'];
+  const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
   const deck: Card[] = [];
 
   for (const suit of suits) {
@@ -107,14 +109,44 @@ export function sortCardsByRank(cards: Card[]): Card[] {
 }
 
 // Helper to check if 5 cards form a Straight (顺子)
-function checkStraight(cards: Card[]): { isStraight: boolean; highestCard: Card | null } {
-  if (cards.length !== 5) return { isStraight: false, highestCard: null };
+// 用户定制顺子规则：
+// 1. A-2-3-4-5 最大 (weight = 100)
+// 2. 9-10-J-Q-K 第二大 (weight = 90)
+// 3. 其它连续顺子：
+//    10-J-Q-K-A (85)
+//    8-9-10-J-Q (80)
+//    7-8-9-10-J (70)
+//    6-7-8-9-10 (60)
+//    5-6-7-8-9 (50)
+//    4-5-6-7-8 (40)
+//    3-4-5-6-7 (30)
+//    2-3-4-5-6 (20)
+function checkStraight(cards: Card[]): { isStraight: boolean; highestCard: Card | null; straightWeight: number } {
+  if (cards.length !== 5) return { isStraight: false, highestCard: null, straightWeight: 0 };
 
-  // Sort by rank value
+  // Sort by rank value (2=2, ..., A=14)
   const sorted = [...cards].sort((a, b) => a.rankValue - b.rankValue);
   const ranks = sorted.map(c => c.rankValue);
 
-  // Normal consecutive (e.g. 3-4-5-6-7 ... 10-J-Q-K-A)
+  // Case 1: A-2-3-4-5 (ranks: [2, 3, 4, 5, 14]) -> 顺子第一大！
+  if (ranks[0] === 2 && ranks[1] === 3 && ranks[2] === 4 && ranks[3] === 5 && ranks[4] === 14) {
+    const cardA = sorted.find(c => c.rankValue === 14)!;
+    return { isStraight: true, highestCard: cardA, straightWeight: 100 };
+  }
+
+  // Case 2: 9-10-J-Q-K (ranks: [9, 10, 11, 12, 13]) -> 顺子第二大！
+  if (ranks[0] === 9 && ranks[1] === 10 && ranks[2] === 11 && ranks[3] === 12 && ranks[4] === 13) {
+    const cardK = sorted.find(c => c.rankValue === 13)!;
+    return { isStraight: true, highestCard: cardK, straightWeight: 90 };
+  }
+
+  // Case 3: 10-J-Q-K-A (ranks: [10, 11, 12, 13, 14])
+  if (ranks[0] === 10 && ranks[1] === 11 && ranks[2] === 12 && ranks[3] === 13 && ranks[4] === 14) {
+    const cardA = sorted.find(c => c.rankValue === 14)!;
+    return { isStraight: true, highestCard: cardA, straightWeight: 85 };
+  }
+
+  // Normal consecutive (e.g. 2-3-4-5-6 up to 8-9-10-J-Q)
   let isSequential = true;
   for (let i = 0; i < 4; i++) {
     if (ranks[i + 1] !== ranks[i] + 1) {
@@ -124,25 +156,11 @@ function checkStraight(cards: Card[]): { isStraight: boolean; highestCard: Card 
   }
 
   if (isSequential) {
-    // Highest card is the last card in sorted array
-    const highestCard = sorted.reduce((max, c) => (c.totalValue > max.totalValue ? c : max), sorted[4]);
-    return { isStraight: true, highestCard };
+    const topCard = sorted[4];
+    return { isStraight: true, highestCard: topCard, straightWeight: topCard.rankValue * 5 };
   }
 
-  // Special A-2-3-4-5 (ranks 14, 15, 3, 4, 5) or 2-3-4-5-6 (15, 3, 4, 5, 6)
-  if (ranks[0] === 3 && ranks[1] === 4 && ranks[2] === 5 && ranks[3] === 14 && ranks[4] === 15) {
-    // A-2-3-4-5, highest rank card is 2
-    const highestCard = sorted.find(c => c.rankValue === 15) || sorted[4];
-    return { isStraight: true, highestCard };
-  }
-
-  if (ranks[0] === 3 && ranks[1] === 4 && ranks[2] === 5 && ranks[3] === 6 && ranks[4] === 15) {
-    // 2-3-4-5-6, highest card is 2
-    const highestCard = sorted.find(c => c.rankValue === 15) || sorted[4];
-    return { isStraight: true, highestCard };
-  }
-
-  return { isStraight: false, highestCard: null };
+  return { isStraight: false, highestCard: null, straightWeight: 0 };
 }
 
 // Analyze any card selection and return valid Big Two CardHand, or null if invalid
@@ -193,6 +211,11 @@ export function analyzeHand(cards: Card[]): CardHand | null {
     return null;
   }
 
+  // 4 Cards: 规则没有纯铁支，禁止出纯四张！
+  if (count === 4) {
+    return null;
+  }
+
   // 5 Cards Combinations
   if (count === 5) {
     // Rank counts
@@ -204,20 +227,23 @@ export function analyzeHand(cards: Card[]): CardHand | null {
 
     const uniqueRanks = Object.keys(rankCounts).map(Number);
     const isFlush = sorted.every(c => c.suit === sorted[0].suit);
-    const { isStraight, highestCard: straightHighest } = checkStraight(sorted);
+    const { isStraight, highestCard: straightHighest, straightWeight } = checkStraight(sorted);
 
-    // 1. Straight Flush (同花顺)
+    // 1. Straight Flush (同花顺): categoryWeight = 50
+    // 用户规则：同花顺也是黑桃大于红桃大于梅花大于方块（例如黑桃同花顺23456比红桃56789大）
+    // 花色相同再比同花顺顺子（A2345最大，9-10-J-Q-K第二大）
     if (isFlush && isStraight && straightHighest) {
+      const flushSuitVal = sorted[0].suitValue; // 4=黑桃, 3=红桃, 2=梅花, 1=方块
       return {
         type: 'STRAIGHT_FLUSH',
         cards: sorted,
         categoryWeight: 50,
-        primaryValue: straightHighest.rankValue,
-        suitValue: straightHighest.suitValue,
+        primaryValue: flushSuitVal * 1000 + straightWeight,
+        suitValue: flushSuitVal,
       };
     }
 
-    // 2. Four of a Kind + 1 (铁支 / 四带一)
+    // 2. Four of a Kind + 1 (四带一): categoryWeight = 40
     if (uniqueRanks.length === 2) {
       for (const r of uniqueRanks) {
         if (rankCounts[r].length === 4) {
@@ -233,7 +259,7 @@ export function analyzeHand(cards: Card[]): CardHand | null {
       }
     }
 
-    // 3. Full House (葫芦)
+    // 3. Full House / 俘虏 (三带二): categoryWeight = 30
     if (uniqueRanks.length === 2) {
       for (const r of uniqueRanks) {
         if (rankCounts[r].length === 3) {
@@ -249,25 +275,27 @@ export function analyzeHand(cards: Card[]): CardHand | null {
       }
     }
 
-    // 4. Flush (同花)
+    // 4. Flush (同花): categoryWeight = 20
+    // 用户规则：黑桃大于红桃大于梅花大于方块，花色相同时比最大牌
     if (isFlush) {
       const highestCard = sorted.reduce((max, c) => (c.totalValue > max.totalValue ? c : max), sorted[0]);
       return {
         type: 'FLUSH',
         cards: sorted,
         categoryWeight: 20,
-        primaryValue: highestCard.rankValue,
+        primaryValue: highestCard.suitValue * 100 + highestCard.rankValue,
         suitValue: highestCard.suitValue,
       };
     }
 
-    // 5. Straight (顺子)
+    // 5. Straight (顺子): categoryWeight = 10
+    // 用户规则：A2345最大 (100)，9 10 J Q K第二大 (90)，相同顺比最高单张花色
     if (isStraight && straightHighest) {
       return {
         type: 'STRAIGHT',
         cards: sorted,
         categoryWeight: 10,
-        primaryValue: straightHighest.rankValue,
+        primaryValue: straightWeight,
         suitValue: straightHighest.suitValue,
       };
     }
@@ -285,12 +313,12 @@ export function canBeat(prevHand: CardHand, candidateHand: CardHand): boolean {
   const prevCount = prevHand.cards.length;
   const candidateCount = candidateHand.cards.length;
 
-  // Non-5-card hands MUST have matching card counts & hand types
+  // Non-5-card hands MUST have matching card counts & hand types (单张/对子/三条)
   if (prevCount !== 5 || candidateCount !== 5) {
     if (prevCount !== candidateCount || prevHand.type !== candidateHand.type) {
       return false;
     }
-    // Compare primary rank value, then suit value
+    // Compare primary rank value, then suit value (黑桃 > 红桃 > 梅花 > 方块)
     if (candidateHand.primaryValue > prevHand.primaryValue) return true;
     if (candidateHand.primaryValue === prevHand.primaryValue) {
       return candidateHand.suitValue > prevHand.suitValue;
@@ -298,9 +326,10 @@ export function canBeat(prevHand: CardHand, candidateHand: CardHand): boolean {
     return false;
   }
 
-  // 5-Card Combinations Comparison
+  // 5-Card Combinations Comparison:
+  // 同花顺(50) > 四带一(40) > 俘虏(30) > 同花(20) > 顺子(10)
   if (candidateHand.categoryWeight > prevHand.categoryWeight) {
-    return true; // Higher category beats lower (e.g. Full House beats Straight/Flush)
+    return true; // Higher category beats lower (e.g. 同花顺压一切5张)
   }
 
   if (candidateHand.categoryWeight === prevHand.categoryWeight) {
@@ -474,9 +503,9 @@ export function getHandDescription(hand: CardHand): string {
       return `同花 (${SUIT_NAMES[suit]})！`;
     }
     case 'FULL_HOUSE':
-      return `葫芦 (三带二)！`;
+      return `俘虏 (三带二)！`;
     case 'FOUR_OF_A_KIND':
-      return `铁支 (四带一)！`;
+      return `四带一！`;
     case 'STRAIGHT_FLUSH':
       return `同花顺！💣`;
     default:

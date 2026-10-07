@@ -183,12 +183,12 @@ export function aiChoosePlay(
   }
 
   // Smart conserve logic:
-  // If opponent played a single card and AI's only beating candidate is a 2 (rankValue=15),
-  // and AI has more than 3 cards left, AI might pass to keep the 2 for endgame!
+  // If opponent played a single card and AI's only beating candidate is an Ace (rankValue=14, highest card),
+  // and AI has more than 3 cards left, AI might pass to keep the Ace for endgame!
   const chosen = beatingCandidates[0];
   if (
     lastValidHand.hand.type === 'SINGLE' &&
-    chosen.cards[0].rankValue === 15 &&
+    chosen.cards[0].rankValue === 14 &&
     cards.length > 4 &&
     Math.random() < 0.4
   ) {

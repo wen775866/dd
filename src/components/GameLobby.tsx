@@ -1059,16 +1059,18 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
                 <h4 className="font-bold text-amber-400 mb-1">1. 4人桌基础牌值规则</h4>
                 <p>• 必须满 <strong className="text-amber-300">4 位玩家</strong> 才可以发牌开局，每人分得 13 张手牌。</p>
-                <p>• 点数大小：<strong className="text-amber-300">2 &gt; A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3</strong>（老二最大）。</p>
+                <p>• 点数大小：<strong className="text-amber-300">A &gt; K &gt; Q &gt; J &gt; 10 &gt; 9 &gt; 8 &gt; 7 &gt; 6 &gt; 5 &gt; 4 &gt; 3 &gt; 2</strong>（A最大，2最小）。</p>
                 <p>• 花色大小：<strong className="text-amber-300">♠黑桃 &gt; ♥红桃 &gt; ♣草花 &gt; ♦方块</strong>。</p>
-                <p>• 首局首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 的玩家优先首出，首出牌型中必须包含♦2。</p>
+                <p>• 首局首出：持有 <strong className="text-amber-300">♦2 (方块2)</strong> 的玩家优先首出（方块2为全副牌最小一张），首出牌型中必须包含♦2。</p>
                 <p>• 出牌顺序：四个玩家的出牌顺序为 <strong className="text-emerald-300">逆时针轮流</strong> (南➔东➔北➔西)。</p>
               </div>
 
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800">
-                <h4 className="font-bold text-amber-400 mb-1">2. 牌型压制规则</h4>
-                <p>• 单张 / 对子 / 三条：按点数与最高花色压制。</p>
-                <p>• 五张牌型压制顺序：<strong className="text-emerald-300">同花顺 &gt; 铁支 (四带一) &gt; 葫芦 (三带二) &gt; 同花 &gt; 顺子</strong>。</p>
+                <h4 className="font-bold text-amber-400 mb-1">2. 牌型与压制规则</h4>
+                <p>• 基础牌型：<strong className="text-emerald-300">单张、对子、三条、四带一</strong>（没有铁支，不能出纯四张）。</p>
+                <p>• 五张牌型大小顺序：<strong className="text-emerald-300">同花顺 &gt; 四带一 &gt; 俘虏 (三带二) &gt; 同花 &gt; 顺子</strong>。</p>
+                <p>• 顺子与同花顺大小：<strong className="text-amber-300">A2345 最大</strong>，<strong className="text-amber-300">9 10 J Q K 第二大</strong>，其余按连续顺子递减。</p>
+                <p>• 同花与同花顺的花色绝对压制：<strong className="text-amber-300">黑桃 &gt; 红桃 &gt; 梅花 &gt; 方块</strong>（例如黑桃同花顺 23456 比红桃 56789 大）。</p>
               </div>
 
               <div className="p-2.5 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
