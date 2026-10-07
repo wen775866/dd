@@ -36,11 +36,11 @@ jobs:
           node scripts/generate-pwa-icons.js
           npm run build
 
-      - name: Setup Java JDK 17
+      - name: Setup Java JDK 21 (Required for Capacitor 8 & Modern AGP)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: 17
+          java-version: 21
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -183,20 +183,14 @@ jobs:
       - name: Organize Output APK Files
         run: |
           mkdir -p output-apks
-          # Copy release APK
-          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk output-apks/yansan-release.apk
-          elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release-unsigned.apk output-apks/yansan-release.apk
-          fi
+          # Find and copy release APK
+          find android/app/build/outputs/apk -name "*release*.apk" -exec cp {} output-apks/yansan-release.apk \; || true
+          
+          # Find and copy debug APK
+          find android/app/build/outputs/apk -name "*debug*.apk" -exec cp {} output-apks/yansan-debug.apk \; || true
 
-          # Copy debug APK
-          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp android/app/build/outputs/apk/debug/app-debug.apk output-apks/yansan-debug.apk
-          fi
-
-          echo "Generated APKs:"
-          ls -la output-apks/
+          echo "Generated APKs list:"
+          ls -lh output-apks/
 
       - name: Upload APKs as Artifact (Direct Download from Actions)
         uses: actions/upload-artifact@v4
