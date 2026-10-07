@@ -22,7 +22,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22 LTS
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -31,14 +31,10 @@ jobs:
         run: |
           npm install
 
-      - name: Generate brand icons & Build Web Assets
+      - name: Build Web Assets & Generate Brand Icons
         run: |
           node scripts/generate-pwa-icons.js
           npm run build
-
-      - name: Sync Capacitor Android Project
-        run: |
-          npx cap sync android
 
       - name: Setup Java JDK 17
         uses: actions/setup-java@v4
@@ -47,13 +43,105 @@ jobs:
           java-version: 17
           cache: 'gradle'
 
-      - name: Grant execute permission for gradlew
+      - name: Initialize / Sync Android Platform
         run: |
-          chmod +x android/gradlew
+          if [ ! -d "android" ]; then
+            echo "Android directory not found in repository. Initializing Capacitor Android..."
+            npx cap add android
+          fi
+          
+          # Sync web distribution to Android project
+          npx cap sync android
+          
+          # Re-apply brand icons to Android mipmap folders
+          node scripts/generate-pwa-icons.js
 
-      - name: Generate Release Keystore (No secrets required)
+      - name: Configure Android Immersive Landscape & Keystore
         run: |
-          mkdir -p android/app
+          # 1. Ensure package folder exists
+          mkdir -p android/app/src/main/java/com/game/yansan
+          
+          # 2. Ensure immersive MainActivity.java
+          cat << 'EOF' > android/app/src/main/java/com/game/yansan/MainActivity.java
+          package com.game.yansan;
+
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.view.Window;
+          import android.view.WindowManager;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsCompat;
+          import androidx.core.view.WindowInsetsControllerCompat;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setupImmersiveMode();
+              }
+
+              @Override
+              public void onWindowFocusChanged(boolean hasFocus) {
+                  super.onWindowFocusChanged(hasFocus);
+                  if (hasFocus) {
+                      setupImmersiveMode();
+                  }
+              }
+
+              @Override
+              protected void onResume() {
+                  super.onResume();
+                  setupImmersiveMode();
+              }
+
+              private void setupImmersiveMode() {
+                  Window window = getWindow();
+                  if (window == null) return;
+
+                  window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                      WindowManager.LayoutParams lp = window.getAttributes();
+                      lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                      window.setAttributes(lp);
+                  }
+
+                  WindowCompat.setDecorFitsSystemWindows(window, false);
+                  WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+                  if (controller != null) {
+                      controller.hide(WindowInsetsCompat.Type.systemBars());
+                      controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                  }
+
+                  View decorView = window.getDecorView();
+                  if (decorView != null) {
+                      int uiOptions = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                              | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                              | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                              | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                              | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                              | View.SYSTEM_UI_FLAG_FULLSCREEN;
+                      decorView.setSystemUiVisibility(uiOptions);
+                  }
+              }
+          }
+          EOF
+
+          # 3. Ensure App Name strings
+          mkdir -p android/app/src/main/res/values
+          cat << 'EOF' > android/app/src/main/res/values/strings.xml
+          <?xml version='1.0' encoding='utf-8'?>
+          <resources>
+              <string name="app_name">烟三</string>
+              <string name="title_activity_main">烟三</string>
+              <string name="package_name">com.game.yansan</string>
+              <string name="custom_url_scheme">com.game.yansan</string>
+          </resources>
+          EOF
+
+          # 4. Generate Release Keystore (Self-contained, no secrets needed!)
           if [ ! -f android/app/release.jks ]; then
             keytool -genkeypair -v -keystore android/app/release.jks \
               -alias yansan \
@@ -63,7 +151,12 @@ jobs:
               -storepass yansan888 \
               -keypass yansan888 \
               -dname "CN=yansan, OU=Game, O=Yansan, L=Shenzhen, ST=Guangdong, C=CN"
-            echo "Release keystore generated successfully."
+            echo "Release keystore created successfully."
+          fi
+
+          # 5. Ensure gradlew has executable permission
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
           fi
 
       - name: Build Debug and Release APKs
