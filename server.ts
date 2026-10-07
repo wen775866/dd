@@ -741,7 +741,7 @@ app.post('/api/bot/webhook', async (req, res) => {
 
 // ---------------- START SERVER ----------------
 async function start() {
-  const PORT = Number(process.env.PORT) || 3000;
+  const PORT = Number(process.env.PORT) || 8080;
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
