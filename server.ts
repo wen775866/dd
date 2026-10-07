@@ -180,6 +180,15 @@ const BOT_KEYBOARD = {
   one_time_keyboard: false,
 };
 
+function formatBotTokenPath(rawToken: string): string {
+  const clean = rawToken.trim();
+  if (!clean) return '';
+  if (clean.toLowerCase().startsWith('bot')) {
+    return clean;
+  }
+  return `bot${clean}`;
+}
+
 async function sendTelegramMessage(
   chatId: string | number,
   text: string,
@@ -190,7 +199,8 @@ async function sendTelegramMessage(
   if (!token || token.includes('ExampleToken')) return;
 
   try {
-    const url = `${ENV_TG_API_HOST}/bot${token}/sendMessage`;
+    const tokenPath = formatBotTokenPath(token);
+    const url = `${ENV_TG_API_HOST}/${tokenPath}/sendMessage`;
     const payload: any = {
       chat_id: chatId,
       text,
@@ -370,7 +380,8 @@ async function startTelegramPolling() {
 
   async function pollUpdates() {
     try {
-      const url = `${ENV_TG_API_HOST}/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
+      const tokenPath = formatBotTokenPath(token);
+      const url = `${ENV_TG_API_HOST}/${tokenPath}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -425,7 +436,8 @@ app.post('/api/bot/set-webhook', async (req, res) => {
   }
 
   try {
-    const tgUrl = `${ENV_TG_API_HOST}/bot${token}/setWebhook?url=${encodeURIComponent(urlToSet)}`;
+    const tokenPath = formatBotTokenPath(token);
+    const tgUrl = `${ENV_TG_API_HOST}/${tokenPath}/setWebhook?url=${encodeURIComponent(urlToSet)}`;
     const tgRes = await fetch(tgUrl);
     const tgData = await tgRes.json();
 
