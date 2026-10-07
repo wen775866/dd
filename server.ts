@@ -682,6 +682,18 @@ app.post('/api/bot/config', (req, res) => {
   return res.json({ success: true, botConfig: db.botConfig });
 });
 
+// Webhook GET Diagnostic route for browser testing
+app.get('/api/bot/webhook', (req, res) => {
+  return res.json({
+    status: 'ok',
+    message: '✅ Telegram Bot Webhook 接口服务正常在线！请在 Telegram 软件中向 Bot 发送指令进行对讲。',
+    botId: db.botConfig.botId,
+    botUsername: db.botConfig.botUsername,
+    authorizedPhonesCount: db.authorizedPhones.length,
+    usersCount: Object.keys(db.users).length,
+  });
+});
+
 // Webhook Handler (Returns method: sendMessage directly in HTTP response JSON for zero-lag TG Webhook reply)
 app.post('/api/bot/webhook', async (req, res) => {
   const body = req.body || {};
