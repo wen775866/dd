@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 
-// Minimal compliant PNG generator in pure Node.js
+// Minimal compliant PNG generator in pure Node.js (no external canvas/sharp dependencies required)
 function crc32(buf) {
   let table = new Uint32Array(256);
   for (let i = 0; i < 256; i++) {
@@ -31,13 +31,44 @@ function makeChunk(type, data) {
   return buf;
 }
 
-function generatePngBuffer(width, height, isMaskable = false) {
+// Function to check if point (nx, ny) in normalized [-1, 1] is inside a Spade ♠️
+function isInsideSpade(nx, ny) {
+  // Translate center: top apex at (0, -0.65), bottom waist at y = 0.25, stem down to 0.55
+  if (ny > 0.18 && ny <= 0.52) {
+    // Stem check (narrow triangular base)
+    const stemWidth = 0.08 + (ny - 0.18) * 0.45;
+    if (Math.abs(nx) <= stemWidth) return 2; // Stem
+  }
+
+  // Spade main heart-inverted lobes
+  // Shift y: apex at top (y = -0.55), lobes around y = 0.05
+  const py = ny + 0.15; // now center is around py = 0
+  if (py >= -0.70 && py <= 0.35) {
+    // Top triangle tapering to apex
+    const apexDist = Math.abs(nx) - (py + 0.70) * 0.75;
+    
+    // Bottom two circular lobes
+    const r1x = nx - 0.22, r1y = py - 0.08;
+    const r2x = nx + 0.22, r2y = py - 0.08;
+    const inLobe1 = (r1x * r1x + r1y * r1y) <= 0.08;
+    const inLobe2 = (r2x * r2x + r2y * r2y) <= 0.08;
+
+    if (inLobe1 || inLobe2 || (apexDist <= 0 && py <= 0.25)) {
+      return 1; // Main spade body
+    }
+  }
+  return 0;
+}
+
+function generateSpadePngBuffer(width, height, options = {}) {
+  const { isMaskable = false, isForeground = false } = options;
   const rowBytes = width * 4 + 1; // filter byte (0) + RGBA per pixel
   const rawData = Buffer.alloc(rowBytes * height);
 
   const cx = width / 2;
   const cy = height / 2;
-  const radius = width * (isMaskable ? 0.48 : 0.44);
+  const outerRadius = width * (isMaskable ? 0.49 : 0.46);
+  const feltRadius = width * 0.40;
 
   for (let y = 0; y < height; y++) {
     const rowOffset = y * rowBytes;
@@ -49,43 +80,65 @@ function generatePngBuffer(width, height, isMaskable = false) {
       const dy = y - cy;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // Default dark navy background
-      let r = 15, g = 32, b = 39, a = 255;
+      let r = 0, g = 0, b = 0, a = 0;
 
-      // Diagonal gradient
-      const diag = (x + y) / (width + height);
-      r = Math.floor(15 + diag * 30);
-      g = Math.floor(32 + diag * 50);
-      b = Math.floor(50 + diag * 50);
+      if (isForeground) {
+        // Transparent background for adaptive icon foreground
+        r = 0; g = 0; b = 0; a = 0;
+      } else {
+        // Base dark navy background
+        const diag = (x + y) / (width + height);
+        r = Math.floor(10 + diag * 15);
+        g = Math.floor(18 + diag * 20);
+        b = Math.floor(32 + diag * 25);
+        a = 255;
 
-      // Green Felt Table Circle
-      if (dist < radius) {
-        // Table border gold
-        if (dist > radius - width * 0.03) {
-          r = 234; g = 179; b = 8;
-        } else {
-          // Felt green gradient
-          const f = dist / radius;
-          r = Math.floor(12 + (1 - f) * 15);
-          g = Math.floor(76 + (1 - f) * 45);
-          b = Math.floor(45 + (1 - f) * 20);
+        // Outer Gold / Green Felt Board
+        if (dist <= outerRadius) {
+          if (dist > outerRadius - width * 0.025) {
+            // Gold Outer Ring
+            r = 234; g = 179; b = 8;
+          } else if (dist <= feltRadius) {
+            // Deep emerald green felt
+            const f = dist / feltRadius;
+            r = Math.floor(6 + (1 - f) * 12);
+            g = Math.floor(58 + (1 - f) * 45);
+            b = Math.floor(36 + (1 - f) * 20);
+
+            // Subtle gold inner dashed ring
+            if (Math.abs(dist - feltRadius * 0.92) < width * 0.012) {
+              r = 217; g = 119; b = 6;
+            }
+          }
         }
       }
 
-      // Center Gold Emblem
-      if (dist < width * 0.22) {
-        if (dist > width * 0.20) {
-          r = 255; g = 255; b = 255;
-        } else {
-          // Gold crown center
-          r = 245; g = 158; b = 11;
-        }
-      }
+      // Normalized coordinates for Spade rendering [-1, 1]
+      const scale = isForeground ? (width * 0.42) : (width * 0.36);
+      const nx = dx / scale;
+      const ny = (dy + (isForeground ? 0 : width * 0.02)) / scale;
 
-      // Crown pattern / '斗' center
-      if (Math.abs(dx) < width * 0.08 && Math.abs(dy) < height * 0.08) {
-        if (Math.abs(dx) < width * 0.06 && Math.abs(dy) < height * 0.06) {
-          r = 255; g = 255; b = 255;
+      const spadeType = isInsideSpade(nx, ny);
+      if (spadeType > 0) {
+        // Golden spade outline check
+        const isBorder = isInsideSpade(nx * 1.08, ny * 1.08) && !isInsideSpade(nx * 0.92, ny * 0.92);
+        
+        if (isBorder) {
+          // Gold Border
+          r = 250; g = 204; b = 21;
+          a = 255;
+        } else {
+          // Sleek Onyx Spade Body with gold inner highlight
+          const innerSpade = isInsideSpade(nx * 1.8, ny * 1.8);
+          if (innerSpade) {
+            // Inner gold engraving
+            r = 245; g = 158; b = 11;
+            a = 255;
+          } else {
+            // Dark luxury spade
+            r = 15; g = 23; b = 42;
+            a = 255;
+          }
         }
       }
 
@@ -97,53 +150,58 @@ function generatePngBuffer(width, height, isMaskable = false) {
   }
 
   const deflated = zlib.deflateSync(rawData);
-
-  // PNG Signature
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
-  // IHDR chunk
   const ihdrData = Buffer.alloc(13);
   ihdrData.writeUInt32BE(width, 0);
   ihdrData.writeUInt32BE(height, 4);
-  ihdrData[8] = 8; // bit depth
-  ihdrData[9] = 6; // color type: RGBA
-  ihdrData[10] = 0; // compression
-  ihdrData[11] = 0; // filter
-  ihdrData[12] = 0; // interlace
+  ihdrData[8] = 8;
+  ihdrData[9] = 6;
+  ihdrData[10] = 0;
+  ihdrData[11] = 0;
+  ihdrData[12] = 0;
   const ihdrChunk = makeChunk('IHDR', ihdrData);
-
-  // IDAT chunk
   const idatChunk = makeChunk('IDAT', deflated);
-
-  // IEND chunk
   const iendChunk = makeChunk('IEND', Buffer.alloc(0));
 
   return Buffer.concat([sig, ihdrChunk, idatChunk, iendChunk]);
 }
 
+// Ensure public directory
 const publicDir = path.resolve('public');
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
-// 1. 192x192
-fs.writeFileSync(path.join(publicDir, 'pwa-192x192.png'), generatePngBuffer(192, 192, false));
-console.log('✓ Generated pwa-192x192.png');
+// 1. PWA Icons
+fs.writeFileSync(path.join(publicDir, 'pwa-192x192.png'), generateSpadePngBuffer(192, 192));
+fs.writeFileSync(path.join(publicDir, 'pwa-512x512.png'), generateSpadePngBuffer(512, 512));
+fs.writeFileSync(path.join(publicDir, 'pwa-maskable-512x512.png'), generateSpadePngBuffer(512, 512, { isMaskable: true }));
+fs.writeFileSync(path.join(publicDir, 'apple-touch-icon.png'), generateSpadePngBuffer(180, 180));
+fs.writeFileSync(path.join(publicDir, 'favicon.ico'), generateSpadePngBuffer(48, 48));
+console.log('✓ Generated public/ PWA & Web icons');
 
-// 2. 512x512
-fs.writeFileSync(path.join(publicDir, 'pwa-512x512.png'), generatePngBuffer(512, 512, false));
-console.log('✓ Generated pwa-512x512.png');
+// 2. Android App Icons across all standard densities
+const mipmapSizes = [
+  { dir: 'mipmap-mdpi', size: 48 },
+  { dir: 'mipmap-hdpi', size: 72 },
+  { dir: 'mipmap-xhdpi', size: 96 },
+  { dir: 'mipmap-xxhdpi', size: 144 },
+  { dir: 'mipmap-xxxhdpi', size: 192 },
+];
 
-// 3. Maskable 512x512
-fs.writeFileSync(path.join(publicDir, 'pwa-maskable-512x512.png'), generatePngBuffer(512, 512, true));
-console.log('✓ Generated pwa-maskable-512x512.png');
+const resBase = path.resolve('android/app/src/main/res');
+if (fs.existsSync(resBase)) {
+  mipmapSizes.forEach(({ dir, size }) => {
+    const targetDir = path.join(resBase, dir);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher.png'), generateSpadePngBuffer(size, size));
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher_round.png'), generateSpadePngBuffer(size, size, { isMaskable: true }));
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher_foreground.png'), generateSpadePngBuffer(size, size, { isForeground: true }));
+  });
+  console.log('✓ Generated Android mipmap icons (ic_launcher, ic_launcher_round, ic_launcher_foreground)');
+}
 
-// 4. Apple Touch Icon 180x180
-fs.writeFileSync(path.join(publicDir, 'apple-touch-icon.png'), generatePngBuffer(180, 180, false));
-console.log('✓ Generated apple-touch-icon.png');
-
-// 5. Favicon 48x48
-fs.writeFileSync(path.join(publicDir, 'favicon.ico'), generatePngBuffer(48, 48, false));
-console.log('✓ Generated favicon.ico');
-
-console.log('All PWA icon assets generated successfully!');
+console.log('All icons generated successfully with ♠️ Spade brand theme!');

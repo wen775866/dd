@@ -1,0 +1,127 @@
+name: Build Android APK (烟三)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+# Grant permission to write releases using the built-in GITHUB_TOKEN (No secrets needed!)
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build & Package Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install
+
+      - name: Generate brand icons & Build Web Assets
+        run: |
+          node scripts/generate-pwa-icons.js
+          npm run build
+
+      - name: Sync Capacitor Android Project
+        run: |
+          npx cap sync android
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: |
+          chmod +x android/gradlew
+
+      - name: Generate Release Keystore (No secrets required)
+        run: |
+          mkdir -p android/app
+          if [ ! -f android/app/release.jks ]; then
+            keytool -genkeypair -v -keystore android/app/release.jks \
+              -alias yansan \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass yansan888 \
+              -keypass yansan888 \
+              -dname "CN=yansan, OU=Game, O=Yansan, L=Shenzhen, ST=Guangdong, C=CN"
+            echo "Release keystore generated successfully."
+          fi
+
+      - name: Build Debug and Release APKs
+        run: |
+          cd android
+          ./gradlew assembleDebug assembleRelease --stacktrace
+
+      - name: Organize Output APK Files
+        run: |
+          mkdir -p output-apks
+          # Copy release APK
+          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk output-apks/yansan-release.apk
+          elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+            cp android/app/build/outputs/apk/release/app-release-unsigned.apk output-apks/yansan-release.apk
+          fi
+
+          # Copy debug APK
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            cp android/app/build/outputs/apk/debug/app-debug.apk output-apks/yansan-debug.apk
+          fi
+
+          echo "Generated APKs:"
+          ls -la output-apks/
+
+      - name: Upload APKs as Artifact (Direct Download from Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: yansan-android-apks
+          path: output-apks/*.apk
+          retention-days: 30
+          overwrite: true
+
+      - name: Create or Update Release (Fixed 'latest' tag without version stacking)
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: "latest"
+          name: "烟三 最新版 APK 下载"
+          body: |
+            ### ♠️ 烟三 Android 游戏安装包（自动更新覆盖）
+            
+            本版本为仓库最新代码自动打包生成，每次推送代码均会自动覆盖此页面文件，无需手动清理旧版本：
+            
+            - **正式版（推荐安装）**：[yansan-release.apk](https://github.com/${{ github.repository }}/releases/download/latest/yansan-release.apk)
+            - **测试版（调试可用）**：[yansan-debug.apk](https://github.com/${{ github.repository }}/releases/download/latest/yansan-debug.apk)
+            
+            #### 📱 体验特性：
+            1. **沉浸式全屏**：自动隐藏顶部状态栏与底部虚拟按键；
+            2. **横屏适配**：支持手机传感器左右旋转横屏；
+            3. **真机性能**：原生 WebView 硬件加速，流畅无卡顿；
+            4. **离线与联机**：支持本地 AI 对局与创建/加入好友房间联机对战。
+          draft: false
+          prerelease: false
+          generate_release_notes: false
+          files: |
+            output-apks/yansan-release.apk
+            output-apks/yansan-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
