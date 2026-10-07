@@ -61,9 +61,10 @@ interface DatabaseSchema {
   logs: { id: string; time: string; type: string; message: string }[];
 }
 
-// Environment Variables Resolution (Supports BOT_TOKEN / TELEGRAM_BOT_TOKEN and BOT_ID / TELEGRAM_BOT_ID)
+// Environment Variables Resolution (Supports BOT_TOKEN, BOT_ID and TG_API_HOST)
 const ENV_BOT_TOKEN = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TG_BOT_TOKEN || '';
 const ENV_BOT_ID = process.env.BOT_ID || process.env.TELEGRAM_BOT_ID || process.env.TG_BOT_ID || (ENV_BOT_TOKEN.split(':')[0] || '');
+const ENV_TG_API_HOST = process.env.TG_API_HOST || process.env.TELEGRAM_API_HOST || 'https://api.telegram.org';
 
 // Default admin phone
 const DEFAULT_ADMIN_PHONE = '13800138000';
@@ -189,7 +190,7 @@ async function sendTelegramMessage(
   if (!token || token.includes('ExampleToken')) return;
 
   try {
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const url = `${ENV_TG_API_HOST}/bot${token}/sendMessage`;
     const payload: any = {
       chat_id: chatId,
       text,
@@ -369,7 +370,7 @@ async function startTelegramPolling() {
 
   async function pollUpdates() {
     try {
-      const url = `https://api.telegram.org/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
+      const url = `${ENV_TG_API_HOST}/bot${token}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
@@ -424,7 +425,7 @@ app.post('/api/bot/set-webhook', async (req, res) => {
   }
 
   try {
-    const tgUrl = `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(urlToSet)}`;
+    const tgUrl = `${ENV_TG_API_HOST}/bot${token}/setWebhook?url=${encodeURIComponent(urlToSet)}`;
     const tgRes = await fetch(tgUrl);
     const tgData = await tgRes.json();
 
