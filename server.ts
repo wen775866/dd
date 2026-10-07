@@ -739,6 +739,207 @@ app.post('/api/bot/webhook', async (req, res) => {
   });
 });
 
+// ---------------- ROOM MANAGEMENT ENDPOINTS ----------------
+interface RoomSeat {
+  position: 'bottom' | 'left' | 'top' | 'right';
+  playerName: string;
+  avatar: string;
+  isHost: boolean;
+  isAI: boolean;
+  ready: boolean;
+  phone?: string;
+}
+
+interface RoomRecord {
+  code: string; // 6-digit code, e.g. "883921"
+  mode: 'room-chudadi' | 'room-yansan';
+  roomName: string;
+  baseScore: number;
+  entryMin: number;
+  hostName: string;
+  hostPhone?: string;
+  isPrivate: boolean;
+  passcode?: string;
+  allowBotFill: boolean;
+  seats: RoomSeat[];
+  createdAt: number;
+  status: 'WAITING' | 'PLAYING' | 'CLOSED';
+}
+
+const activeRooms: Record<string, RoomRecord> = {};
+
+// Helper: Generate unique 6-digit Room Code
+function generateRoomCode(): string {
+  let code = '';
+  do {
+    code = Math.floor(100000 + Math.random() * 900000).toString();
+  } while (activeRooms[code]);
+  return code;
+}
+
+// Create Room Endpoint
+app.post('/api/rooms/create', (req, res) => {
+  const { mode, roomName, baseScore, entryMin, hostName, hostPhone, avatar, isPrivate, passcode, allowBotFill } = req.body || {};
+
+  const code = generateRoomCode();
+  const newRoom: RoomRecord = {
+    code,
+    mode: mode === 'room-yansan' ? 'room-yansan' : 'room-chudadi',
+    roomName: roomName || (mode === 'room-yansan' ? '🔥 烟三火爆房' : '♠️ 锄大地好友场'),
+    baseScore: Number(baseScore) || (mode === 'room-yansan' ? 2000 : 1000),
+    entryMin: Number(entryMin) || (mode === 'room-yansan' ? 2000 : 100),
+    hostName: hostName || '房主',
+    hostPhone,
+    isPrivate: !!isPrivate,
+    passcode: passcode || '',
+    allowBotFill: allowBotFill !== false,
+    seats: [
+      {
+        position: 'bottom',
+        playerName: hostName || '房主',
+        avatar: avatar || '😎',
+        isHost: true,
+        isAI: false,
+        ready: true,
+        phone: hostPhone,
+      },
+      { position: 'left', playerName: '空位', avatar: '❓', isHost: false, isAI: false, ready: false },
+      { position: 'top', playerName: '空位', avatar: '❓', isHost: false, isAI: false, ready: false },
+      { position: 'right', playerName: '空位', avatar: '❓', isHost: false, isAI: false, ready: false },
+    ],
+    createdAt: Date.now(),
+    status: 'WAITING',
+  };
+
+  activeRooms[code] = newRoom;
+  addLog('ROOM_CREATE', `创建房间 [${code}]: ${newRoom.roomName} (房主: ${hostName})`);
+
+  return res.json({ success: true, room: newRoom });
+});
+
+// List Public Waiting Rooms
+app.get('/api/rooms/list', (_req, res) => {
+  const list = Object.values(activeRooms).filter(r => r.status === 'WAITING');
+  return res.json({ success: true, rooms: list });
+});
+
+// Get Room by Code
+app.get('/api/rooms/get/:code', (req, res) => {
+  const code = String(req.params.code || '').trim();
+  const room = activeRooms[code];
+  if (!room) {
+    return res.status(404).json({ error: '未找到该房号对应的房间，请检查 6 位房号' });
+  }
+  return res.json({ success: true, room });
+});
+
+// Join Room by Code
+app.post('/api/rooms/join', (req, res) => {
+  const { code, playerName, avatar, phone, passcode } = req.body || {};
+  const cleanCode = String(code || '').trim();
+  const room = activeRooms[cleanCode];
+
+  if (!room) {
+    return res.status(404).json({ error: '房号不存在，请核对 6 位数字房号' });
+  }
+
+  if (room.status !== 'WAITING') {
+    return res.status(400).json({ error: '该房间对局已开始或已关闭' });
+  }
+
+  if (room.isPrivate && room.passcode && room.passcode !== String(passcode || '').trim()) {
+    return res.status(403).json({ error: '房间密码不正确' });
+  }
+
+  // Find empty seat
+  const emptySeatIndex = room.seats.findIndex(s => s.playerName === '空位' || (!s.isHost && s.isAI));
+  if (emptySeatIndex === -1) {
+    return res.status(400).json({ error: '房间玩家已满 4 人' });
+  }
+
+  const positions: ('bottom' | 'left' | 'top' | 'right')[] = ['bottom', 'left', 'top', 'right'];
+  room.seats[emptySeatIndex] = {
+    position: positions[emptySeatIndex],
+    playerName: playerName || '玩家',
+    avatar: avatar || '🤠',
+    isHost: false,
+    isAI: false,
+    ready: true,
+    phone,
+  };
+
+  addLog('ROOM_JOIN', `加入房间 [${cleanCode}]: ${playerName}`);
+  return res.json({ success: true, room });
+});
+
+// Add AI Bot to Empty Seat
+app.post('/api/rooms/add-bot', (req, res) => {
+  const { code, seatIndex, botName, avatar } = req.body || {};
+  const cleanCode = String(code || '').trim();
+  const room = activeRooms[cleanCode];
+
+  if (!room) return res.status(404).json({ error: '房间不存在' });
+
+  const idx = Number(seatIndex);
+  if (idx < 1 || idx > 3) return res.status(400).json({ error: '无效座位' });
+
+  const positions: ('bottom' | 'left' | 'top' | 'right')[] = ['bottom', 'left', 'top', 'right'];
+  room.seats[idx] = {
+    position: positions[idx],
+    playerName: botName || `电脑·人偶${idx}`,
+    avatar: avatar || '🤖',
+    isHost: false,
+    isAI: true,
+    ready: true,
+  };
+
+  return res.json({ success: true, room });
+});
+
+// Kick Player / Remove Bot
+app.post('/api/rooms/kick-seat', (req, res) => {
+  const { code, seatIndex } = req.body || {};
+  const cleanCode = String(code || '').trim();
+  const room = activeRooms[cleanCode];
+
+  if (!room) return res.status(404).json({ error: '房间不存在' });
+
+  const idx = Number(seatIndex);
+  if (idx < 1 || idx > 3) return res.status(400).json({ error: '无法更改房主位置' });
+
+  const positions: ('bottom' | 'left' | 'top' | 'right')[] = ['bottom', 'left', 'top', 'right'];
+  room.seats[idx] = {
+    position: positions[idx],
+    playerName: '空位',
+    avatar: '❓',
+    isHost: false,
+    isAI: false,
+    ready: false,
+  };
+
+  return res.json({ success: true, room });
+});
+
+// Start Room Game
+app.post('/api/rooms/start', (req, res) => {
+  const { code } = req.body || {};
+  const cleanCode = String(code || '').trim();
+  const room = activeRooms[cleanCode];
+
+  if (!room) return res.status(404).json({ error: '房间不存在' });
+
+  // Verify all 4 seats are ready
+  const readySeats = room.seats.filter(s => s.playerName !== '空位' && s.ready);
+  if (readySeats.length < 4) {
+    return res.status(400).json({ error: '房间必须凑齐 4 位玩家才可以开局！' });
+  }
+
+  room.status = 'PLAYING';
+  addLog('ROOM_START', `房间开局 [${cleanCode}]: ${room.roomName}`);
+
+  return res.json({ success: true, room });
+});
+
 // ---------------- START SERVER ----------------
 async function start() {
   const PORT = Number(process.env.PORT) || 8080;

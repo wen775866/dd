@@ -75,7 +75,7 @@ export default function App() {
 
   // Create initial GameState for Big Two (锄大地)
   const initGame = useCallback(
-    (room: RoomConfig, prevPlayers?: Player[], round = 1): GameState => {
+    (room: RoomConfig, prevPlayers?: Player[], round = 1, overrideBots?: { name: string; avatar: string }[]): GameState => {
       const rawDeck = shuffleDeck(createDeck());
       const p0Cards = sortCards(rawDeck.slice(0, 13));
       const p1Cards = sortCards(rawDeck.slice(13, 26));
@@ -87,11 +87,11 @@ export default function App() {
       const p2Score = prevPlayers?.[2]?.score ?? room.baseScore * 50;
       const p3Score = prevPlayers?.[3]?.score ?? room.baseScore * 50;
 
-      let bot1 = { name: prevPlayers?.[1]?.name || '西家·智多星', avatar: prevPlayers?.[1]?.avatar || '🤖' };
-      let bot2 = { name: prevPlayers?.[2]?.name || '北家·雀圣霸主', avatar: prevPlayers?.[2]?.avatar || '👑' };
-      let bot3 = { name: prevPlayers?.[3]?.name || '东家·常胜猫仙', avatar: prevPlayers?.[3]?.avatar || '🐱' };
+      let bot1 = overrideBots?.[0] || { name: prevPlayers?.[1]?.name || '西家·智多星', avatar: prevPlayers?.[1]?.avatar || '🤖' };
+      let bot2 = overrideBots?.[1] || { name: prevPlayers?.[2]?.name || '北家·雀圣霸主', avatar: prevPlayers?.[2]?.avatar || '👑' };
+      let bot3 = overrideBots?.[2] || { name: prevPlayers?.[3]?.name || '东家·常胜猫仙', avatar: prevPlayers?.[3]?.avatar || '🐱' };
 
-      if (!prevPlayers) {
+      if (!prevPlayers && !overrideBots) {
         const shuffledBots = [...BOT_CHARACTERS].sort(() => Math.random() - 0.5);
         bot1 = shuffledBots[0];
         bot2 = shuffledBots[1];
@@ -184,9 +184,9 @@ export default function App() {
   }));
 
   // Enter room from lobby
-  const handleSelectRoom = (room: RoomConfig) => {
+  const handleSelectRoom = (room: RoomConfig, matchedBots?: { name: string; avatar: string }[]) => {
     setCurrentRoom(room);
-    const newGame = initGame(room, undefined, 1);
+    const newGame = initGame(room, undefined, 1, matchedBots);
     setGameState(newGame);
 
     for (let i = 0; i < 4; i++) {

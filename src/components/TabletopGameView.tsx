@@ -322,7 +322,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
     setChatMessages(prev => [...prev.slice(-15), newMsg]);
 
     if (!isVoiceMsg) {
-      sounds.speak(phrase, 'player-0');
+      if (phrase === '💣') {
+        sounds.playBomb();
+      } else if (phrase === '👍' || phrase === '🌹') {
+        sounds.playWin();
+      } else {
+        sounds.speak(phrase, 'player-0');
+      }
     }
 
     // AI bot simulated voice response
