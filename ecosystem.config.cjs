@@ -3,9 +3,9 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { execSync } = require('child_process');
 
-// 自动检测并编译缺失的 server.js，防止 PM2 报错 Error: Script not found: server.js
+// 自动检测并编译缺失或为空的 server.js，防止 PM2 报错 Error: Script not found: server.js
 const serverJsPath = path.resolve(__dirname, 'server.js');
-if (!fs.existsSync(serverJsPath)) {
+if (!fs.existsSync(serverJsPath) || fs.statSync(serverJsPath).size === 0) {
   console.log('⚡ 检测到 server.js 尚未生成，正在自动进行编译 (node build-server.js)...');
   try {
     execSync('node build-server.js', { stdio: 'inherit', cwd: __dirname });
@@ -35,11 +35,22 @@ const tunnelArgs = tunnelToken
   ? `tunnel --edge-ip-version 4 --protocol http2 run --token ${tunnelToken}`
   : 'tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080';
 
+// 检测 Termux 环境中的二进制路径
+const termuxPrefix = process.env.PREFIX || '/data/data/com.termux/files/usr';
+const sshdBin = fs.existsSync(path.join(termuxPrefix, 'bin/sshd'))
+  ? path.join(termuxPrefix, 'bin/sshd')
+  : 'sshd';
+
+const cloudflaredBin = fs.existsSync(path.join(termuxPrefix, 'bin/cloudflared'))
+  ? path.join(termuxPrefix, 'bin/cloudflared')
+  : 'cloudflared';
+
 module.exports = {
   apps: [
     {
       name: 'ddz-game',
-      script: 'server.js',
+      script: path.resolve(__dirname, 'server.js'),
+      cwd: __dirname,
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 8080
@@ -50,17 +61,19 @@ module.exports = {
       watch: false
     },
     {
-      name: 'termux-sshd',
-      script: 'sshd',
+      name: 'sshd',
+      script: sshdBin,
       args: '-D', // 前台运行，便于 PM2 进程守护
+      cwd: __dirname,
       autorestart: true,
       restart_delay: 5000,
       exec_mode: 'fork'
     },
     {
       name: 'cf-tunnel',
-      script: 'cloudflared',
+      script: cloudflaredBin,
       args: tunnelArgs,
+      cwd: __dirname,
       env: {
         GODEBUG: 'netdns=go',
         SSL_CERT_FILE: process.env.PREFIX ? `${process.env.PREFIX}/etc/tls/cert.pem` : ''

@@ -34,10 +34,12 @@ if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/vite" ] || [ ! -d "node_
 fi
 
 echo -e "\033[33;1m[3/3] 检查项目构建...\033[0m"
-if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ] || [ ! -f "server.js" ] || [ "$FORCE_REBUILD" = "1" ]; then
-    echo "正在清理旧构建并重新编译静态资源与服务端 (npm run build)..."
+if [ "$FORCE_REBUILD" = "1" ]; then
+    echo "强制清理并重新编译 (npm run build)..."
     rm -rf dist server.js
-    # 核心修复：预编译 server.ts 为 pure JS (server.js)，避免 Termux 下 tsx 运行时 Exit 139 崩溃
+    npm run build
+elif [ ! -d "dist" ] || [ ! -f "dist/index.html" ] || [ ! -f "server.js" ]; then
+    echo "检测到缺少静态资源或服务端文件，正在编译构建 (npm run build)..."
     npm run build || true
 fi
 
