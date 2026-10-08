@@ -9,13 +9,28 @@ set -e
 # 进入脚本所在项目根目录
 cd "$(dirname "$0")"
 
-# 1. 规范化并补全 Termux 环境变量
+# 1. 规范化并补全 Termux 环境变量与用户配置
 PREFIX="${PREFIX:-/data/data/com.termux/files/usr}"
 if [ -d "$PREFIX/bin" ] && [[ ":$PATH:" != *":$PREFIX/bin:"* ]]; then
     export PATH="$PREFIX/bin:$PATH"
 fi
 if [ -d "$HOME/bin" ] && [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
     export PATH="$HOME/bin:$PATH"
+fi
+
+# 自动优先读取上级根目录 (~/.env)，保护配置文件在 git pull 更新时不被覆盖
+if [ -f "../.env" ]; then
+    set -a
+    source "../.env" 2>/dev/null || true
+    set +a
+elif [ -f "$HOME/.env" ]; then
+    set -a
+    source "$HOME/.env" 2>/dev/null || true
+    set +a
+elif [ -f ".env" ]; then
+    set -a
+    source ".env" 2>/dev/null || true
+    set +a
 fi
 
 echo -e "\033[33;1m[1/3] 检查系统基础运行环境 (Node.js / Git / 依赖工具)...\033[0m"
@@ -30,6 +45,9 @@ if ! command -v git &> /dev/null; then
 fi
 if ! command -v curl &> /dev/null && ! command -v wget &> /dev/null; then
     MISSING_PKGS="$MISSING_PKGS curl"
+fi
+if [ -n "$PREFIX" ] && ! command -v termux-chroot &> /dev/null; then
+    MISSING_PKGS="$MISSING_PKGS proot"
 fi
 
 if [ -n "$MISSING_PKGS" ]; then
@@ -194,7 +212,13 @@ echo ""
 if [ "$1" = "pm2" ] || [ "$1" = "daemon" ] || [ "$1" = "--pm2" ]; then
     if command -v pm2 &> /dev/null; then
         echo "🚀 正在转由 PM2 启动全部守护服务..."
-        pm2 start ecosystem.config.cjs
+        CFG="ecosystem.config.cjs"
+        if [ -f "../ecosystem.config.cjs" ]; then
+            CFG="../ecosystem.config.cjs"
+        elif [ -f "$HOME/ecosystem.config.cjs" ]; then
+            CFG="$HOME/ecosystem.config.cjs"
+        fi
+        pm2 start "$CFG"
         pm2 save
         pm2 list
         exit 0

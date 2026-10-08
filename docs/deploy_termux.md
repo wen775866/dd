@@ -122,7 +122,12 @@ termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 run --toke
 
 ---
 
-## 第四步：从 GitHub 拉取代码与安装项目依赖
+## 第四步：从 GitHub 拉取代码与配置分离存储（核心重点）
+
+> 💡 **核心设计原则（配置与代码完全隔离）**：
+> - **Termux 根目录 `~`**（上级目录）：放置你的个人私密配置 `~/.env` 和 PM2 配置文件 `~/ecosystem.config.cjs`。
+> - **游戏代码目录 `~/dd`**（子目录）：只存放 GitHub 游戏源代码与编译文件。
+> - **巨大优势**：后续无论你在 `~/dd` 里如何运行 `git checkout .`、`git pull` 甚至强制重置代码，都**绝对不会覆盖或丢失你的个人配置与 Token**！
 
 ### 4.1 拉取 GitHub 仓库代码
 ```bash
@@ -134,124 +139,144 @@ git clone https://github.com/wen775866/dd.git
 # 进入项目目录
 cd dd
 ```
-如果之前已经克隆过，更新最新代码运行：
+
+### 4.2 将配置文件初始化到上级目录（Termux 根目录 `~`）
+执行以下命令，将配置模板复制到上级根目录中永久保留：
+```bash
+# 复制环境变量模板到上级根目录 ~/.env
+cp ~/dd/.env.example ~/.env
+
+# 复制 PM2 生态配置模板到上级根目录 ~/ecosystem.config.cjs
+cp ~/dd/ecosystem.config.cjs ~/ecosystem.config.cjs
+```
+
+### 4.3 编辑根目录配置文件 `~/.env`
+```bash
+nano ~/.env
+```
+根据你的需求修改以下参数（按 `Ctrl + O` 回车保存，`Ctrl + X` 退出）：
+```ini
+# 游戏服务运行端口（默认 8080）
+PORT=8080
+
+# Cloudflare Tunnel 专属 Token（若没有可留空，将自动使用临时隧道）
+CLOUDFLARE_TUNNEL_TOKEN=你的Cloudflare_Token
+
+# 是否托管手机 SSH 服务（默认 false，如需 PM2 一同守护手机 SSH 服务可改为 true）
+ENABLE_SSHD=false
+```
+
+### 4.4 安装 npm 项目依赖
 ```bash
 cd ~/dd
-git checkout .
-git pull
-```
 
-### 4.2 配置环境变量（可选，保存隧道 Token）
-如果你有 Cloudflare 隧道 Token，可以存入根目录或项目根目录的 `.env`：
-```bash
-# 复制示例环境变量
-cp .env.example .env
-
-# 编辑 .env 文件填入你的 Token 与端口（可选）
-nano .env
-# 写入内容如：
-# PORT=8080
-# CLOUDFLARE_TUNNEL_TOKEN=你的Token
-```
-
-### 4.3 安装 npm 依赖
-```bash
-# 安装项目依赖（使用 --legacy-peer-deps 确保顺利安装）
+# 使用 --legacy-peer-deps 确保顺利安装全部依赖
 npm install --legacy-peer-deps
 ```
 
 ---
 
-## 第五步：编译与启动游戏服务
+## 第五步：编译与启动验证游戏服务
 
 ### 5.1 编译打包前端与服务端
 ```bash
-# 构建前端 dist 静态文件以及 server.js 服务端入口
-npm run build
+cd ~/dd
+
+# 强制清理旧缓存并构建最新代码（生成 dist/ 静态文件和 server.js 入口）
+npm run clean && npm run build
 ```
-编译成功后，目录中会生成 `dist/` 文件夹和 `server.js` 文件。
+编译成功后，终端会打印出模块打包成功提示，并在 `~/dd` 目录下生成 `dist/` 与 `server.js`。
 
 ### 5.2 启动并验证游戏
 ```bash
-# 启动游戏（默认端口 8080）
-PORT=8080 npm start
+cd ~/dd
+
+# 前台临时启动测试
+npm start
 ```
-此时终端会显示服务已在端口 8080 监听：
-- **本机访问**：手机浏览器打开 `http://localhost:8080`
-- **局域网访问**：同一 WiFi 下的朋友可打开 `http://<手机局域网IP>:8080`
-- 按 `Ctrl + C` 可停止前台运行。
+此时终端会显示服务已启动：
+- **手机本机测试**：打开手机浏览器访问 `http://localhost:8080`，确认能进入斗地主大厅。
+- 确认无误后，在终端按键盘 **`Ctrl + C`** 停止前台测试。
 
 ---
 
-## 第六步：安装 PM2 进程守护与自动开机常驻
+## 第六步：安装 PM2 进程守护与自动常驻管理
 
-为了让游戏、Cloudflare 隧道以及 SSH 服务在手机锁屏、退到后台甚至断线后自动恢复与重启，使用 PM2 进行进程守护是最佳方案。
+为了让游戏和 Cloudflare 隧道在手机退到后台、锁屏甚至网络切换后自动维持常驻，使用 PM2 守护。
 
 ### 6.1 全局安装 PM2
 ```bash
 npm install -g pm2
 ```
 
-### 6.2 启动 SSHD 远程服务（可选但推荐）
-Termux 自带 SSH 服务，方便电脑通过局域网连接手机排查问题：
+### 6.2 在 Termux 根目录一键启动全部后台守护
+因为我们前面把配置文件放到了上级根目录，所以直接在 `~` 启动即可：
 ```bash
-# 设置 Termux 用户登录密码
-passwd
+cd ~
 
-# 启动 SSH 服务（默认端口 8022）
-sshd
-```
-
-### 6.3 使用项目自带的 PM2 配置文件一键启动
-项目已预置 `ecosystem.config.cjs`，它会自动守护 **游戏服务 (`ddz-game`)**、**SSH 服务 (`sshd`)** 和 **Cloudflare 隧道 (`cf-tunnel`)**：
-
-```bash
-cd ~/dd
-
-# 使用 ecosystem.config.cjs 一键启动全部服务
+# 使用根目录的 ecosystem.config.cjs 启动
 pm2 start ecosystem.config.cjs
 
-# 保存当前运行状态列表（开机恢复所用）
+# 保存当前运行列表状态（手机重启或唤醒后自动恢复）
 pm2 save
 ```
 
+`ecosystem.config.cjs` 已经内置了全自动路径识别与环境检测机制：
+1. 它会自动定位到 `~/dd` 目录中的 `server.js` 执行游戏守护。
+2. 自动载入 `~/.env` 中的 `PORT` 和 `CLOUDFLARE_TUNNEL_TOKEN`。
+3. 在 Termux 环境下自动通过 `termux-chroot` 和公共 DNS 运行 `cloudflared`，彻底解决 Go 语言在安卓下的 DNS 解析被拒报错。
+
+### 6.3 检查运行状态与公网网址
+```bash
+# 查看所有进程运行状态（ddz-game 和 cf-tunnel 应为 online）
+pm2 status
+
+# 查看 Cloudflare 隧道的实时日志与分配的公网访问网址
+pm2 logs cf-tunnel --lines 20 --nostream
+```
+如果使用的是临时隧道，日志中会显示 `https://xxxx.trycloudflare.com`，发送给好友即可开始对战！
+
 ### 6.4 PM2 常用管理命令
 ```bash
-# 查看所有后台服务状态 (ddz-game / sshd / cf-tunnel)
-pm2 list
-
-# 查看特定服务实时日志
-pm2 logs ddz-game --lines 30
-pm2 logs cf-tunnel --lines 30
-
 # 重启全部服务
 pm2 restart all
+
+# 重启游戏服务
+pm2 restart ddz-game
+
+# 重启隧道服务
+pm2 restart cf-tunnel
 
 # 停止全部服务
 pm2 stop all
 ```
 
-### 6.5 日常拉取 GitHub 最新代码并彻底更新游戏（必读）
-当你需要拉取 GitHub 最新的游戏更新时，执行以下标准更新流程（自动清理旧缓存编译产物，确保生效最新代码）：
+---
+
+## 第七步：后续日常拉取 GitHub 更新流程（安全无忧）
+
+当 GitHub 仓库有新功能或 Bug 修复发布时，由于你的 `.env` 和 `ecosystem.config.cjs` 保存在上级根目录 `~`，你可以在 `~/dd` 放心大胆地拉取更新，完全不用担心配置文件被覆盖：
 
 ```bash
 cd ~/dd
 
-# 1. 放弃本地冲突并拉取 GitHub 最新代码
+# 1. 撤销本地代码变动并拉取最新版本（配置文件在外面，百分之百安全）
 git checkout .
 git pull
 
-# 2. 安装可能新增的依赖包
+# 2. 安装可能新增的依赖
 npm install --legacy-peer-deps
 
-# 3. 彻底清理旧编译产物并重新编译（前端 dist 与后端 server.js）
+# 3. 强制清理旧缓存并重新编译最新前端与后端
 npm run clean && npm run build
 
-# 4. 重启 PM2 游戏进程生效最新版本
-pm2 restart ddz-game
+# 4. 重启 PM2 进程生效最新游戏
+pm2 restart all
 ```
 
-### 6.6 设置 Termux 启动自动恢复（`.bashrc` 开机自启）
+---
+
+## 第八步：设置 Termux 启动自动恢复（`.bashrc` 开机自启）
 编辑 `~/.bashrc`，确保打开 Termux 时 PM2 服务自动处于活跃状态：
 ```bash
 cat << 'EOF' >> ~/.bashrc

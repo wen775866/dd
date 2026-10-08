@@ -206,20 +206,25 @@ bash start.sh
 3. 申请 `termux-wake-lock` 防休眠锁
 4. 运行基于纯 Node.js 的 `server.js`，展示局域网 IP 与访问网址。
 
-#### 方式二：使用 PM2 三合一集群守护 (`ecosystem.config.cjs`)
+#### 方式二：使用 PM2 守护 (推荐放置于上级目录 ~ 运行，拉取代码不覆盖配置)
 
 ```bash
-# 在 dd 根目录下执行：
+# 将配置复制到 Termux 根目录（上级目录），与代码隔离存储
+cp ecosystem.config.cjs ~/ecosystem.config.cjs
+cp .env.example ~/.env
+
+# 在根目录启动 PM2 守护
+cd ~
 pm2 start ecosystem.config.cjs
 
-# 保存 PM2 启动状态
+# 保存 PM2 启动状态（开机/唤醒自动恢复）
 pm2 save
 ```
 
 #### 守护进程说明 (`ecosystem.config.cjs`)：
 1. **`ddz-game`**：游戏生产服务器（监听 `8080` 端口，附带 200MB 内存上限阈值，超限自动重启，防系统强杀）。
-2. **`termux-sshd`**：Termux SSH 远程终端守护（监听 `8022` 端口，掉线自动拉起）。
-3. **`cf-tunnel`**：Cloudflare Tunnel 公网免端口穿透（自动读取根目录 `.env` 中的 `CLOUDFLARE_TUNNEL_TOKEN`，无 Token 时开启免费临时穿透，集成 `GODEBUG=netdns=go` 和 DNS 防解析崩溃设置）。
+2. **`cf-tunnel`**：Cloudflare Tunnel 公网免端口穿透（自动读取根目录 `.env` 中的 `CLOUDFLARE_TUNNEL_TOKEN`，在 Termux 下自动借由 `termux-chroot` 彻底修复 DNS 连接拒绝）。
+3. **`sshd`**（可选）：若在 `~/.env` 设置 `ENABLE_SSHD=true`，可一并托管手机 SSH 远程连接。
 
 ---
 

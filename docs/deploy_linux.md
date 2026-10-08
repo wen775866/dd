@@ -100,11 +100,11 @@ cd ~
 git clone https://github.com/wen775866/dd.git
 cd dd
 
-# 复制环境变量配置
-cp .env.example .env
+# 复制环境变量配置到上级根目录（推荐放在 ~/.env，防止 git pull 时被覆盖）
+cp .env.example ~/.env
 
-# 编辑配置（如修改端口 PORT=8080 或填入 CLOUDFLARE_TUNNEL_TOKEN）
-nano .env
+# 编辑配置（如修改端口 PORT=8080）
+nano ~/.env
 
 # 安装 npm 项目依赖
 npm install --legacy-peer-deps

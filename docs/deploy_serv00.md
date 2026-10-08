@@ -96,9 +96,9 @@ cd ~
 git clone https://github.com/wen775866/dd.git
 cd dd
 
-# 配置环境变量（填入在面板申请的端口）
-cp .env.example .env
-nano .env
+# 配置环境变量（推荐放置在用户主目录 ~/.env，拉取代码不丢失）
+cp .env.example ~/.env
+nano ~/.env
 # 设置：
 # PORT=32415 (改成你面板申请的端口号)
 
