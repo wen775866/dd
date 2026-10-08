@@ -990,14 +990,20 @@ app.post('/api/rooms/start', (req, res) => {
 async function start() {
   const PORT = Number(process.env.PORT) || 8080;
 
-  if (process.env.NODE_ENV !== 'production') {
+  const distPath = path.resolve('dist');
+  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+
+  if (process.env.NODE_ENV !== 'production' && !hasDist) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static('dist'));
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
   }
 
   app.listen(PORT, '0.0.0.0', () => {
