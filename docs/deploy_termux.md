@@ -103,7 +103,7 @@ export SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem"
 #### 方式 A：临时免配置快速隧道（自动分配随机域名）
 适合临时测试、无需 Cloudflare 账号：
 ```bash
-termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 --dns 1.1.1.1 --url http://localhost:8080
+termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080
 ```
 启动后终端中会打印形如 `https://xxxx-xxxx.trycloudflare.com` 的公网网址，任何人和好友用此网址即可在公网打开手机里的游戏。
 
@@ -111,7 +111,7 @@ termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 --dns 1.1.
 如果你在 Cloudflare Zero Trust 控制台创建了 Named Tunnel，并拥有专属 Token：
 ```bash
 # 将 your_token_here 替换为你在 Cloudflare 控制台复制的实际 Token
-termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 --dns 1.1.1.1 run --token your_token_here
+termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 run --token your_token_here
 ```
 
 ### 3.3 其它常见错误排查

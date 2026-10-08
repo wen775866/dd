@@ -3,7 +3,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { execSync } = require('child_process');
 
-// 自动检测并编译缺失或为空的 server.js，防止 PM2 报错 Error: Script not found: server.js
+// 1. 自动检测并编译缺失或为空的 server.js，防止 PM2 报错 Error: Script not found: server.js
 const serverJsPath = path.resolve(__dirname, 'server.js');
 if (!fs.existsSync(serverJsPath) || fs.statSync(serverJsPath).size === 0) {
   console.log('⚡ 检测到 server.js 尚未生成，正在自动进行编译 (node build-server.js)...');
@@ -14,7 +14,7 @@ if (!fs.existsSync(serverJsPath) || fs.statSync(serverJsPath).size === 0) {
   }
 }
 
-// 自动加载根目录 (~/.env 或 ../.env) 或当前目录下的 .env 配置文件
+// 2. 自动加载根目录 (~/.env 或 ../.env) 或当前目录下的 .env 配置文件
 const envPaths = [
   path.resolve(process.cwd(), '../.env'),
   path.resolve(__dirname, '../.env'),
@@ -31,12 +31,12 @@ for (const envPath of envPaths) {
 
 const tunnelToken = (process.env.CLOUDFLARE_TUNNEL_TOKEN || process.env.TUNNEL_TOKEN || process.env.CLOUDFLARED_TOKEN || '').trim();
 
-const dnsFlags = '--dns 1.1.1.1 --dns 8.8.8.8';
+// 修正：移除 cloudflared CLI 不支持的 --dns 标记，靠 GODEBUG 与 resolv.conf 处理 DNS
 const tunnelArgs = tunnelToken
-  ? `tunnel --edge-ip-version 4 --protocol http2 ${dnsFlags} run --token ${tunnelToken}`
-  : `tunnel --edge-ip-version 4 --protocol http2 ${dnsFlags} --url http://localhost:8080`;
+  ? `tunnel --edge-ip-version 4 --protocol http2 run --token ${tunnelToken}`
+  : `tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080`;
 
-// 检测 Termux 及常用环境中的二进制路径
+// 3. 检测 Termux 及常用环境中的二进制路径
 const termuxPrefix = process.env.PREFIX || '/data/data/com.termux/files/usr';
 
 const candidateSshd = [
@@ -73,7 +73,7 @@ for (const p of candidateCloudflared) {
   }
 }
 
-// 自动确保 Termux 及 Linux 环境下有可用的 DNS 解析配置 (Android Go 程序默认常尝试查询 127.0.0.1:53 或 [::1]:53 导致 connection refused)
+// 4. 自动确保 Termux 环境下有可用的 DNS 解析配置
 const dnsConfig = 'nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 114.114.114.114\n';
 const possibleResolvPaths = [
   path.join(termuxPrefix, 'etc/resolv.conf'),
@@ -90,13 +90,22 @@ for (const resolvConfPath of possibleResolvPaths) {
   } catch (_) {}
 }
 
-// 确保 Android Termux 下如果 /etc 不存在软链接，尽量建好 $PREFIX/etc/resolv.conf
 const termuxResolvConf = path.join(termuxPrefix, 'etc/resolv.conf');
 try {
   if (fs.existsSync(termuxResolvConf)) {
     fs.writeFileSync(termuxResolvConf, dnsConfig);
   }
 } catch (_) {}
+
+// 构建 cloudflared 环境变量
+const cfEnv = {
+  GODEBUG: 'netdns=go',
+  RESOLV_CONF: termuxResolvConf
+};
+const certPath = path.join(termuxPrefix, 'etc/tls/cert.pem');
+if (fs.existsSync(certPath)) {
+  cfEnv.SSL_CERT_FILE = certPath;
+}
 
 module.exports = {
   apps: [
@@ -116,7 +125,7 @@ module.exports = {
     {
       name: 'sshd',
       script: sshdBin,
-      args: '-D', // 前台运行，便于 PM2 进程守护
+      args: '-D', // 前台运行模式，以便 PM2 进行进程守护
       cwd: __dirname,
       autorestart: true,
       restart_delay: 5000,
@@ -127,14 +136,7 @@ module.exports = {
       script: cloudflaredBin,
       args: tunnelArgs,
       cwd: __dirname,
-      env: {
-        GODEBUG: 'netdns=go',
-        RES_OPTIONS: 'nameserver 1.1.1.1',
-        RESOLV_CONF: path.join(termuxPrefix, 'etc/resolv.conf'),
-        SSL_CERT_FILE: fs.existsSync(path.join(termuxPrefix, 'etc/tls/cert.pem'))
-          ? path.join(termuxPrefix, 'etc/tls/cert.pem')
-          : ''
-      },
+      env: cfEnv,
       autorestart: true,
       restart_delay: 5000,
       exec_mode: 'fork'

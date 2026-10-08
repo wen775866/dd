@@ -132,17 +132,15 @@ PORT=8080 npm start
 sudo npm install -g pm2
 ```
 
-### 5.2 启动项目
+### 5.2 启动项目（仅托管纯粹游戏服务）
 进入项目根目录：
 ```bash
 cd ~/dd
 
-# 方式 A：使用项目自带的一键编排配置（同时托管游戏与隧道）
-pm2 start ecosystem.config.cjs
-
-# 方式 B：单独托管游戏
+# 使用 PM2 纯净托管游戏（不启动任何额外隧道或 SSHD）
 pm2 start server.js --name "ddz-game" --env PORT=8080
 ```
+> **注意**：`ecosystem.config.cjs` 是专为 Android Termux 手机环境打造的一键组合配置（包含了 Termux 特有的 DNS 修正与前台 SSH 守护）。在标准 Linux 服务器上，**直接托管 `server.js` 即可**，避免引入多余进程。
 
 ### 5.3 保存状态与配置开机自启
 ```bash
