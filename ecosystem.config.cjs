@@ -1,6 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+const { execSync } = require('child_process');
+
+// 自动检测并编译缺失的 server.js，防止 PM2 报错 Error: Script not found: server.js
+const serverJsPath = path.resolve(__dirname, 'server.js');
+if (!fs.existsSync(serverJsPath)) {
+  console.log('⚡ 检测到 server.js 尚未生成，正在自动进行编译 (node build-server.js)...');
+  try {
+    execSync('node build-server.js', { stdio: 'inherit', cwd: __dirname });
+  } catch (e) {
+    console.error('❌ 自动编译 server.js 失败:', e.message);
+  }
+}
 
 // 自动加载根目录 (~/.env 或 ../.env) 或当前目录下的 .env 配置文件
 const envPaths = [
