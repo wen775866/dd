@@ -35,15 +35,42 @@ const tunnelArgs = tunnelToken
   ? `tunnel --edge-ip-version 4 --protocol http2 run --token ${tunnelToken}`
   : 'tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080';
 
-// 检测 Termux 环境中的二进制路径
+// 检测 Termux 及常用环境中的二进制路径
 const termuxPrefix = process.env.PREFIX || '/data/data/com.termux/files/usr';
-const sshdBin = fs.existsSync(path.join(termuxPrefix, 'bin/sshd'))
-  ? path.join(termuxPrefix, 'bin/sshd')
-  : 'sshd';
 
-const cloudflaredBin = fs.existsSync(path.join(termuxPrefix, 'bin/cloudflared'))
-  ? path.join(termuxPrefix, 'bin/cloudflared')
-  : 'cloudflared';
+const candidateSshd = [
+  path.join(termuxPrefix, 'bin/sshd'),
+  '/data/data/com.termux/files/usr/bin/sshd',
+  '/usr/sbin/sshd',
+  '/usr/bin/sshd'
+];
+let sshdBin = 'sshd';
+for (const p of candidateSshd) {
+  if (p && fs.existsSync(p)) {
+    sshdBin = p;
+    break;
+  }
+}
+
+const candidateCloudflared = [
+  path.join(termuxPrefix, 'bin/cloudflared'),
+  path.resolve(__dirname, 'cloudflared'),
+  path.join(process.env.HOME || '/data/data/com.termux/files/home', 'bin/cloudflared'),
+  '/data/data/com.termux/files/usr/bin/cloudflared',
+  '/usr/local/bin/cloudflared',
+  '/usr/bin/cloudflared'
+];
+let cloudflaredBin = 'cloudflared';
+for (const p of candidateCloudflared) {
+  if (p && fs.existsSync(p)) {
+    try {
+      if (fs.statSync(p).size > 1000) {
+        cloudflaredBin = p;
+        break;
+      }
+    } catch (_) {}
+  }
+}
 
 // 自动确保 Termux 环境下有可用的 DNS 解析配置 (Android Go 程序默认常尝试查询 127.0.0.1:53 或 [::1]:53 导致 connection refused)
 const resolvConfPath = path.join(termuxPrefix, 'etc/resolv.conf');
