@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import ts from 'typescript';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 console.log('📦 正在打包生成 server.js...');
 
@@ -13,18 +15,43 @@ const isTermux = Boolean(
   fs.existsSync('/data/data/com.termux')
 );
 
+function getTsEngine() {
+  try {
+    const loaded = require('typescript');
+    if (loaded && typeof loaded.transpileModule === 'function') {
+      return loaded;
+    }
+    if (loaded && loaded.default && typeof loaded.default.transpileModule === 'function') {
+      return loaded.default;
+    }
+  } catch (e) {
+    console.warn('⚠️ require("typescript") 加载失败，尝试相对路径加载...');
+  }
+
+  try {
+    const loaded = require('./node_modules/typescript/lib/typescript.js');
+    if (loaded && typeof loaded.transpileModule === 'function') {
+      return loaded;
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 function buildWithTypeScript() {
   try {
     console.log('🔄 正在使用 100% 纯 JS TypeScript 引擎转译 server.ts ...');
     const source = fs.readFileSync('server.ts', 'utf-8');
 
-    // 适配 Node.js ESM 环境下的 typescript 模块导出结构
-    const TS = ts.default || ts;
-    const moduleKind = TS.ModuleKind?.ESNext ?? TS.ModuleKind?.ES2022 ?? 99;
-    const scriptTarget = TS.ScriptTarget?.ES2022 ?? TS.ScriptTarget?.ESNext ?? 9;
-    const transpileFn = TS.transpileModule || ts.transpileModule;
+    const tsEngine = getTsEngine();
+    if (!tsEngine || typeof tsEngine.transpileModule !== 'function') {
+      throw new Error('未能在 typescript 模块中找到 transpileModule 方法');
+    }
 
-    const result = transpileFn(source, {
+    const moduleKind = tsEngine.ModuleKind?.ESNext ?? tsEngine.ModuleKind?.ES2022 ?? 99;
+    const scriptTarget = tsEngine.ScriptTarget?.ES2022 ?? tsEngine.ScriptTarget?.ESNext ?? 9;
+
+    const result = tsEngine.transpileModule(source, {
       compilerOptions: {
         module: moduleKind,
         target: scriptTarget,
