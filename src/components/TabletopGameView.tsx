@@ -135,21 +135,22 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       return;
     }
 
-    setCountdown(isHumanCurrent ? (isAutoPlay ? 2 : 20) : 3);
+    let initialCountdown = isHumanCurrent ? (isAutoPlay ? 2 : 20) : 3;
+    setCountdown(initialCountdown);
 
     if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          if (isHumanCurrent) {
-            handleTimeoutAction();
-          }
-          return 0;
+      initialCountdown -= 1;
+      if (initialCountdown <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        setCountdown(0);
+        if (isHumanCurrent) {
+          handleTimeoutAction();
         }
-        return prev - 1;
-      });
+      } else {
+        setCountdown(initialCountdown);
+      }
     }, 1000);
 
     return () => {
