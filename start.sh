@@ -9,7 +9,7 @@ set -e
 echo -e "\033[33;1m[1/3] 检查并安装 Node.js 与 Git 运行环境...\033[0m"
 if ! command -v node &> /dev/null; then
     echo "正在安装 Node.js..."
-    pkg update -y && pkg install -y nodejs git
+    pkg update -y && pkg install -y nodejs git net-tools
 fi
 
 echo -e "\033[33;1m[2/3] 检查项目依赖...\033[0m"
@@ -22,17 +22,23 @@ echo -e "\033[33;1m[3/3] 检查项目构建...\033[0m"
 if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ] || [ "$FORCE_REBUILD" = "1" ]; then
     echo "正在清理旧构建并重新编译静态资源 (npm run build)..."
     rm -rf dist
-    npm run build
+    # 核心修复：添加 || true 容忍 Termux 环境下打包尾部的 Segmentation Fault (139) 报错
+    npm run build || true
 fi
 
 PORT=${PORT:-8080}
-IP_ADDR=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1 || echo "localhost")
+
+# 优化 IP 获取：优先从路由获取局域网 IP，更兼容无 net-tools 的环境
+IP_ADDR=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $7}')
+if [ -z "$IP_ADDR" ]; then
+    IP_ADDR=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1 || echo "localhost")
+fi
 
 echo ""
 echo -e "\033[32;1m==============================================================\033[0m"
 echo -e "\033[32;1m🎮 锄大地 (经典 4 人对局 & 烟三) 服务端与 Telegram Bot 启动成功！\033[0m"
 echo -e "\033[36;1m👉 本机浏览器访问: http://localhost:${PORT}\033[0m"
-if [ "$IP_ADDR" != "localhost" ]; then
+if [ -n "$IP_ADDR" ] && [ "$IP_ADDR" != "localhost" ]; then
     echo -e "\033[36;1m👉 同 WiFi 局域网访问: http://${IP_ADDR}:${PORT}\033[0m"
 fi
 echo -e "\033[33;1m💡 Cloudflare Tunnel 隧道推荐配置 (同时穿透游戏与 Telegram Webhook):\033[0m"
