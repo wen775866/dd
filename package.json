@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "start": "tsx server.ts",
-    "build": "vite build",
-    "preview": "tsx server.ts",
-    "preview:3000": "PORT=3000 tsx server.ts",
-    "preview:8080": "PORT=8080 tsx server.ts",
+    "dev": "npm run build:server && tsx server.ts",
+    "start": "node server.js",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=server.js",
+    "build": "vite build && npm run build:server",
+    "preview": "NODE_ENV=production node server.js",
+    "preview:3000": "PORT=3000 NODE_ENV=production node server.js",
+    "preview:8080": "PORT=8080 NODE_ENV=production node server.js",
     "clean": "rm -rf dist server.js",
-    "update": "rm -rf dist && vite build",
+    "update": "rm -rf dist server.js && npm run build",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

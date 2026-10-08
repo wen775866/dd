@@ -26,12 +26,22 @@ if (!loadedEnvPath) {
   console.log(`ℹ️ 未找到 .env 配置文件，将使用默认环境变量或管理控制台配置`);
 }
 
+// Process crash prevention handlers for Termux long-running stability
+process.on('uncaughtException', (err) => {
+  console.error('🛡️ [Uncaught Exception Handler] 捕获未处理异常，保护进程继续运行:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🛡️ [Unhandled Rejection Handler] 捕获未处理的 Promise Rejection:', reason);
+});
+
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // Path to persistent JSON store
 const DATA_DIR = path.resolve('data');
 const DATA_FILE = path.join(DATA_DIR, 'db.json');
+const DATA_TEMP = path.join(DATA_DIR, 'db.json.tmp');
 
 interface UserRecord {
   phone: string;
@@ -149,9 +159,16 @@ function saveDatabase(dbSchema: DatabaseSchema) {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(dbSchema, null, 2), 'utf-8');
+    const content = JSON.stringify(dbSchema, null, 2);
+    fs.writeFileSync(DATA_TEMP, content, 'utf-8');
+    fs.renameSync(DATA_TEMP, DATA_FILE);
   } catch (err) {
-    console.error('Error saving db.json:', err);
+    console.error('Error saving db.json atomically, trying direct write:', err);
+    try {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(dbSchema, null, 2), 'utf-8');
+    } catch (fallbackErr) {
+      console.error('Fatal error saving db.json:', fallbackErr);
+    }
   }
 }
 
@@ -368,6 +385,8 @@ function processTelegramCommand(commandText: string, chatId: string | number = '
 
 // ---------------- TELEGRAM BOT LONG POLLING LOOP ----------------
 let lastUpdateId = 0;
+let isPollingRunning = false;
+
 async function startTelegramPolling() {
   const token = db.botConfig.token;
   if (!token || token.includes('ExampleToken')) {
@@ -375,12 +394,22 @@ async function startTelegramPolling() {
     return;
   }
 
+  if (isPollingRunning) {
+    return; // Polling loop is already active
+  }
+  isPollingRunning = true;
+
   console.log(`🤖 开始启动 Telegram Bot 实时 Polling 监听 (Bot ID: ${db.botConfig.botId})...`);
   addLog('TG_POLLING', 'Telegram Bot 键盘菜单与轮询服务已在线运行');
 
   async function pollUpdates() {
     try {
-      const tokenPath = formatBotTokenPath(token);
+      const currentToken = db.botConfig.token;
+      if (!currentToken || currentToken.includes('ExampleToken')) {
+        isPollingRunning = false;
+        return;
+      }
+      const tokenPath = formatBotTokenPath(currentToken);
       const url = `${ENV_TG_API_HOST}/${tokenPath}/getUpdates?offset=${lastUpdateId + 1}&timeout=20`;
       const res = await fetch(url);
       if (res.ok) {
@@ -394,7 +423,7 @@ async function startTelegramPolling() {
               console.log(`📩 收到 Telegram 来自 ${chatId} 的消息: ${text}`);
 
               const reply = processTelegramCommand(text, chatId);
-              await sendTelegramMessage(chatId, reply, token, true);
+              await sendTelegramMessage(chatId, reply, currentToken, true);
             }
           }
         }
@@ -402,7 +431,9 @@ async function startTelegramPolling() {
     } catch (err) {
       // network timeout or offline
     } finally {
-      setTimeout(pollUpdates, 2000);
+      if (isPollingRunning) {
+        setTimeout(pollUpdates, 2000);
+      }
     }
   }
 
@@ -767,6 +798,21 @@ interface RoomRecord {
 }
 
 const activeRooms: Record<string, RoomRecord> = {};
+
+// Clean up inactive/closed rooms older than 6 hours to prevent memory leaks
+setInterval(() => {
+  try {
+    const now = Date.now();
+    const maxAge = 6 * 3600 * 1000; // 6 hours
+    for (const code in activeRooms) {
+      if (now - activeRooms[code].createdAt > maxAge) {
+        delete activeRooms[code];
+      }
+    }
+  } catch (err) {
+    console.error('Error during activeRooms cleanup interval:', err);
+  }
+}, 30 * 60 * 1000);
 
 // Helper: Generate unique 6-digit Room Code
 function generateRoomCode(): string {

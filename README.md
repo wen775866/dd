@@ -1,6 +1,6 @@
-# 🔨 欢聚锄大地 (Big Two) · Web 横屏独立版 · Termux 部署指南
+# 🔨 欢聚锄大地 (Big Two) · Web 横屏独立版 · Termux 部署与全服务常驻守护指南
 
-> 本项目已全新升级重构为经典 4 人 **锄大地 (Big Two / Big 2)** Web 网页版，采用 **全局固定旋转 90 度横屏** 架构。手机竖屏打开即自动呈现沉浸式 4 人牌桌视界，支持 52 张标准扑克牌规则（老二最大、3最小，首出方块3）、五大五张牌型压制（同花顺/铁支/葫芦/同花/顺子）、双倍与关门三倍惩罚、实时麦克风语音对讲、五大方言配音、PWA 渐进式独立桌面应用以及 Termux 局域网 / Cloudflare Tunnel 公网隧道穿透。
+> 本项目已全新升级重构为经典 4 人 **锄大地 (Big Two / Big 2)** Web 网页版，采用 **全局固定旋转 90 度横屏** 架构。手机竖屏打开即自动呈现沉浸式 4 人牌桌视界，支持 52 张标准扑克牌规则（老二最大、3最小，首出方块3）、五大五张牌型压制（同花顺/铁支/葫芦/同花/顺子）、双倍与关门三倍惩罚、实时麦克风语音对讲、五大方言配音、PWA 渐进式独立桌面应用以及 Termux 局域网 / SSHD 远程管理 / PM2 进程守护 / Cloudflare Tunnel 公网隧道穿透。
 >
 > 🔗 **GitHub 仓库地址**：[https://github.com/wen775866/dd.git](https://github.com/wen775866/dd.git)
 
@@ -9,267 +9,251 @@
 ## 📱 核心功能特性
 
 - 🔨 **经典 4 人锄大地对局**：正宗 52 张牌规则，点数 `2 > A > K ... > 3`，花色 `♠ > ♥ > ♣ > ♦`，首局持有 `♦3 (方块3)` 玩家必须优先首出。
-- 💥 **五大五张牌型压制层级**：同花顺 (Straight Flush) &gt; 铁支 (Four of a Kind) &gt; 葫芦 (Full House) &gt; 同花 (Flush) &gt; 顺子 (Straight)，高阶牌型可直接跨级压制！
+- 💥 **五大五张牌型压制层级**：同花顺 (Straight Flush) > 铁支 (Four of a Kind) > 葫芦 (Full House) > 同花 (Flush) > 顺子 (Straight)，高阶牌型可直接跨级压制！
 - 💥 **终盘关门与双倍/三倍暴击惩罚**：
   - 剩 10~12 张牌：触发 **双倍惩罚 (张数x2)**。
   - 剩 13 张一张未出：触发 **关门三倍暴击 (39倍底分扣除)**！
   - 胜者以老二清牌倍数额外x2，以铁支/同花顺清牌倍数额外x4！
 - 🎙️ **实时语音对讲与对讲机**：支持真实麦克风按住说话 (Hold to Talk)、实时声波频谱动效、语音消息回放与电脑 AI 智能语音互动回应。
-- 🔊 **全套真人语音与五大方言音效**：支持【经典普通话 / 川味麻辣 / 粤语情怀 / 东北豪爽 / 萌系二次元】配音包，单张、对子、三条、顺子、葫芦、铁支、同花顺、关门均有生动方言配音。
+- 🔊 **全套真人语音与五大方言音效**：支持【经典普通话 / 川味麻辣 / 粤语情怀 / 东北豪爽 / 萌系二次元】配音包。
 - 📲 **PWA 渐进式独立应用**：支持一键“安装至桌面主屏幕”，免浏览器地址栏全屏独立启动，支持离线单机运行。
 - 🔄 **全局固定 90° 旋转横屏**：无需开启手机系统自动旋转，打开网页即刻铺满屏幕，零黑边、零滚动条。
-- 🃏 **SVG 矢量高清扑克牌**：全套 52 张卡牌高清矢量渲染，支持理牌（按大小/按点数）与多选牌重选。
-- 🤖 **进阶 AI 算法与博弈**：智能评估领牌、留大牌（如老二与同花顺）、自动顺牌与同盟配合。
-- ⚡ **智能多方案轮换提示**：连续点击“提示”智能循环推荐所有可压制上家的候选出牌方案。
-- 🤖 **一键智能托管模式**：临时离开可一触开启 AI 代打，随时点击解除托管收回控制权。
-- 🏆 **对局终盘明牌复盘**：结算面板公开展示 4 家剩余所有手牌与结算明细，胜负走势清晰透明。
+- 🛡️ **双重常驻保护机制**：同时支持 `.bashrc` 终端自动开机恢复与 `PM2` 集群常驻，彻底解决 Node.js 未捕获异常、网络超时及 Cloudflare 域名解析崩溃。
 
 ---
 
-## 🚀 Termux 手机一键极速部署教程
+## ⚡ Termux 自动化环境防护与启动（推荐 `.bashrc` 写入）
 
-无论你在自己的安卓手机上玩，还是作为局域网主机分享给朋友，仅需以下几步即可在 Termux 中完整跑起来！
-
-### 第一步：准备 Termux 运行环境
-
-打开手机上的 **Termux** 应用，执行以下命令更新软件包并安装 `git` 和 `nodejs`：
+为了确保每次打开 Termux 时，自动修正 Go 语言与 Cloudflared 的 DNS 域名解析失败报错、自动拉起 SSHD 远程服务、并自动建立 Cloudflare 公网隧道，直接在 Termux 中粘贴并运行以下配置（**隧道 Token 自动读取根目录 `.env` 文件，不写入任何代码**）：
 
 ```bash
-# 1. 更新软件包仓库并安装 Node.js 与 Git
-pkg update -y && pkg install -y git nodejs
+cat << 'EOF' >> ~/.bashrc
+
+# 1. 自动配置 DNS (解决 Termux 下 Go 语言与 Cloudflared 域名解析报错)
+mkdir -p $PREFIX/etc
+echo -e "nameserver 223.5.5.5\nnameserver 114.114.114.114\nnameserver 1.1.1.1" > $PREFIX/etc/resolv.conf
+
+# 2. 自动启动 SSH 服务 (sshd)
+if ! pgrep -x "sshd" >/dev/null; then
+    sshd
+    echo "SSH 服务 (sshd) 已自动启动，默认端口: 8022"
+fi
+
+# 3. 自动启动 Cloudflared 隧道 (从根目录 ~/.env 或 dd/.env 自动读取 Token)
+if ! pgrep -f cloudflared >/dev/null; then
+    export SSL_CERT_FILE=$PREFIX/etc/tls/cert.pem
+    export GODEBUG=netdns=go
+    
+    ENV_FILE="$HOME/.env"
+    [ ! -f "$ENV_FILE" ] && ENV_FILE="$(pwd)/.env"
+    CF_TOKEN=""
+    if [ -f "$ENV_FILE" ]; then
+        CF_TOKEN=$(grep -E '^(CLOUDFLARE_TUNNEL_TOKEN|TUNNEL_TOKEN)=' "$ENV_FILE" | cut -d '=' -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+    fi
+
+    if [ -n "$CF_TOKEN" ]; then
+        termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 run --token "$CF_TOKEN" > /dev/null 2>&1 &
+        echo "Cloudflare Tunnel 专用隧道 (已使用 .env Token) 启动成功"
+    else
+        termux-chroot cloudflared tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080 > /dev/null 2>&1 &
+        echo "Cloudflare Tunnel 免费临时隧道 启动成功"
+    fi
+fi
+EOF
+
+# 使配置立即生效
+source ~/.bashrc
 ```
 
-> **国内加速提示（可选）**：如果下载依赖较慢，可切换 npm 镜像源：
+---
+
+## 🚀 Termux 手机全服务极速部署与常驻指南
+
+### 🆕 重新安装 / 新机首次安装 Termux 快速上手 (1 分钟极速流程)
+
+如果您是**重新安装了 Termux** 或在**新手机上初次安装**，直接复制并运行以下命令即可完成全局环境安装、代码拉取与一键启动：
+
+```bash
+# 1. 更新软件源与软件包 (自动同意所有 y/n 提示)
+pkg update -y && yes | pkg upgrade -y
+
+# 2. 安装 git, nodejs, openssh, wget 等基础依赖
+pkg install -y git nodejs openssh wget net-tools termux-exec
+
+# 3. 自动下载安装 cloudflared 官方最新二进制文件 (解决 pkg install cloudflared 无法安装问题)
+ARCH=$(uname -m) && case "$ARCH" in aarch64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64";; armv7l|armv8l) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm";; x86_64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64";; *) echo "未识别的架构: $ARCH"; exit 1;; esac && wget -q --show-progress -O $PREFIX/bin/cloudflared "$URL" && chmod +x $PREFIX/bin/cloudflared && echo -e "\nCloudflared 安装成功！当前版本：" && cloudflared --version
+
+# 4. 激活 CPU 防休眠锁 (防止手机锁屏挂起后台)
+termux-wake-lock
+
+# 5. 克隆 GitHub 仓库并进入项目目录
+git clone https://github.com/wen775866/dd.git
+cd dd
+
+# 6. 赋予启动脚本可执行权限并运行
+chmod +x start.sh
+./start.sh
+```
+
+> 💡 **自动部署说明**：
+> `start.sh` 启动脚本会自动检测并自动执行 `npm install --legacy-peer-deps`、自动运行 `npm run build` 预编译生成 `server.js`（彻底避开 tsx ARM64 崩溃）、自动检测补全 `cloudflared`、自动修复 Termux DNS 配置并拉起游戏服务！
+
+---
+
+### 第一步：安装 Termux 必备软件包
+
+打开 Termux，一次性安装 Node.js、Git、OpenSSH（用于远程管理）和 Cloudflare Tunnel：
+
+```bash
+# 1. 更新软件源并安装基础依赖
+pkg update -y && pkg install -y git nodejs openssh wget net-tools termux-exec
+
+# 2. 一键安装 Cloudflare Tunnel (直接从 Cloudflare 官方 GitHub Release 下载二进制包)
+ARCH=$(uname -m) && case "$ARCH" in aarch64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64";; armv7l|armv8l) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm";; x86_64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64";; *) echo "未识别的架构: $ARCH"; exit 1;; esac && wget -q --show-progress -O $PREFIX/bin/cloudflared "$URL" && chmod +x $PREFIX/bin/cloudflared
+
+# 3. 激活 Termux CPU 防休眠锁（极其重要，防止手机锁屏休眠导致服务暂停）
+termux-wake-lock
+```
+
+> **国内镜像加速（可选）**：
 > ```bash
 > npm config set registry https://registry.npmmirror.com
 > ```
 
 ---
 
-### 第二步：从 GitHub 拉取代码仓库
+### 第二步：拉取项目代码与配置根目录 `.env` 文件
+
+隧道 Token 以及 Telegram Bot 配置统一放置在上一级根目录 `~/.env` 或项目根目录 `dd/.env` 中：
 
 ```bash
-# 克隆仓库到 Termux 本地目录
+# 克隆仓库并进入目录
 git clone https://github.com/wen775866/dd.git
-
-# 进入项目目录
 cd dd
-```
 
----
-
-### 第三步：配置 Telegram Bot 环境变量 (.env)
-
-你可以在 `dd` 文件夹的上一级目录（即 Termux 根目录 `~/.env`）或 `dd/.env` 中创建 `.env` 配置文件：
-
-```bash
-# 在 Termux 根目录创建并配置 .env 文件
+# 配置根目录环境变量 (.env)
 nano ~/.env
 ```
 
-填入以下内容（包含你的 Telegram Bot ID 与 Token）：
-
+在 `~/.env` 中按需填入信息（支持 Telegram Bot 和 Cloudflare Tunnel Token）：
 ```env
-# Telegram Bot 简易配置 (存放在 Termux 根目录 ~/.env 或 dd/.env)
+# 1. 网页服务端口
+PORT=8080
+
+# 2. Telegram 机器人 (选填)
 BOT_ID="你的_BOT_ID"
 BOT_TOKEN="你的_BOT_TOKEN"
-```
 
-> **自动化特性与 Telegram 键盘菜单**：
-> - 启动 Express 服务器时会自动向上寻址并加载 `~/.env`。
-> - 自动开启 **Telegram Bot 实时 Polling 监听** 并自动推送 **6 按钮快捷键盘菜单** (`📱 授权手机号`, `📋 授权列表`, `👥 玩家清单`, `💰 充值积分`, `🔑 重置密码`, `ℹ️ 运行状态`)！
+# 3. Cloudflare Tunnel 隧道 Token (选填，不填则自动分配免费临时域名)
+CLOUDFLARE_TUNNEL_TOKEN="你的_CLOUDFLARE_TUNNEL_TOKEN"
+```
 
 ---
 
-### 🤖 设置 Telegram Webhook 启动 Bot 方式
-
-如果你有公网域名或使用了 Cloudflare Tunnel / Ngrok，可通过一行 `curl` 命令快速绑定 Telegram Webhook：
+### 第三步：编译项目与预构建（防止 Exit 139 段错误）
 
 ```bash
-# 绑定 Webhook 方式 (替换你的 BOT_TOKEN 与你的公网域名)
-curl -X POST "https://api.telegram.org/bot<你的_BOT_TOKEN>/setWebhook?url=https://<你的域名>/api/bot/webhook"
-```
-
-绑定成功后 Telegram 会返回：`{"ok":true,"result":true,"description":"Webhook was set"}`！用户在 Telegram 软件中与 Bot 交互时即可通过 Webhook 毫秒级响应授权。
-
----
-
-### 第四步：安装依赖并构建生产版本
-
-```bash
-# 安装项目依赖（使用 --legacy-peer-deps 保证在 Termux 下 100% 顺畅安装）
+# 1. 安装项目依赖
 npm install --legacy-peer-deps
 
-# 编译打包前端静态工程（极速编译并优化体积）
+# 2. 编译打包（自动将 server.ts 预编译为 pure JS server.js，彻底绕过 Termux ARM64 tsx 内存崩溃）
 npm run build
-```
 
-> **或者使用一键免配置脚本**：
-> ```bash
-> chmod +x start.sh
-> ./start.sh
-> ```
-
----
-
-### 第四步：启动网页游戏服务
-
-```bash
-# 默认使用 8080 端口启动（完美适配 Cloudflare Tunnel 8080 端口配置）：
-npm run preview
-
-# 或者如果你想指定 3000 端口：
-npm run preview:3000
-
-# 或者使用一键脚本（自动使用 8080 端口）：
-./start.sh
-```
-
-终端会输出：
-```text
-  ➜  Local:   http://localhost:8080/
-  ➜  Network: http://192.168.x.x:8080/
-```
-
-此时，在手机自带浏览器中输入 **`http://localhost:8080`** 即可立即畅玩！
-
----
-
-## 🌐 局域网 WiFi 联机对战访问
-
-想让同处于一个 WiFi（局域网）下的其他手机、平板或电脑也能打开游玩？
-
-1. 在 Termux 中新开一个会话或按下 `Ctrl + C` 前查看当前手机的局域网 IP：
-   ```bash
-   # 查看局域网 IP 地址
-   ifconfig | grep inet
-   ```
-   *通常形如 `192.168.1.105` 或 `192.168.0.x`*
-
-2. 在同一 WiFi 下的任何设备（如苹果手机、朋友的安卓手机、电脑浏览器）上输入：
-   ```text
-   http://你的手机IP:8080
-   例如：http://192.168.1.105:8080
-   ```
-   打开就是横屏欢聚锄大地游戏大厅！
-
----
-
-## ☁️ Cloudflare Tunnel 公网免端口穿透（8080 端口适配）
-
-当你在 Cloudflare Tunnel 中配置的本地转发端口是 **`8080`** 时：
-
-### 1. 确保锄大地服务正运行在 8080 端口
-```bash
-npm run preview
-# 此时服务监听在 http://localhost:8080
-```
-
-### 2. 启动 Cloudflare Tunnel
-- 如果使用固定配置文件（如已在 Cloudflare 控制台添加了 public hostname `localhost:8080`）：
-  ```bash
-  cloudflared tunnel run <你的隧道名称>
-  ```
-- 如果使用一键临时快速穿透：
-  ```bash
-  cloudflared tunnel --url http://localhost:8080
-  ```
-
-终端中会出现类似下方的一行链接：
-```text
-+--------------------------------------------------------------------------------------------+
-|  Your quick Tunnel has been created! Visit it at (it may take some time to be reachable):  |
-|  https://random-words-here.trycloudflare.com                                               |
-+--------------------------------------------------------------------------------------------+
-```
-
-将该 **`https://xxxxxx.trycloudflare.com`** 发给任何人，在任何手机浏览器中打开就是原汁原味的横屏欢聚锄大地游戏！
-
-### 3. 绑定自己购买的顶级域名（可选）
-
-如果你在 Cloudflare 上有自定义域名（如 `ddz.yourdomain.com`）：
-```bash
-# 登录 Cloudflare 账号授权
-cloudflared tunnel login
-
-# 创建命名隧道
-cloudflared tunnel create ddz-tunnel
-
-# 配置路由指向本机的 3000 端口并启动
-cloudflared tunnel route dns ddz-tunnel ddz.yourdomain.com
-cloudflared tunnel run --url http://localhost:3000 ddz-tunnel
-```
-
----
-
-## 🔋 Termux 后台持续运行（锁屏不掉线）
-
-为了防止手机息屏或退出 Termux 后进程被系统杀掉：
-
-### 1. 获取 Termux 唤醒锁（防止息屏休眠）
-在 Termux 中执行：
-```bash
-termux-wake-lock
-```
-*(通知栏将显示 `Termux: wake lock acquired`)*
-
-### 2. 使用 PM2 守护进程管理游戏后台运行（强烈推荐）
-```bash
-# 全局安装进程守护工具 pm2
+# 3. 全局安装 PM2 进程守护工具（可选，推荐）
 npm install -g pm2
+```
 
-# 后台守护启动斗地主服务
-pm2 start "npm run preview" --name ddz
+---
 
-# 查看运行状态
-pm2 status
+### 第四步：配置 SSHD 远程 SSH 管理（可选但推荐）
 
-# 开机/启动保存
+在 Termux 中开启 SSHD 后，你可以用电脑（如 PuTTY、Xshell、VSCode 或 Mac 终端）远程登录手机进行控制：
+
+```bash
+# 1. 设置 Termux 当前用户的 SSH 登录密码
+passwd
+
+# 2. 获取当前 Termux 的用户名与 IP
+whoami
+ifconfig
+```
+
+*Termux 的 SSHD 默认监听在 **`8022`** 端口。*  
+电脑端连接命令：`ssh -p 8022 <whoami显示的用户名>@<手机局域网IP>`
+
+---
+
+### 第五步：一键启动全服务守护（一键启动脚本 或 PM2 集群）
+
+#### 方式一：运行项目内置启动脚本 (`start.sh`)
+
+```bash
+bash start.sh
+```
+该脚本会自动：
+1. 检查并补全 Node.js 与 Git 环境
+2. 自动生成并优化 Termux `$PREFIX/etc/resolv.conf` DNS 文件
+3. 申请 `termux-wake-lock` 防休眠锁
+4. 运行基于纯 Node.js 的 `server.js`，展示局域网 IP 与访问网址。
+
+#### 方式二：使用 PM2 三合一集群守护 (`ecosystem.config.cjs`)
+
+```bash
+# 在 dd 根目录下执行：
+pm2 start ecosystem.config.cjs
+
+# 保存 PM2 启动状态
 pm2 save
 ```
 
-后续常用命令：
-- 停止服务：`pm2 stop ddz`
-- 重启服务：`pm2 restart ddz`
-- 查看实时日志：`pm2 logs ddz`
+#### 守护进程说明 (`ecosystem.config.cjs`)：
+1. **`ddz-game`**：游戏生产服务器（监听 `8080` 端口，附带 200MB 内存上限阈值，超限自动重启，防系统强杀）。
+2. **`termux-sshd`**：Termux SSH 远程终端守护（监听 `8022` 端口，掉线自动拉起）。
+3. **`cf-tunnel`**：Cloudflare Tunnel 公网免端口穿透（自动读取根目录 `.env` 中的 `CLOUDFLARE_TUNNEL_TOKEN`，无 Token 时开启免费临时穿透，集成 `GODEBUG=netdns=go` 和 DNS 防解析崩溃设置）。
 
 ---
 
-## 🛠️ 常用维护命令与更新
+## 🛠️ PM2 服务常用运维管理命令
 
-若仓库有新版本发布，可以在 Termux 的 `dd` 目录下拉取更新：
-
-```bash
-cd ~/dd
-git pull
-npm install --legacy-peer-deps
-npm run build
-pm2 restart ddz  # 如果使用了 pm2，或者执行 ./start.sh
-```
+| 操作需求 | 执行命令 |
+| :--- | :--- |
+| **查看所有服务运行状态** | `pm2 status` |
+| **查看实时日志 (全部服务)** | `pm2 logs` |
+| **仅查看游戏服务端日志** | `pm2 logs ddz-game` |
+| **仅查看 Cloudflare 隧道公网链接** | `pm2 logs cf-tunnel` |
+| **仅查看 SSHD 状态** | `pm2 logs termux-sshd` |
+| **重启所有守护服务** | `pm2 restart all` |
+| **停止所有服务** | `pm2 stop all` |
 
 ---
 
-## ❓ 常见问题排查 (FAQ)
+## 🌐 访问方式与联机指南
 
-1. **问：打开网页后是一片空白？**
-   - 答：请检查是否执行了 `npm run build`。推荐使用 `npm run preview`，或者使用 `npm run dev` 开发模式运行。
+1. **本机浏览器访问**：
+   打开手机自带浏览器输入：`http://localhost:8080`
 
-2. **问：如何将游戏安装为桌面 App（PWA 渐进式应用）？**
-   - 答：
-     - **Android (Chrome / 夸克 / Edge)**：打开网页后点击大厅右上角【安装 App】按钮，或浏览器菜单中的“添加到主屏幕”/“安装应用”。
-     - **iOS (Safari)**：点击 Safari 底部【分享】图标，选择【添加到主屏幕】即可在桌面生成独立全屏图标。
-     - **离线畅玩**：安装后在断网/飞行模式下亦可直接打开与智能 AI 单机对战。
+2. **同一 WiFi 局域网联机**：
+   * 在 Termux 中执行 `ifconfig` 或 `ip route` 获取局域网 IP（例如 `192.168.1.100`）。
+   * 局域网设备访问：`http://192.168.1.100:8080`
 
-3. **问：端口 8080 被占用报错 `EADDRINUSE: address already in use`？**
-   - 答：通过命令找出并关闭旧进程：
+3. **Internet 互联网公网联机**：
+   * 通过 Cloudflare Tunnel 生成的 `https://xxxxxx.trycloudflare.com` 或你自有的域名链接畅玩。
+
+---
+
+## ❓ 常见问题与原理排查 (FAQ)
+
+1. **问：为什么 Cloudflared 报错 `failed to connect to origin` 或 DNS 解析报错？**
+   - 答：Termux 环境下默认缺乏完整的 `/etc/resolv.conf`，导致 Go 语言标准库的网络解析器失败。在 `~/.bashrc` 或 `start.sh` 中配置 `nameserver 223.5.5.5` 以及导出环境变量 `export GODEBUG=netdns=go` 即可解决。
+
+2. **问：Termux 切后台或锁屏后，网页突然无法连接？**
+   - 答：请务必在 Termux 中执行 `termux-wake-lock` 开启防休眠锁。此外，请在手机系统【设置】->【电池/后台管理】中将 Termux 设置为“允许后台高耗电/无限制”。
+
+3. **问：端口被占用报错 `EADDRINUSE: address already in use`？**
+   - 答：通过 PM2 重启，或者执行以下命令强制清理占用端口：
      ```bash
      fuser -k 8080/tcp
-     # 或
-     kill $(lsof -t -i:8080)
      ```
-
-4. **问：可以在 PC 电脑浏览器打开吗？**
-   - 答：可以，专为手机端优化的全局 90° 旋转横屏模式，在手机端体验极佳；电脑端也可直接打开体验。
 
 ---
 

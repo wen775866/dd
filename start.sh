@@ -6,10 +6,25 @@
 
 set -e
 
-echo -e "\033[33;1m[1/3] 检查并安装 Node.js 与 Git 运行环境...\033[0m"
+echo -e "\033[33;1m[1/3] 检查并安装 Node.js、Git 与 Cloudflared 运行环境...\033[0m"
 if ! command -v node &> /dev/null; then
     echo "正在安装 Node.js..."
-    pkg update -y && pkg install -y nodejs git net-tools
+    pkg update -y && pkg install -y nodejs git net-tools wget
+fi
+
+if ! command -v cloudflared &> /dev/null; then
+    echo "正在自动下载安装 cloudflared 官方二进制包..."
+    pkg install -y wget
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        aarch64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64";;
+        armv7l|armv8l) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm";;
+        x86_64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64";;
+        *) echo "未识别架构: $ARCH"; URL="";;
+    esac
+    if [ -n "$URL" ]; then
+        wget -q --show-progress -O "$PREFIX/bin/cloudflared" "$URL" && chmod +x "$PREFIX/bin/cloudflared" || true
+    fi
 fi
 
 echo -e "\033[33;1m[2/3] 检查项目依赖...\033[0m"
@@ -19,10 +34,10 @@ if [ ! -d "node_modules" ] || [ ! -f "node_modules/.bin/vite" ] || [ ! -d "node_
 fi
 
 echo -e "\033[33;1m[3/3] 检查项目构建...\033[0m"
-if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ] || [ "$FORCE_REBUILD" = "1" ]; then
-    echo "正在清理旧构建并重新编译静态资源 (npm run build)..."
-    rm -rf dist
-    # 核心修复：添加 || true 容忍 Termux 环境下打包尾部的 Segmentation Fault (139) 报错
+if [ ! -d "dist" ] || [ ! -f "dist/sw.js" ] || [ ! -f "server.js" ] || [ "$FORCE_REBUILD" = "1" ]; then
+    echo "正在清理旧构建并重新编译静态资源与服务端 (npm run build)..."
+    rm -rf dist server.js
+    # 核心修复：预编译 server.ts 为 pure JS (server.js)，避免 Termux 下 tsx 运行时 Exit 139 崩溃
     npm run build || true
 fi
 
@@ -34,15 +49,31 @@ if [ -z "$IP_ADDR" ]; then
     IP_ADDR=$(ifconfig 2>/dev/null | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -n 1 || echo "localhost")
 fi
 
+# 自动申请 Termux CPU 防休眠锁 (如果运行在 Termux 中)
+if command -v termux-wake-lock &> /dev/null; then
+    termux-wake-lock || true
+    echo -e "\033[32;1m🔒 已激活 Termux CPU 防休眠锁 (termux-wake-lock)\033[0m"
+fi
+
+# 自动配置 DNS (解决 Termux 下 Go 语言 / Cloudflared 域名解析失败)
+if [ -n "$PREFIX" ] && [ -d "$PREFIX/etc" ]; then
+    if [ ! -f "$PREFIX/etc/resolv.conf" ] || ! grep -q "223.5.5.5" "$PREFIX/etc/resolv.conf" 2>/dev/null; then
+        echo -e "nameserver 223.5.5.5\nnameserver 114.114.114.114\nnameserver 1.1.1.1" > "$PREFIX/etc/resolv.conf" 2>/dev/null || true
+        echo -e "\033[32;1m🌐 已完成 Termux DNS 最佳优化 (resolv.conf)\033[0m"
+    fi
+    export SSL_CERT_FILE=$PREFIX/etc/tls/cert.pem
+fi
+export GODEBUG=netdns=go
+
 echo ""
 echo -e "\033[32;1m==============================================================\033[0m"
-echo -e "\033[32;1m🎮 锄大地 (经典 4 人对局 & 烟三) 服务端与 Telegram Bot 启动成功！\033[0m"
+echo -e "\033[32;1m🎮 欢聚锄大地 (Big Two) 服务端与 Telegram Bot 启动准备就绪！\033[0m"
 echo -e "\033[36;1m👉 本机浏览器访问: http://localhost:${PORT}\033[0m"
 if [ -n "$IP_ADDR" ] && [ "$IP_ADDR" != "localhost" ]; then
     echo -e "\033[36;1m👉 同 WiFi 局域网访问: http://${IP_ADDR}:${PORT}\033[0m"
 fi
-echo -e "\033[33;1m💡 Cloudflare Tunnel 隧道推荐配置 (同时穿透游戏与 Telegram Webhook):\033[0m"
-echo -e "\033[33;1m   cloudflared tunnel --url http://localhost:${PORT}\033[0m"
+echo -e "\033[33;1m💡 PM2 全服务守护（同时守护游戏服务 + SSHD + Cloudflare 隧道）:\033[0m"
+echo -e "\033[33;1m   pm2 start ecosystem.config.cjs\033[0m"
 echo -e "\033[32;1m==============================================================\033[0m"
 echo ""
 

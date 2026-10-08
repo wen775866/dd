@@ -271,23 +271,32 @@ export default function App() {
   };
 
   // Sync human score back to userProfile
-  const handleUpdateGameState = (newState: GameState) => {
+  const handleUpdateGameState = useCallback((newState: GameState) => {
     setGameState(newState);
     if (newState.players[0]) {
       const isWon = newState.phase === 'GAME_OVER' && newState.winnerIndex === 0;
       const isLost = newState.phase === 'GAME_OVER' && newState.winnerIndex !== 0 && newState.winnerIndex !== null;
 
-      const updatedProfile: UserProfile = {
-        ...userProfile,
-        coins: newState.players[0].score,
-        wins: isWon ? userProfile.wins + 1 : userProfile.wins,
-        losses: isLost ? userProfile.losses + 1 : userProfile.losses,
-      };
+      const newCoins = newState.players[0].score;
 
-      setUserProfile(updatedProfile);
-      authStore.syncUserCoins(newState.players[0].score, isWon, isLost);
+      setUserProfile(prev => {
+        const newWins = isWon ? prev.wins + 1 : prev.wins;
+        const newLosses = isLost ? prev.losses + 1 : prev.losses;
+
+        if (prev.coins === newCoins && prev.wins === newWins && prev.losses === newLosses) {
+          return prev;
+        }
+
+        authStore.syncUserCoins(newCoins, isWon, isLost);
+        return {
+          ...prev,
+          coins: newCoins,
+          wins: newWins,
+          losses: newLosses,
+        };
+      });
     }
-  };
+  }, []);
 
   return (
     <ThemeProvider>
