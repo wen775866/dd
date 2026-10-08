@@ -688,11 +688,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           setSelectedCardIds([]);
         }
       }}
-      className="w-full h-full flex flex-col justify-between p-1 sm:p-2 select-none"
+      className="w-full h-full flex flex-col justify-between p-0.5 sm:p-1.5 select-none"
     >
       {/* Tabletop Outer Border */}
       <div 
-        className={`relative w-full h-full rounded-2xl sm:rounded-3xl border-2 sm:border-6 shadow-2xl overflow-hidden flex flex-col justify-between transition-colors duration-300 p-2 sm:p-3 ${
+        className={`relative w-full h-full rounded-xl sm:rounded-2xl border sm:border-4 shadow-2xl overflow-hidden flex flex-col justify-between transition-colors duration-300 p-1 sm:p-2.5 ${
           theme === 'deep-green'
             ? 'border-[#0e3b28] bg-gradient-to-b from-[#186443] via-[#23855a] to-[#155b3c]'
             : 'border-[#0d344d] bg-gradient-to-b from-[#18608f] via-[#237eb5] to-[#14537c]'
@@ -1027,7 +1027,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
         </div>
 
         {/* BOTTOM SECTION: Human Actions & 13 Card Hand Fan (Border-free, Tabletop Felt matching background, Fixed stable height) */}
-        <div className="relative z-20 flex flex-col items-center w-full -mb-2 sm:-mb-3 bg-transparent">
+        <div className="relative z-20 flex flex-col items-center w-full bg-transparent shrink-0">
           {speechBubble['player-0'] && (
             <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-2xl border-2 border-white z-40 animate-bounce flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
@@ -1036,11 +1036,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           )}
 
           {/* Action Buttons Row & Info: Fixed constant height to prevent any border/height shifts */}
-          <div className="flex items-center justify-between w-full px-2 sm:px-4 h-9 sm:h-10 shrink-0 select-none">
+          <div className="flex items-center justify-between w-full px-2 sm:px-4 h-8 sm:h-9 shrink-0 select-none">
             {/* Left: Player Identity & Sort Switch */}
             <div className="flex items-center gap-1.5 text-xs text-white">
               <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center border transition-all relative overflow-hidden shrink-0 ${
+                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center border transition-all relative overflow-hidden shrink-0 ${
                   gameState.currentPlayerIndex === 0
                     ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.9)] animate-pulse scale-105 bg-red-500/20'
                     : theme === 'deep-green'
@@ -1053,7 +1053,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                     <span>{passStatuses['player-0'].text}</span>
                   </div>
                 ) : (
-                  <User className="w-4 h-4 text-amber-300" />
+                  <User className="w-3.5 h-3.5 text-amber-300" />
                 )}
               </div>
               <span className="font-bold text-slate-100">{human.name} (南家)</span>
@@ -1078,7 +1078,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               {isHumanCurrent && gameState.phase === 'PLAYING' ? (
                 <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in zoom-in-95 duration-150">
                   {/* Timer Circle */}
-                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono shadow-md border-2 border-yellow-200">
+                  <div className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-500 text-slate-950 font-black text-xs font-mono shadow-md border-2 border-yellow-200">
                     {countdown}
                   </div>
 
@@ -1165,13 +1165,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
             </div>
           </div>
 
-          {/* 13 Overlapping Cards Fan: Giant Cards shifted downward, bottom half sliced off */}
+          {/* 13 Overlapping Cards Fan: Completely visible with full top and bottom margins, never clipped */}
           <div
-            className="w-full flex items-start justify-center overflow-x-auto overflow-y-hidden pt-1 pb-0 px-2 h-[82px] sm:h-[105px] md:h-[120px]"
+            className="w-full flex items-center justify-center overflow-x-auto overflow-y-visible pt-4 pb-2 px-2 shrink-0 min-h-[96px] sm:min-h-[115px]"
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <div className="flex -space-x-8 sm:-space-x-11 md:-space-x-13 lg:-space-x-15 shrink-0 translate-y-1 sm:translate-y-2">
+            <div className="flex -space-x-7 sm:-space-x-9 md:-space-x-11 lg:-space-x-13 shrink-0">
               {displayedHumanCards.map(card => {
                 const isSelected = selectedCardIds.includes(card.id);
                 return (

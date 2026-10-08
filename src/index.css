@@ -14,6 +14,14 @@ html, body, #root {
   color: #e2e8f0;
 }
 
+/* 适配刘海屏、全面屏 Home 手势指示横条安全区 */
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
 /* Custom Gaming Scrollbar for eye-friendly themes */
 .custom-scrollbar {
   -webkit-overflow-scrolling: touch;

@@ -31,10 +31,10 @@ export const SvgCard: React.FC<SvgCardProps> = ({
   // md: 48x68 -> 60x84
   // lg: (human hand) enlarged to w-18 h-26 sm:w-24 sm:h-34 md:w-28 md:h-40
   const sizeClasses = {
-    mini: 'w-8 h-12 sm:w-10 sm:h-14',
-    sm: 'w-11 h-16 sm:w-14 sm:h-20',
-    md: 'w-14 h-20 sm:w-18 sm:h-26',
-    lg: 'w-18 h-26 sm:w-22 sm:h-32 md:w-26 md:h-38',
+    mini: 'w-7 h-10 sm:w-9 sm:h-13',
+    sm: 'w-10 h-14 sm:w-13 sm:h-18',
+    md: 'w-13 h-18 sm:w-16 sm:h-23',
+    lg: 'w-14 h-20 sm:w-17 sm:h-24 md:w-20 md:h-28',
   }[size];
 
   if (showBack || !card) {
