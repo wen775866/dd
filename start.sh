@@ -163,15 +163,20 @@ fi
 # 优化 Termux DNS 解析配置 (解决 Go 语言 / Cloudflared 解析 DNS 拒绝错误)
 if [ -n "$PREFIX" ] && [ -d "$PREFIX/etc" ]; then
     mkdir -p "$PREFIX/etc" 2>/dev/null || true
-    if [ ! -f "$PREFIX/etc/resolv.conf" ] || ! grep -q "1.1.1.1" "$PREFIX/etc/resolv.conf" 2>/dev/null; then
-        echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 114.114.114.114" > "$PREFIX/etc/resolv.conf" 2>/dev/null || true
-        echo -e "\033[32;1m🌐 已完成 Termux DNS 最佳配置 (resolv.conf)\033[0m"
+    echo -e "nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 114.114.114.114" > "$PREFIX/etc/resolv.conf" 2>/dev/null || true
+    echo -e "\033[32;1m🌐 已完成 Termux DNS 最佳配置 ($PREFIX/etc/resolv.conf)\033[0m"
+    
+    # 尝试在 /etc/resolv.conf 建立软链接（若有权限）
+    if [ ! -f "/etc/resolv.conf" ] && [ -w "/etc" ]; then
+        ln -sf "$PREFIX/etc/resolv.conf" /etc/resolv.conf 2>/dev/null || true
     fi
     if [ -f "$PREFIX/etc/tls/cert.pem" ]; then
         export SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem"
     fi
 fi
 export GODEBUG="netdns=go"
+export RES_OPTIONS="nameserver 1.1.1.1"
+export RESOLV_CONF="$PREFIX/etc/resolv.conf"
 
 echo ""
 echo -e "\033[32;1m==============================================================\033[0m"

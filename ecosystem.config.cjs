@@ -31,9 +31,10 @@ for (const envPath of envPaths) {
 
 const tunnelToken = (process.env.CLOUDFLARE_TUNNEL_TOKEN || process.env.TUNNEL_TOKEN || process.env.CLOUDFLARED_TOKEN || '').trim();
 
+const dnsFlags = '--dns 1.1.1.1 --dns 8.8.8.8';
 const tunnelArgs = tunnelToken
-  ? `tunnel --edge-ip-version 4 --protocol http2 run --token ${tunnelToken}`
-  : 'tunnel --edge-ip-version 4 --protocol http2 --url http://localhost:8080';
+  ? `tunnel --edge-ip-version 4 --protocol http2 ${dnsFlags} run --token ${tunnelToken}`
+  : `tunnel --edge-ip-version 4 --protocol http2 ${dnsFlags} --url http://localhost:8080`;
 
 // 检测 Termux 及常用环境中的二进制路径
 const termuxPrefix = process.env.PREFIX || '/data/data/com.termux/files/usr';
@@ -72,16 +73,30 @@ for (const p of candidateCloudflared) {
   }
 }
 
-// 自动确保 Termux 环境下有可用的 DNS 解析配置 (Android Go 程序默认常尝试查询 127.0.0.1:53 或 [::1]:53 导致 connection refused)
-const resolvConfPath = path.join(termuxPrefix, 'etc/resolv.conf');
-try {
-  if (!fs.existsSync(resolvConfPath) || fs.readFileSync(resolvConfPath, 'utf8').trim() === '') {
-    fs.mkdirSync(path.dirname(resolvConfPath), { recursive: true });
-    fs.writeFileSync(resolvConfPath, 'nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\n');
-  }
-} catch (e) {
-  // 忽略只读等权限错误
+// 自动确保 Termux 及 Linux 环境下有可用的 DNS 解析配置 (Android Go 程序默认常尝试查询 127.0.0.1:53 或 [::1]:53 导致 connection refused)
+const dnsConfig = 'nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\nnameserver 114.114.114.114\n';
+const possibleResolvPaths = [
+  path.join(termuxPrefix, 'etc/resolv.conf'),
+  '/etc/resolv.conf',
+  path.resolve(process.env.HOME || '/data/data/com.termux/files/home', '.resolv.conf')
+];
+
+for (const resolvConfPath of possibleResolvPaths) {
+  try {
+    if (!fs.existsSync(resolvConfPath) || fs.readFileSync(resolvConfPath, 'utf8').trim() === '') {
+      fs.mkdirSync(path.dirname(resolvConfPath), { recursive: true });
+      fs.writeFileSync(resolvConfPath, dnsConfig);
+    }
+  } catch (_) {}
 }
+
+// 确保 Android Termux 下如果 /etc 不存在软链接，尽量建好 $PREFIX/etc/resolv.conf
+const termuxResolvConf = path.join(termuxPrefix, 'etc/resolv.conf');
+try {
+  if (fs.existsSync(termuxResolvConf)) {
+    fs.writeFileSync(termuxResolvConf, dnsConfig);
+  }
+} catch (_) {}
 
 module.exports = {
   apps: [
@@ -114,7 +129,11 @@ module.exports = {
       cwd: __dirname,
       env: {
         GODEBUG: 'netdns=go',
-        SSL_CERT_FILE: process.env.PREFIX ? `${process.env.PREFIX}/etc/tls/cert.pem` : ''
+        RES_OPTIONS: 'nameserver 1.1.1.1',
+        RESOLV_CONF: path.join(termuxPrefix, 'etc/resolv.conf'),
+        SSL_CERT_FILE: fs.existsSync(path.join(termuxPrefix, 'etc/tls/cert.pem'))
+          ? path.join(termuxPrefix, 'etc/tls/cert.pem')
+          : ''
       },
       autorestart: true,
       restart_delay: 5000,
