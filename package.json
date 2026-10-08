@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "npm run build:server && tsx server.ts",
     "start": "node server.js",
+    "clean": "rm -rf dist server.js",
     "build:server": "node build-server.js",
-    "build": "vite build && npm run build:server",
+    "build": "rm -rf dist server.js && vite build && npm run build:server",
     "preview": "NODE_ENV=production node server.js",
     "preview:3000": "PORT=3000 NODE_ENV=production node server.js",
     "preview:8080": "PORT=8080 NODE_ENV=production node server.js",

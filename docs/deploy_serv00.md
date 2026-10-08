@@ -161,5 +161,23 @@ crontab -e
 ```
 保存并退出即可。
 
-### 6.4 也可以直接绑定 Serv00 自带二级域名（免隧道公网访问）
+### 6.4 日常代码拉取与更新（保证编译最新代码）
+```bash
+cd ~/dd
+
+# 1. 撤销可能产生的本地变动并拉取远程更新
+git checkout .
+git pull
+
+# 2. 安装可能新增的依赖
+npm install --legacy-peer-deps
+
+# 3. 彻底清理旧编译产物并重新生成最新代码
+npm run clean && npm run build
+
+# 4. 重载 PM2 进程
+pm2 restart ddz-serv00
+```
+
+### 6.5 也可以直接绑定 Serv00 自带二级域名（免隧道公网访问）
 在 Serv00 面板的 **WWW Websites** 中添加网站，域名选 `yourusername.serv00.net`，网站类型选择 **Proxy**，代理目标填写 `http://127.0.0.1:32415`。这样全世界无需开启 Cloudflare Tunnel，也可以直接访问你的游戏！

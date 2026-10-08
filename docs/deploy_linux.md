@@ -151,7 +151,25 @@ pm2 save
 pm2 startup
 ```
 
-### 5.4 运维常用命令
+### 5.4 日常代码拉取与更新（保证编译最新代码）
+```bash
+cd ~/dd
+
+# 1. 撤销可能产生的本地变动并拉取远程更新
+git checkout .
+git pull
+
+# 2. 安装可能新增的依赖
+npm install --legacy-peer-deps
+
+# 3. 彻底清理旧编译产物并重新生成最新代码
+npm run clean && npm run build
+
+# 4. 重载 PM2 进程
+pm2 restart ddz-game
+```
+
+### 5.5 运维常用命令
 ```bash
 # 查看所有任务状态
 pm2 list

@@ -231,7 +231,27 @@ pm2 restart all
 pm2 stop all
 ```
 
-### 6.5 设置 Termux 启动自动恢复（`.bashrc` 开机自启）
+### 6.5 日常拉取 GitHub 最新代码并彻底更新游戏（必读）
+当你需要拉取 GitHub 最新的游戏更新时，执行以下标准更新流程（自动清理旧缓存编译产物，确保生效最新代码）：
+
+```bash
+cd ~/dd
+
+# 1. 放弃本地冲突并拉取 GitHub 最新代码
+git checkout .
+git pull
+
+# 2. 安装可能新增的依赖包
+npm install --legacy-peer-deps
+
+# 3. 彻底清理旧编译产物并重新编译（前端 dist 与后端 server.js）
+npm run clean && npm run build
+
+# 4. 重启 PM2 游戏进程生效最新版本
+pm2 restart ddz-game
+```
+
+### 6.6 设置 Termux 启动自动恢复（`.bashrc` 开机自启）
 编辑 `~/.bashrc`，确保打开 Termux 时 PM2 服务自动处于活跃状态：
 ```bash
 cat << 'EOF' >> ~/.bashrc
