@@ -1,8 +1,18 @@
-# 🔨 欢聚锄大地 (Big Two) · Web 横屏独立版 · Termux 部署与全服务常驻守护指南
+# 🔨 欢聚锄大地 (Big Two) · Web 横屏独立版 · 部署与常驻守护指南
 
 > 本项目已全新升级重构为经典 4 人 **锄大地 (Big Two / Big 2)** Web 网页版，采用 **全局固定旋转 90 度横屏** 架构。手机竖屏打开即自动呈现沉浸式 4 人牌桌视界，支持 52 张标准扑克牌规则（老二最大、3最小，首出方块3）、五大五张牌型压制（同花顺/铁支/葫芦/同花/顺子）、双倍与关门三倍惩罚、实时麦克风语音对讲、五大方言配音、PWA 渐进式独立桌面应用以及 Termux 局域网 / SSHD 远程管理 / PM2 进程守护 / Cloudflare Tunnel 公网隧道穿透。
 >
 > 🔗 **GitHub 仓库地址**：[https://github.com/wen775866/dd.git](https://github.com/wen775866/dd.git)
+
+---
+
+## 📖 多平台独立手把手部署教程（按系统查阅）
+
+针对不同平台的系统架构与权限特性，已分别编写了三份专项详细教程：
+
+- 📱 **[Termux 手机完整部署教程 (docs/deploy_termux.md)](docs/deploy_termux.md)**：包含 Termux 系统更新、安装 Node.js/Git、安装 cloudflared 隧道、DNS 报错修复、GitHub 代码克隆、依赖安装、构建游戏与 PM2 进程守护配置。
+- 🐧 **[Linux 服务器部署教程 (docs/deploy_linux.md)](docs/deploy_linux.md)**：包含 Ubuntu/Debian/CentOS 安装 Node.js 20、官方源安装 cloudflared、Systemd 服务托管、PM2 开机自启、Nginx 反代与 WebSocket 配置。
+- 🌐 **[Serv00 免费虚拟主机部署教程 (docs/deploy_serv00.md)](docs/deploy_serv00.md)**：包含开启后台运行权限、自定义端口预约、FreeBSD 架构 cloudflared 适配、无 root 权限 PM2 守护、Crontab 保活以及自带域名反代。
 
 ---
 
