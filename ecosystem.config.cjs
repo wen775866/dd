@@ -45,6 +45,17 @@ const cloudflaredBin = fs.existsSync(path.join(termuxPrefix, 'bin/cloudflared'))
   ? path.join(termuxPrefix, 'bin/cloudflared')
   : 'cloudflared';
 
+// 自动确保 Termux 环境下有可用的 DNS 解析配置 (Android Go 程序默认常尝试查询 127.0.0.1:53 或 [::1]:53 导致 connection refused)
+const resolvConfPath = path.join(termuxPrefix, 'etc/resolv.conf');
+try {
+  if (!fs.existsSync(resolvConfPath) || fs.readFileSync(resolvConfPath, 'utf8').trim() === '') {
+    fs.mkdirSync(path.dirname(resolvConfPath), { recursive: true });
+    fs.writeFileSync(resolvConfPath, 'nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 223.5.5.5\n');
+  }
+} catch (e) {
+  // 忽略只读等权限错误
+}
+
 module.exports = {
   apps: [
     {
