@@ -18,10 +18,16 @@ function buildWithTypeScript() {
     console.log('🔄 正在使用 100% 纯 JS TypeScript 引擎转译 server.ts ...');
     const source = fs.readFileSync('server.ts', 'utf-8');
 
-    const result = ts.transpileModule(source, {
+    // 适配 Node.js ESM 环境下的 typescript 模块导出结构
+    const TS = ts.default || ts;
+    const moduleKind = TS.ModuleKind?.ESNext ?? TS.ModuleKind?.ES2022 ?? 99;
+    const scriptTarget = TS.ScriptTarget?.ES2022 ?? TS.ScriptTarget?.ESNext ?? 9;
+    const transpileFn = TS.transpileModule || ts.transpileModule;
+
+    const result = transpileFn(source, {
       compilerOptions: {
-        module: ts.ModuleKind.ESNext,
-        target: ts.ScriptTarget.ES2022,
+        module: moduleKind,
+        target: scriptTarget,
         removeComments: false,
         esModuleInterop: true,
       },
