@@ -1,6 +1,6 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { useAppTheme } from '../utils/themeContext';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Maximize2, Minimize2, Move } from 'lucide-react';
 
 interface LandscapeContextType {
   isLandscape: boolean;
@@ -17,6 +17,74 @@ export const LandscapeContext = createContext<LandscapeContextType>({
 });
 
 export const useLandscape = () => useContext(LandscapeContext);
+
+/**
+ * Draggable Floating Fullscreen Button
+ * Allows dragging anywhere on screen to avoid covering settings or avatar
+ */
+const DraggableFullscreenButton: React.FC<{ toggleFullscreen: () => void }> = ({
+  toggleFullscreen,
+}) => {
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => {
+    return { x: 12, y: 56 }; // Default: top right, below top bar, doesn't block settings or lobby header
+  });
+
+  const isDraggingRef = useRef(false);
+  const startCoordRef = useRef({ x: 0, y: 0 });
+  const startPosRef = useRef({ x: 0, y: 0 });
+  const hasMovedRef = useRef(false);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDraggingRef.current = true;
+    hasMovedRef.current = false;
+    startCoordRef.current = { x: e.clientX, y: e.clientY };
+    startPosRef.current = { ...pos };
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const dx = e.clientX - startCoordRef.current.x;
+    const dy = e.clientY - startCoordRef.current.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      hasMovedRef.current = true;
+    }
+    // Note: in right-positioned coordinates:
+    // right = startPos.x - dx
+    // top = startPos.y + dy
+    const nextX = Math.max(4, Math.min(window.innerWidth - 60, startPosRef.current.x - dx));
+    const nextY = Math.max(4, Math.min(window.innerHeight - 50, startPosRef.current.y + dy));
+    setPos({ x: nextX, y: nextY });
+  };
+
+  const handlePointerUp = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    if (!hasMovedRef.current) {
+      toggleFullscreen();
+    }
+  };
+
+  return (
+    <button
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => { isDraggingRef.current = false; }}
+      style={{
+        right: `${pos.x}px`,
+        top: `${pos.y}px`,
+        touchAction: 'none',
+      }}
+      className="absolute z-50 p-1.5 sm:p-2 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-amber-300 hover:text-white border border-amber-400/50 shadow-2xl backdrop-blur-md transition-shadow flex items-center gap-1 text-[11px] font-bold cursor-grab active:cursor-grabbing select-none"
+      title="点击全屏，按住可随意拖拽移动位置"
+    >
+      <Maximize2 className="w-3.5 h-3.5" />
+      <span className="text-[10px] sm:text-xs">全屏</span>
+      <Move className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+    </button>
+  );
+};
 
 interface LandscapeWrapperProps {
   children: React.ReactNode;
@@ -147,16 +215,9 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
           {/* Main Game Interface (Lobby / Tabletop) */}
           {children}
 
-          {/* Floating Immersive Fullscreen Entry / Exit Toggle Button */}
+          {/* Floating Immersive Fullscreen Entry / Exit Toggle Button (Draggable & integrated) */}
           {!isFullscreen && (
-            <button
-              onClick={toggleFullscreen}
-              className="absolute top-1 right-1 sm:top-2 sm:right-2 z-50 p-1.5 rounded-full bg-black/60 hover:bg-black/80 text-amber-300 hover:text-white border border-amber-400/40 shadow-lg backdrop-blur-md transition-all active:scale-95 flex items-center gap-1 text-[10px] font-bold"
-              title="进入沉浸式全屏 (隐藏底部按键与白色横条)"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">全屏</span>
-            </button>
+            <DraggableFullscreenButton toggleFullscreen={toggleFullscreen} />
           )}
         </div>
       </div>
