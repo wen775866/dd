@@ -21,7 +21,7 @@ class SoundEffects {
   // Announce played hand in voice
   speakHand(handType: string, cards: { rank: string; suit: string; displayRank: string }[], isBeat: boolean = false, playerId: string = 'player-0') {
     if (!this.enabled || !this.voiceEnabled) return;
-    const text = voiceEngine.getHandVoiceLine(handType, cards, isBeat);
+    const text = voiceEngine.getHandVoiceLine(handType, cards);
     voiceEngine.speak(text, playerId);
   }
 

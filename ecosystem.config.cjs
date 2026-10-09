@@ -23,7 +23,7 @@ if (!fs.existsSync(serverJsPath) || fs.statSync(serverJsPath).size === 0) {
 module.exports = {
   apps: [
     {
-      name: 'ddz-game',
+      name: 'chudadi-game',
       script: serverJsPath,
       cwd: gameDir,
       env: {

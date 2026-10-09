@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useAppTheme } from '../utils/themeContext';
-import { Maximize2, Minimize2, Move } from 'lucide-react';
 
 interface LandscapeContextType {
   isLandscape: boolean;
@@ -17,74 +16,6 @@ export const LandscapeContext = createContext<LandscapeContextType>({
 });
 
 export const useLandscape = () => useContext(LandscapeContext);
-
-/**
- * Draggable Floating Fullscreen Button
- * Allows dragging anywhere on screen to avoid covering settings or avatar
- */
-const DraggableFullscreenButton: React.FC<{ toggleFullscreen: () => void }> = ({
-  toggleFullscreen,
-}) => {
-  const [pos, setPos] = useState<{ x: number; y: number }>(() => {
-    return { x: 12, y: 56 }; // Default: top right, below top bar, doesn't block settings or lobby header
-  });
-
-  const isDraggingRef = useRef(false);
-  const startCoordRef = useRef({ x: 0, y: 0 });
-  const startPosRef = useRef({ x: 0, y: 0 });
-  const hasMovedRef = useRef(false);
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    isDraggingRef.current = true;
-    hasMovedRef.current = false;
-    startCoordRef.current = { x: e.clientX, y: e.clientY };
-    startPosRef.current = { ...pos };
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    const dx = e.clientX - startCoordRef.current.x;
-    const dy = e.clientY - startCoordRef.current.y;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      hasMovedRef.current = true;
-    }
-    // Note: in right-positioned coordinates:
-    // right = startPos.x - dx
-    // top = startPos.y + dy
-    const nextX = Math.max(4, Math.min(window.innerWidth - 60, startPosRef.current.x - dx));
-    const nextY = Math.max(4, Math.min(window.innerHeight - 50, startPosRef.current.y + dy));
-    setPos({ x: nextX, y: nextY });
-  };
-
-  const handlePointerUp = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    if (!hasMovedRef.current) {
-      toggleFullscreen();
-    }
-  };
-
-  return (
-    <button
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={() => { isDraggingRef.current = false; }}
-      style={{
-        right: `${pos.x}px`,
-        top: `${pos.y}px`,
-        touchAction: 'none',
-      }}
-      className="absolute z-50 p-1.5 sm:p-2 rounded-full bg-black/75 hover:bg-black/90 active:scale-95 text-amber-300 hover:text-white border border-amber-400/50 shadow-2xl backdrop-blur-md transition-shadow flex items-center gap-1 text-[11px] font-bold cursor-grab active:cursor-grabbing select-none"
-      title="点击全屏，按住可随意拖拽移动位置"
-    >
-      <Maximize2 className="w-3.5 h-3.5" />
-      <span className="text-[10px] sm:text-xs">全屏</span>
-      <Move className="w-2.5 h-2.5 opacity-60 ml-0.5" />
-    </button>
-  );
-};
 
 interface LandscapeWrapperProps {
   children: React.ReactNode;
@@ -135,8 +66,8 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
         const w = window.visualViewport ? window.visualViewport.width : window.innerWidth;
         const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
         setDimensions({
-          width: Math.round(w),
-          height: Math.round(h),
+          width: Math.max(300, Math.round(w)),
+          height: Math.max(300, Math.round(h)),
         });
       }
     };
@@ -148,7 +79,7 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
       window.visualViewport.addEventListener('resize', updateDimensions);
     }
 
-    // Try auto-locking screen orientation to landscape if supported by browser/PWA
+    // Auto-locking screen orientation to landscape if supported by browser/PWA
     if (typeof screen !== 'undefined' && screen.orientation && 'lock' in screen.orientation) {
       try {
         (screen.orientation as unknown as { lock: (orientation: string) => Promise<void> })
@@ -166,12 +97,10 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
     };
   }, []);
 
-  // Is physical screen currently in portrait mode (height > width)?
+  // Is screen in portrait mode (height > width)?
   const isPortrait = dimensions.height > dimensions.width;
 
-  // Geometry calculation:
-  // - If portrait: rotate 90deg to present a full-screen landscape game.
-  // - If already landscape (e.g. Chrome PWA fullscreen, landscape phone, PC): render directly at 0deg.
+  // Fixed 90-degree rotation when in portrait mode
   const containerWidth = isPortrait ? dimensions.height : dimensions.width;
   const containerHeight = isPortrait ? dimensions.width : dimensions.height;
   const rotationTransform = isPortrait
@@ -193,7 +122,7 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
         style={{ backgroundColor: bgStyleColor }}
         className="fixed inset-0 w-screen h-screen overflow-hidden select-none transition-colors duration-300"
       >
-        {/* Responsive Landscape Canvas (90° on portrait, 0° on landscape) */}
+        {/* Responsive Landscape Canvas (90° fixed rotation on portrait, 0° on landscape) */}
         <div
           style={{
             width: `${containerWidth}px`,
@@ -212,16 +141,9 @@ export const LandscapeWrapper: React.FC<LandscapeWrapperProps> = ({ children }) 
           }}
           className={`${themeConfig.bgClass} flex flex-col justify-between relative shadow-2xl transition-colors duration-300`}
         >
-          {/* Main Game Interface (Lobby / Tabletop) */}
           {children}
-
-          {/* Floating Immersive Fullscreen Entry / Exit Toggle Button (Draggable & integrated) */}
-          {!isFullscreen && (
-            <DraggableFullscreenButton toggleFullscreen={toggleFullscreen} />
-          )}
         </div>
       </div>
     </LandscapeContext.Provider>
   );
 };
-

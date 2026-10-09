@@ -1,0 +1,51 @@
+{
+  "authorizedPhones": [
+    "13800138000",
+    "18888888888",
+    "15999999999",
+    "13333333333",
+    "13666666666",
+    "13999999999"
+  ],
+  "users": {
+    "13800138000": {
+      "phone": "13800138000",
+      "nickname": "锄神大司马",
+      "password": "admin8",
+      "avatar": "😎",
+      "coins": 88888,
+      "diamonds": 888,
+      "wins": 66,
+      "losses": 12,
+      "isBotAdmin": true,
+      "createdAt": "2026-10-09T17:04:29.196716697Z"
+    },
+    "18888888888": {
+      "phone": "18888888888",
+      "nickname": "赌圣阿星",
+      "password": "123456",
+      "avatar": "👑",
+      "coins": 50000,
+      "diamonds": 500,
+      "wins": 30,
+      "losses": 10,
+      "isBotAdmin": false,
+      "createdAt": "2026-10-09T17:04:29.196716697Z"
+    }
+  },
+  "botConfig": {
+    "token": "7890123456:AAFdExampleTokenForChuDaDiBot",
+    "botUsername": "@ChuDaDiGame_Bot",
+    "botId": "7890123456",
+    "adminId": "123456789",
+    "webhookUrl": "https://example.com/api/bot/webhook"
+  },
+  "logs": [
+    {
+      "id": "1791565469196",
+      "time": "17:04:29",
+      "type": "BOT_EVENT",
+      "message": "经典 4 人锄大地 Go 后端管理中心服务启动"
+    }
+  ]
+}

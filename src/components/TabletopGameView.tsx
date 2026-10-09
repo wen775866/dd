@@ -18,6 +18,7 @@ import {
 } from '../utils/chudadiAI';
 import { sounds } from '../utils/audio';
 import { useAppTheme } from '../utils/themeContext';
+import { useLandscape } from './LandscapeWrapper';
 import { SvgCard } from './SvgCard';
 import {
   Play,
@@ -41,6 +42,8 @@ import {
   AlertTriangle,
   Zap,
   Palette,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { voiceEngine, DIALECT_OPTIONS, VoiceDialect, ChatMessage } from '../utils/voiceSystem';
 
@@ -79,6 +82,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   onToggleSound,
 }) => {
   const { theme, toggleTheme, themeConfig } = useAppTheme();
+  const { isFullscreen, toggleFullscreen } = useLandscape();
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [speechBubble, setSpeechBubble] = useState<{ [playerId: string]: string }>({});
   const [passStatuses, setPassStatuses] = useState<{ [playerId: string]: { text: string; timestamp: number } }>({});
@@ -95,6 +99,8 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
   const [activeVoicePlayer, setActiveVoicePlayer] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatTab, setChatTab] = useState<'phrases' | 'history' | 'dialect'>('phrases');
+  // Record all cards played by each player in the current round
+  const [playedHistory, setPlayedHistory] = useState<{ [playerId: string]: Card[] }>({});
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -128,6 +134,13 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       });
     }, 3200);
   };
+
+  // Reset played history on each new round / match
+  useEffect(() => {
+    if (gameState.phase === 'DEALING' || gameState.phase === 'LOBBY') {
+      setPlayedHistory({});
+    }
+  }, [gameState.phase, gameState.roundNumber, gameState.matchNumber]);
 
   // Turn Countdown Timer
   useEffect(() => {
@@ -388,7 +401,7 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
         '牌打得不错嘛！',
         '稳住，这把我们必胜！',
         '配合太默契了，赞！',
-        '收到收到，看我的大老二！',
+        '收到收到，看我的压轴王牌！',
       ];
       const reply = botReplies[Math.floor(Math.random() * botReplies.length)];
       showBubble(bot.id, reply);
@@ -452,6 +465,12 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       return next;
     });
 
+    // Record played cards into player's history (for avatar frame card display)
+    setPlayedHistory(prev => ({
+      ...prev,
+      [player.id]: [...(prev[player.id] || []), ...cards],
+    }));
+
     // Play card sound & Voice speech
     sounds.playCard();
     sounds.speakHand(hand.type, cards, !!gameState.lastValidHand, player.id);
@@ -468,13 +487,11 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
       cards: remainingCards,
     };
 
-    // Alarm warnings
+    // Alarm warnings: 移除提示弹幕，改为头像边框红蓝交替闪烁，保留语音播报与警报音
     if (remainingCards.length === 2) {
-      showBubble(player.id, '⚠️ 只剩两张牌！');
       sounds.playAlarm();
       setTimeout(() => sounds.speak('我就剩两张牌啦！', player.id), 300);
     } else if (remainingCards.length === 1) {
-      showBubble(player.id, '🚨 报警！只剩一张牌！');
       sounds.playAlarm();
       setTimeout(() => sounds.speak('我就剩一张牌啦！', player.id), 300);
     }
@@ -708,192 +725,279 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
           }}
         />
 
-        {/* TOP HEADER: Split into Left Floating Bar, Center Top Player Avatar (北家), Right Floating Bar */}
-        <div className="relative z-10 flex items-center justify-between gap-2 w-full px-1.5 sm:px-3 py-1 shrink-0">
-          {/* Top-Left Floating Info Bar */}
-          <div 
-            className={`flex items-center gap-1.5 sm:gap-2 backdrop-blur-md px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
-              theme === 'deep-green'
-                ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
-                : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
-            }`}
-          >
+        {/* 1. TOP-LEFT: 仅小方块按钮，不要大方块底板 */}
+        <div className="absolute top-1.5 left-1.5 z-30 select-none">
+          <div className="grid grid-cols-3 gap-1 items-center">
+            {/* 1. 大厅 */}
             <button
               onClick={() => {
                 sounds.playClick();
                 onBackToLobby();
               }}
-              className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-emerald-200 border-emerald-400/50'
-                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-cyan-200 border-cyan-400/50'
-              }`}
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 hover:bg-black/95 active:scale-95 text-emerald-300 border border-emerald-400/40 shadow-sm transition-transform cursor-pointer"
+              title="返回大厅"
             >
               <Home className="w-3.5 h-3.5 text-amber-400" />
-              <span>大厅</span>
+              <span className="text-[8px] font-bold leading-none mt-0.5">大厅</span>
             </button>
 
-            <span className="text-xs font-black text-amber-300 hidden sm:inline">
-              🔨 {gameState.room.name}
-            </span>
-
-            <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full border ${
-              theme === 'deep-green'
-                ? 'bg-[#0f402c]/90 text-amber-300 border-emerald-400/40'
-                : 'bg-[#0f3f5f]/90 text-amber-300 border-cyan-400/40'
-            }`}>
-              第 {gameState.matchNumber || 1} 场 · 第 {gameState.roundNumber || 1} 局
-            </span>
-
-            <span className="text-xs sm:text-sm font-black text-amber-300 flex items-center gap-1 font-mono">
-              <Flame className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              <span>底分 {gameState.room.baseScore}</span>
-            </span>
-          </div>
-
-          {/* Center-Top Player: 北家 (Identical size and structure to West & East avatars!) */}
-          <div className="flex flex-col items-center">
-            <div className="relative">
-              {speechBubble[botTop.id] && (
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
-                  <Radio className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-                  <span>{speechBubble[botTop.id]}</span>
-                </div>
-              )}
-              <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
-                  activeVoicePlayer === botTop.id
-                    ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
-                    : gameState.currentPlayerIndex === 2
-                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
-                    : theme === 'deep-green'
-                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
-                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
-                }`}
-              >
-                {passStatuses[botTop.id] ? (
-                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
-                    <span>{passStatuses[botTop.id].text}</span>
-                  </div>
-                ) : (
-                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
-                )}
-              </div>
-              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
-                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
-              }`}>
-                北家
-              </span>
-            </div>
-
-            <div className="text-center mt-1.5">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botTop.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
-                <span>{botTop.cards.length <= 2 && '🚨 '}手牌 {botTop.cards.length} 张</span>
-                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botTop.accumulatedCards || 0}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Top-Right Floating Controls Bar */}
-          <div 
-            className={`flex items-center gap-1 sm:gap-2 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-2xl border shadow-lg transition-colors duration-300 ${
-              theme === 'deep-green'
-                ? 'bg-[#134d35]/90 border-emerald-400/40 text-emerald-50'
-                : 'bg-[#134d73]/90 border-cyan-400/40 text-cyan-50'
-            }`}
-          >
-            {/* Eye-Friendly Theme Toggle */}
+            {/* 2. 全屏 */}
             <button
               onClick={() => {
                 sounds.playClick();
-                toggleTheme();
+                toggleFullscreen();
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border shadow ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] border-emerald-400/60 text-emerald-200'
-                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] border-cyan-400/60 text-cyan-200'
-              }`}
-              title="切换养眼护眼主题 (翡翠草绿 / 湖水湛蓝)"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 hover:bg-black/95 active:scale-95 text-amber-300 border border-amber-400/40 shadow-sm transition-transform cursor-pointer"
+              title={isFullscreen ? '退出全屏' : '全屏显示'}
             >
-              <Palette className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">{theme === 'deep-green' ? '翡翠绿' : '湖水蓝'}</span>
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-amber-400" />}
+              <span className="text-[8px] font-bold leading-none mt-0.5">{isFullscreen ? '退出' : '全屏'}</span>
             </button>
 
-            {/* Walkie-Talkie Hold-to-Talk Button */}
-            <button
-              onPointerDown={handleStartRecord}
-              onPointerUp={handleStopRecord}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none ${
-                isRecording
-                  ? 'bg-red-600 text-white animate-pulse ring-2 ring-red-400'
-                  : theme === 'deep-green'
-                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] border border-emerald-400/70 text-amber-300 shadow'
-                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] border border-cyan-400/70 text-amber-300 shadow'
-              }`}
-              title="按住对讲机直接说话"
-            >
-              <Mic className={`w-3.5 h-3.5 ${isRecording ? 'animate-bounce' : ''}`} />
-              <span className="hidden sm:inline">{isRecording ? `${recordingSec}s 松开发送` : '按住对讲'}</span>
-            </button>
-
-            {/* Quick Chat */}
-            <button
-              onClick={() => setShowChatModal(true)}
-              className={`p-1.5 rounded-lg border text-amber-300 hover:text-white text-xs cursor-pointer transition-colors shadow flex items-center gap-1 ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c]/90 border-emerald-400/60'
-                  : 'bg-[#0f3f5f]/90 border-cyan-400/60'
-              }`}
-              title="快捷短语与语音对讲"
-            >
-              <MessageSquare className="w-4 h-4" />
-              {chatMessages.length > 0 && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-              )}
-            </button>
-
-            {/* Sound Toggle */}
-            <button
-              onClick={onToggleSound}
-              className={`p-1.5 rounded-lg border text-xs cursor-pointer shadow transition-all ${
-                soundEnabled
-                  ? theme === 'deep-green'
-                    ? 'bg-[#0f402c] border-emerald-400 text-emerald-200'
-                    : 'bg-[#0f3f5f] border-cyan-400 text-cyan-200'
-                  : 'bg-slate-900 border-slate-800 text-slate-500'
-              }`}
-              title={soundEnabled ? '静音' : '开音效'}
-            >
-              {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            </button>
-
-            {/* Autoplay Toggle */}
+            {/* 3. 托管 */}
             <button
               onClick={() => {
                 sounds.playClick();
                 setIsAutoPlay(prev => !prev);
               }}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg active:scale-95 transition-transform border shadow-sm cursor-pointer ${
                 isAutoPlay
-                  ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-lg shadow-amber-500/40 animate-pulse ring-2 ring-amber-300 font-black'
-                  : theme === 'deep-green'
-                  ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-emerald-100 border border-emerald-400/60'
-                  : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-cyan-100 border border-cyan-400/60'
+                  ? 'bg-amber-500 text-slate-950 font-black animate-pulse border-yellow-200'
+                  : 'bg-black/80 hover:bg-black/95 text-slate-200 border-white/20'
               }`}
+              title="AI 自动托管"
             >
               <Bot className="w-3.5 h-3.5" />
-              <span>{isAutoPlay ? '托管中' : '托管'}</span>
+              <span className="text-[8px] font-bold leading-none mt-0.5">{isAutoPlay ? '托管中' : '托管'}</span>
             </button>
+
+            {/* 4. 对讲 */}
+            <button
+              onPointerDown={handleStartRecord}
+              onPointerUp={handleStopRecord}
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg active:scale-95 select-none transition-transform border shadow-sm cursor-pointer ${
+                isRecording
+                  ? 'bg-red-600 text-white animate-pulse border-red-300'
+                  : 'bg-black/80 hover:bg-black/95 text-amber-300 border-amber-400/40'
+              }`}
+              title="按住对讲直接说话"
+            >
+              <Mic className={`w-3.5 h-3.5 ${isRecording ? 'animate-bounce' : ''}`} />
+              <span className="text-[8px] font-bold leading-none mt-0.5">{isRecording ? `${recordingSec}s` : '对讲'}</span>
+            </button>
+
+            {/* 5. 短语 */}
+            <button
+              onClick={() => setShowChatModal(true)}
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 hover:bg-black/95 active:scale-95 text-amber-300 border border-amber-400/40 shadow-sm transition-transform relative cursor-pointer"
+              title="快捷短语与表情"
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span className="text-[8px] font-bold leading-none mt-0.5">短语</span>
+              {chatMessages.length > 0 && (
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+              )}
+            </button>
+
+            {/* 6. 音效 */}
+            <button
+              onClick={onToggleSound}
+              className={`w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg active:scale-95 transition-transform border shadow-sm cursor-pointer ${
+                soundEnabled
+                  ? 'bg-black/80 hover:bg-black/95 text-emerald-300 border-emerald-400/40'
+                  : 'bg-slate-900 text-slate-500 border-slate-700'
+              }`}
+              title={soundEnabled ? '静音' : '开启音效'}
+            >
+              {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span className="text-[8px] font-bold leading-none mt-0.5">{soundEnabled ? '音效' : '静音'}</span>
+            </button>
+
+            {/* 7. 换桌 */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                if (onChangeTable) onChangeTable();
+              }}
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 hover:bg-black/95 active:scale-95 text-cyan-300 border border-cyan-400/40 shadow-sm transition-transform cursor-pointer"
+              title="换桌匹配"
+            >
+              <Shuffle className="w-3.5 h-3.5" />
+              <span className="text-[8px] font-bold leading-none mt-0.5">换桌</span>
+            </button>
+
+            {/* 8. 主题 */}
+            <button
+              onClick={() => {
+                sounds.playClick();
+                toggleTheme();
+              }}
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 hover:bg-black/95 active:scale-95 text-amber-300 border border-amber-400/40 shadow-sm transition-transform cursor-pointer"
+              title="切换养眼护眼主题"
+            >
+              <Palette className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-[8px] font-bold leading-none mt-0.5">{theme === 'deep-green' ? '绿' : '蓝'}</span>
+            </button>
+
+            {/* 9. 底分/局数 */}
+            <div 
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center rounded-lg bg-black/80 border border-amber-500/50 text-amber-300 font-mono shadow-sm"
+              title={`第${gameState.matchNumber || 1}场·第${gameState.roundNumber || 1}局 · 底分${gameState.room.baseScore}`}
+            >
+              <Flame className="w-3 h-3 text-amber-400" />
+              <span className="text-[7.5px] font-black leading-none mt-0.5">底{gameState.room.baseScore}</span>
+            </div>
           </div>
         </div>
 
-        {/* 4-PLAYER ARENA: Left (西家), Center Table, Right (东家) */}
-        <div className="relative z-10 grid grid-cols-12 gap-1 sm:gap-2 items-center my-auto py-1">
-          {/* Left Player: 西家 */}
-          <div className="col-span-3 flex flex-col items-center">
+        {/* 2. TOP-RIGHT: 累计牌数小方块 (精致紧凑尺寸，紧贴右上角，绝不遮挡玩家头像) */}
+        <div className="absolute top-1 right-1 sm:top-1.5 sm:right-1.5 z-30 select-none">
+          <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+            {/* Top: 北方 */}
+            <div 
+              className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border font-mono font-black text-xs sm:text-sm shadow-md transition-all ${
+                (botTop.accumulatedCards || 0) >= 80
+                  ? 'bg-red-950/95 border-red-500 text-red-300 animate-pulse ring-1 ring-red-400'
+                  : (botTop.accumulatedCards || 0) >= 50
+                  ? 'bg-amber-950/90 border-amber-400 text-amber-300'
+                  : 'bg-black/85 border-white/25 text-emerald-300'
+              }`}
+              title={`累计输牌: ${botTop.accumulatedCards || 0}张`}
+            >
+              {botTop.accumulatedCards || 0}
+            </div>
+
+            {/* Middle: 西方与东方贴近 (gap-0.5) */}
+            <div className="flex items-center gap-0.5 sm:gap-1">
+              <div 
+                className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border font-mono font-black text-xs sm:text-sm shadow-md transition-all ${
+                  (botLeft.accumulatedCards || 0) >= 80
+                    ? 'bg-red-950/95 border-red-500 text-red-300 animate-pulse ring-1 ring-red-400'
+                    : (botLeft.accumulatedCards || 0) >= 50
+                    ? 'bg-amber-950/90 border-amber-400 text-amber-300'
+                    : 'bg-black/85 border-white/25 text-emerald-300'
+                }`}
+                title={`累计输牌: ${botLeft.accumulatedCards || 0}张`}
+              >
+                {botLeft.accumulatedCards || 0}
+              </div>
+
+              <div 
+                className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border font-mono font-black text-xs sm:text-sm shadow-md transition-all ${
+                  (botRight.accumulatedCards || 0) >= 80
+                    ? 'bg-red-950/95 border-red-500 text-red-300 animate-pulse ring-1 ring-red-400'
+                    : (botRight.accumulatedCards || 0) >= 50
+                    ? 'bg-amber-950/90 border-amber-400 text-amber-300'
+                    : 'bg-black/85 border-white/25 text-emerald-300'
+                }`}
+                title={`累计输牌: ${botRight.accumulatedCards || 0}张`}
+              >
+                {botRight.accumulatedCards || 0}
+              </div>
+            </div>
+
+            {/* Bottom: 南方 (自己) */}
+            <div 
+              className={`w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center rounded-lg border font-mono font-black text-xs sm:text-sm shadow-md transition-all ${
+                (human.accumulatedCards || 0) >= 80
+                  ? 'bg-red-950/95 border-red-500 text-red-300 animate-pulse ring-1 ring-red-400'
+                  : (human.accumulatedCards || 0) >= 50
+                  ? 'bg-amber-950/90 border-amber-400 text-amber-300'
+                  : 'bg-black/85 border-amber-400/90 text-amber-300 ring-1 ring-amber-400/50'
+              }`}
+              title={`自己累计输牌: ${human.accumulatedCards || 0}张`}
+            >
+              {human.accumulatedCards || 0}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. CENTER-TOP PLAYER: 北家 (紧贴顶部上边，精美金属质感头像框) */}
+        <div className="relative z-20 flex flex-col items-center justify-start pt-0 shrink-0">
+          <div className="relative">
+            {speechBubble[botTop.id] && (
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
+                <Radio className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                <span>{speechBubble[botTop.id]}</span>
+              </div>
+            )}
+            {/* 精美金属质感头像框 (顶部玩家：按比例继续增大，横向宽屏展示该玩家出过的牌) */}
+            <div className="p-0.5 sm:p-1 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-amber-400/90 via-yellow-300/80 to-amber-600/90 shadow-2xl">
+              <div
+                className={`w-32 h-20 sm:w-38 sm:h-23 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center shadow-inner border-2 transition-all relative overflow-hidden p-1 ${
+                  botTop.cards.length <= 2
+                    ? 'border-2 animate-police-flash scale-105'
+                    : activeVoicePlayer === botTop.id
+                    ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
+                    : gameState.currentPlayerIndex === 2
+                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_24px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/25'
+                    : theme === 'deep-green'
+                    ? 'border-emerald-400/80 bg-gradient-to-b from-[#165a3d] to-[#0a3020]'
+                    : 'border-cyan-400/80 bg-gradient-to-b from-[#185c88] to-[#0b2f48]'
+                }`}
+              >
+                {passStatuses[botTop.id] ? (
+                  /* 要不起时：不需要红色背景，使用高贵典雅的金黄色背景 */
+                  <div className="w-full h-full bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150 shadow-inner">
+                    <span className="drop-shadow-sm font-black">{passStatuses[botTop.id].text}</span>
+                  </div>
+                ) : (
+                  /* 移除头像图片，在头像框里两排整齐排放该玩家出过的牌，旋转90度竖放，最多显示十二张，不溢出不切割 (字体花色增大) */
+                  <div className="w-full h-full flex flex-col justify-center pt-2.5 pb-0.5 px-0.5 overflow-hidden">
+                    {playedHistory[botTop.id] && playedHistory[botTop.id].length > 0 ? (
+                      <div className="grid grid-cols-6 grid-rows-2 gap-1 sm:gap-1.5 items-center justify-items-center h-full w-full overflow-hidden">
+                        {playedHistory[botTop.id].slice(-12).map((c, idx) => (
+                          <div
+                            key={c.id ? `${c.id}-${idx}` : idx}
+                            className={`flex flex-col items-center justify-center py-0.5 px-1 rounded bg-white/95 shadow-sm border border-slate-300 w-full h-[22px] sm:h-[26px] ${
+                              c.color === 'red' ? 'text-red-600' : 'text-slate-950'
+                            }`}
+                            title={`${c.rank} ${c.suit}`}
+                          >
+                            <span className="text-[10px] sm:text-[11.5px] font-black leading-none mb-0.5">{c.rank}</span>
+                            <span className="text-[10px] sm:text-[11.5px] leading-none">{SUIT_SYMBOLS[c.suit]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[11px] sm:text-xs text-amber-200/70 font-bold">
+                        未出牌
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 玩家昵称角标 (自适应截断，绝不溢出头像框) */}
+                <div 
+                  className="absolute top-0 right-0 max-w-full px-1.5 py-0.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-bl-md text-[8px] sm:text-[9px] font-black text-slate-950 leading-tight shadow truncate pointer-events-none z-10"
+                  title={botTop.name}
+                >
+                  {botTop.name}
+                </div>
+              </div>
+            </div>
+            {/* 东南西北家的小圆用来显示手牌剩余数量 */}
+            <span 
+              className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-black font-mono px-2 py-0.5 rounded-full border shadow-md flex items-center justify-center whitespace-nowrap z-20 transition-all ${
+                botTop.cards.length <= 2
+                  ? 'bg-red-600 text-yellow-200 border-red-400 animate-pulse ring-2 ring-red-500'
+                  : theme === 'deep-green'
+                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/60'
+                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/60'
+              }`}
+              title={`手牌剩余: ${botTop.cards.length}张`}
+            >
+              {botTop.cards.length <= 2 ? `🚨${botTop.cards.length}张` : `${botTop.cards.length}张`}
+            </span>
+          </div>
+
+          {/* 原来头像下的手牌多少张和玩家昵称已移除，昵称已在头像角标中展示 */}
+        </div>
+
+        {/* 4-PLAYER ARENA: Left (西家紧贴最左边), Center Table Area (宽广增高的出牌区), Right (东家紧贴最右边) */}
+        <div className="relative z-10 flex items-center justify-between my-auto py-0.5 w-full px-0 sm:px-0.5 min-h-[160px] sm:min-h-[185px] md:min-h-[205px] flex-1">
+          {/* Left Player: 西家 (紧贴最左侧边缘) */}
+          <div className="flex flex-col items-start pl-0 sm:pl-0.5 shrink-0 z-20">
             <div className="relative">
               {speechBubble[botLeft.id] && (
                 <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
@@ -901,80 +1005,117 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   <span>{speechBubble[botLeft.id]}</span>
                 </div>
               )}
-              <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
-                  activeVoicePlayer === botLeft.id
-                    ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
-                    : gameState.currentPlayerIndex === 3
-                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
-                    : theme === 'deep-green'
-                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
-                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
-                }`}
-              >
-                {passStatuses[botLeft.id] ? (
-                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
-                    <span>{passStatuses[botLeft.id].text}</span>
+              {/* 精美金属质感头像框 (左边玩家：按比例增大，展示该玩家出过的牌) */}
+              <div className="p-0.5 sm:p-1 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-amber-400/90 via-yellow-300/80 to-amber-600/90 shadow-2xl">
+                <div
+                  className={`w-20 h-30 sm:w-23 sm:h-36 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center shadow-inner border-2 transition-all relative overflow-hidden p-1 ${
+                    botLeft.cards.length <= 2
+                      ? 'border-2 animate-police-flash scale-105'
+                      : activeVoicePlayer === botLeft.id
+                      ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
+                      : gameState.currentPlayerIndex === 3
+                      ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_24px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/25'
+                      : theme === 'deep-green'
+                      ? 'border-emerald-400/80 bg-gradient-to-b from-[#165a3d] to-[#0a3020]'
+                      : 'border-cyan-400/80 bg-gradient-to-b from-[#185c88] to-[#0b2f48]'
+                  }`}
+                >
+                  {passStatuses[botLeft.id] ? (
+                    /* 要不起时：金黄色背景 */
+                    <div className="w-full h-full bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150 shadow-inner">
+                      <span className="drop-shadow-sm font-black">{passStatuses[botLeft.id].text}</span>
+                    </div>
+                  ) : (
+                    /* 移除头像图片，在头像框里两列显示该玩家出过的牌，最多显示十二张，不允许滚动 (字体和花色放大，不溢出) */
+                    <div className="w-full h-full flex flex-col justify-start pt-3 pb-0.5 px-0.5 overflow-hidden">
+                      {playedHistory[botLeft.id] && playedHistory[botLeft.id].length > 0 ? (
+                        <div className="grid grid-cols-2 gap-0.5 sm:gap-1 items-center justify-items-center w-full max-h-full overflow-hidden">
+                          {playedHistory[botLeft.id].slice(-12).map((c, idx) => (
+                            <span
+                              key={c.id ? `${c.id}-${idx}` : idx}
+                              className={`flex items-center justify-center px-1 py-0.5 rounded bg-white/95 shadow-xs border border-slate-300 text-[10px] sm:text-[11.5px] font-black leading-none shrink-0 w-full ${
+                                c.color === 'red' ? 'text-red-600' : 'text-slate-950'
+                              }`}
+                              title={`${c.suit} ${c.rank}`}
+                            >
+                              <span className="text-[10px] sm:text-[11.5px] mr-0.5 leading-none">{SUIT_SYMBOLS[c.suit]}</span>
+                              <span className="leading-none">{c.rank}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-[11px] sm:text-xs text-amber-200/70 font-bold">
+                          未出牌
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 玩家昵称角标 (自适应截断，绝不溢出头像框) */}
+                  <div 
+                    className="absolute top-0 right-0 max-w-full px-1.5 py-0.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-bl-md text-[8px] sm:text-[9px] font-black text-slate-950 leading-tight shadow truncate pointer-events-none z-10"
+                    title={botLeft.name}
+                  >
+                    {botLeft.name}
                   </div>
-                ) : (
-                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
-                )}
+                </div>
               </div>
-              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
-                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
-              }`}>
-                西家
+              {/* 东南西北家的小圆用来显示手牌剩余数量 */}
+              <span 
+                className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-black font-mono px-2 py-0.5 rounded-full border shadow-md flex items-center justify-center whitespace-nowrap z-20 transition-all ${
+                  botLeft.cards.length <= 2
+                    ? 'bg-red-600 text-yellow-200 border-red-400 animate-pulse ring-2 ring-red-500'
+                    : theme === 'deep-green'
+                    ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/60'
+                    : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/60'
+                }`}
+                title={`手牌剩余: ${botLeft.cards.length}张`}
+              >
+                {botLeft.cards.length <= 2 ? `🚨${botLeft.cards.length}张` : `${botLeft.cards.length}张`}
               </span>
-            </div>
-
-            <div className="text-center mt-2">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botLeft.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
-                <span>{botLeft.cards.length <= 2 && '🚨 '}手牌 {botLeft.cards.length} 张</span>
-                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botLeft.accumulatedCards || 0}</span>
-              </div>
-            </div>
-
-            <div className="flex -space-x-5 mt-1">
-              {Array.from({ length: Math.min(5, botLeft.cards.length) }).map((_, i) => (
-                <SvgCard key={i} showBack={true} size="mini" className="shadow-md" />
-              ))}
             </div>
           </div>
 
-          {/* Center Battle Field */}
-          <div className="col-span-6 flex flex-col items-center justify-center min-h-[140px] px-1">
-            {/* Current Active Trick Cards on Felt Table */}
+          {/* Table Active Played Cards Area (出牌区：从左边玩家头像到右边玩家头像的开阔区域，大幅增高增宽) */}
+          <div className="flex-1 relative w-full h-full min-h-[170px] sm:min-h-[195px] md:min-h-[215px] mx-1 sm:mx-2.5 pointer-events-none flex items-center">
             {gameState.lastValidHand ? (
-              <div className="flex flex-col items-center gap-1.5 my-auto">
-                <div className="flex items-center justify-center gap-1 flex-wrap">
+              <div 
+                className={`w-full flex transition-all duration-200 pointer-events-auto ${
+                  gameState.lastValidHand.playerId === 'player-3' // 左边玩家(西家): 靠左侧展示
+                    ? 'justify-start pl-1 sm:pl-3'
+                    : gameState.lastValidHand.playerId === 'player-1' // 右边玩家(东家): 靠右侧展示
+                    ? 'justify-end pr-1 sm:pr-3'
+                    : 'justify-center' // 我(南家)和上面玩家(北家): 都在中间展示，上面玩家无需紧贴头像
+                }`}
+              >
+                <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
                   {gameState.lastValidHand.hand.cards.map((c, i) => (
                     <SvgCard
                       key={c.id || i}
                       card={c}
                       size="md"
-                      className="animate-in fade-in zoom-in-95 duration-200 shadow-xl"
+                      className="animate-in fade-in zoom-in-95 duration-200 shadow-2xl ring-1 ring-black/40"
                     />
                   ))}
                 </div>
               </div>
             ) : (
-              <div className={`my-auto text-center text-xs border-2 border-dashed px-6 py-2.5 rounded-2xl ${
-                theme === 'deep-green'
-                  ? 'text-emerald-100/90 border-emerald-300/40 bg-[#0f402c]/40'
-                  : 'text-cyan-100/90 border-cyan-300/40 bg-[#0f3f5f]/40'
-              }`}>
-                {gameState.isFirstTrick
-                  ? '♦2 (方块2) 首出！首出牌型中必须包含♦2 (逆时针出牌)'
-                  : '桌面无牌，轮到领牌者任意出牌'}
+              <div className="w-full flex items-center justify-center">
+                <div className={`text-center text-xs sm:text-sm border-2 border-dashed px-5 py-2.5 rounded-2xl pointer-events-auto font-medium shadow-sm ${
+                  theme === 'deep-green'
+                    ? 'text-emerald-100/90 border-emerald-300/40 bg-[#0f402c]/50'
+                    : 'text-cyan-100/90 border-cyan-300/40 bg-[#0f3f5f]/50'
+                }`}>
+                  {gameState.isFirstTrick
+                    ? '♦2 (方块2) 首出！首出牌型中必须包含♦2 (逆时针出牌)'
+                    : '桌面无牌，轮到领牌者任意出牌'}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Right Player: 东家 */}
-          <div className="col-span-3 flex flex-col items-center">
+          {/* Right Player: 东家 (紧贴最右侧边缘) */}
+          <div className="flex flex-col items-end pr-0 sm:pr-0.5 shrink-0 z-20">
             <div className="relative">
               {speechBubble[botRight.id] && (
                 <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-white text-slate-900 text-xs font-black px-3.5 py-1 rounded-full shadow-2xl border-2 border-amber-400 z-30 animate-bounce flex items-center gap-1">
@@ -982,99 +1123,140 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
                   <span>{speechBubble[botRight.id]}</span>
                 </div>
               )}
-              <div
-                className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-xl border-2 transition-all relative overflow-hidden ${
-                  activeVoicePlayer === botRight.id
-                    ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
-                    : gameState.currentPlayerIndex === 1
-                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_18px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/20'
-                    : theme === 'deep-green'
-                    ? 'border-emerald-500/60 bg-[#0f402c]/80'
-                    : 'border-cyan-500/60 bg-[#0f3f5f]/80'
-                }`}
-              >
-                {passStatuses[botRight.id] ? (
-                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150">
-                    <span>{passStatuses[botRight.id].text}</span>
+              {/* 精美金属质感头像框 (右边玩家：按比例增大，展示该玩家出过的牌) */}
+              <div className="p-0.5 sm:p-1 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-amber-400/90 via-yellow-300/80 to-amber-600/90 shadow-2xl">
+                <div
+                  className={`w-20 h-30 sm:w-23 sm:h-36 rounded-xl sm:rounded-2xl flex flex-col items-center justify-center shadow-inner border-2 transition-all relative overflow-hidden p-1 ${
+                    botRight.cards.length <= 2
+                      ? 'border-2 animate-police-flash scale-105'
+                      : activeVoicePlayer === botRight.id
+                      ? 'ring-4 ring-emerald-400 animate-pulse border-emerald-300'
+                      : gameState.currentPlayerIndex === 1
+                      ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_24px_rgba(239,68,68,0.95)] animate-pulse scale-105 bg-red-500/25'
+                      : theme === 'deep-green'
+                      ? 'border-emerald-400/80 bg-gradient-to-b from-[#165a3d] to-[#0a3020]'
+                      : 'border-cyan-400/80 bg-gradient-to-b from-[#185c88] to-[#0b2f48]'
+                  }`}
+                >
+                  {passStatuses[botRight.id] ? (
+                    /* 要不起时：金黄色背景 */
+                    <div className="w-full h-full bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-xs sm:text-base flex items-center justify-center animate-in zoom-in-75 duration-150 shadow-inner">
+                      <span className="drop-shadow-sm font-black">{passStatuses[botRight.id].text}</span>
+                    </div>
+                  ) : (
+                    /* 移除头像图片，在头像框里两列显示该玩家出过的牌，最多显示十二张，不允许滚动 (字体和花色放大，不溢出) */
+                    <div className="w-full h-full flex flex-col justify-start pt-3 pb-0.5 px-0.5 overflow-hidden">
+                      {playedHistory[botRight.id] && playedHistory[botRight.id].length > 0 ? (
+                        <div className="grid grid-cols-2 gap-0.5 sm:gap-1 items-center justify-items-center w-full max-h-full overflow-hidden">
+                          {playedHistory[botRight.id].slice(-12).map((c, idx) => (
+                            <span
+                              key={c.id ? `${c.id}-${idx}` : idx}
+                              className={`flex items-center justify-center px-1 py-0.5 rounded bg-white/95 shadow-xs border border-slate-300 text-[10px] sm:text-[11.5px] font-black leading-none shrink-0 w-full ${
+                                c.color === 'red' ? 'text-red-600' : 'text-slate-950'
+                              }`}
+                              title={`${c.suit} ${c.rank}`}
+                            >
+                              <span className="text-[10px] sm:text-[11.5px] mr-0.5 leading-none">{SUIT_SYMBOLS[c.suit]}</span>
+                              <span className="leading-none">{c.rank}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-[11px] sm:text-xs text-amber-200/70 font-bold">
+                          未出牌
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 玩家昵称角标 (自适应截断，绝不溢出头像框) */}
+                  <div 
+                    className="absolute top-0 right-0 max-w-full px-1.5 py-0.5 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-300 rounded-bl-md text-[8px] sm:text-[9px] font-black text-slate-950 leading-tight shadow truncate pointer-events-none z-10"
+                    title={botRight.name}
+                  >
+                    {botRight.name}
                   </div>
-                ) : (
-                  <Bot className="w-7 h-7 sm:w-8 sm:h-8 text-amber-300 drop-shadow" />
-                )}
+                </div>
               </div>
-              <span className={`absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] font-black px-2 py-0.2 rounded-full border ${
-                theme === 'deep-green'
-                  ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/40'
-                  : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/40'
-              }`}>
-                东家
+              {/* 东南西北家的小圆用来显示手牌剩余数量 */}
+              <span 
+                className={`absolute -bottom-2.5 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-black font-mono px-2 py-0.5 rounded-full border shadow-md flex items-center justify-center whitespace-nowrap z-20 transition-all ${
+                  botRight.cards.length <= 2
+                    ? 'bg-red-600 text-yellow-200 border-red-400 animate-pulse ring-2 ring-red-500'
+                    : theme === 'deep-green'
+                    ? 'bg-[#0f402c] text-emerald-200 border-emerald-400/60'
+                    : 'bg-[#0f3f5f] text-cyan-200 border-cyan-400/60'
+                }`}
+                title={`手牌剩余: ${botRight.cards.length}张`}
+              >
+                {botRight.cards.length <= 2 ? `🚨${botRight.cards.length}张` : `${botRight.cards.length}张`}
               </span>
-            </div>
-
-            <div className="text-center mt-2">
-              <div className="text-[11px] sm:text-xs font-bold text-slate-100">{botRight.name}</div>
-              <div className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-200 mt-0.5 flex items-center justify-center gap-1">
-                <span>{botRight.cards.length <= 2 && '🚨 '}手牌 {botRight.cards.length} 张</span>
-                <span className="text-amber-300 bg-amber-950/80 px-1 rounded border border-amber-500/30">累计{botRight.accumulatedCards || 0}</span>
-              </div>
-            </div>
-
-            <div className="flex -space-x-5 mt-1">
-              {Array.from({ length: Math.min(5, botRight.cards.length) }).map((_, i) => (
-                <SvgCard key={i} showBack={true} size="mini" className="shadow-md" />
-              ))}
             </div>
           </div>
         </div>
 
-        {/* BOTTOM SECTION: Human Actions & 13 Card Hand Fan (Border-free, Tabletop Felt matching background, Fixed stable height) */}
-        <div className="relative z-20 flex flex-col items-center w-full bg-transparent shrink-0">
+        {/* BOTTOM SECTION: 扑克牌与到我出牌的功能按钮上移，底部留出充足安全空间，确保绝不被切割 */}
+        <div className="relative z-20 flex flex-col items-center w-full bg-transparent shrink-0 -mt-3 sm:-mt-4 md:-mt-5 pb-4 sm:pb-5 md:pb-6">
           {speechBubble['player-0'] && (
-            <div className="absolute -top-11 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-2xl border-2 border-white z-40 animate-bounce flex items-center gap-1.5">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 text-xs font-black px-4 py-1.5 rounded-full shadow-2xl border-2 border-white z-40 animate-bounce flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-slate-950 animate-pulse" />
               <span>{speechBubble['player-0']}</span>
             </div>
           )}
 
-          {/* Action Buttons Row & Info: Fixed constant height to prevent any border/height shifts */}
-          <div className="flex items-center justify-between w-full px-2 sm:px-4 h-8 sm:h-9 shrink-0 select-none">
-            {/* Left: Player Identity & Sort Switch */}
-            <div className="flex items-center gap-1.5 text-xs text-white">
-              <div
-                className={`w-6 h-6 sm:w-7 sm:h-7 rounded-xl flex items-center justify-center border transition-all relative overflow-hidden shrink-0 ${
-                  gameState.currentPlayerIndex === 0
-                    ? 'border-2 border-red-500 ring-4 ring-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.9)] animate-pulse scale-105 bg-red-500/20'
-                    : theme === 'deep-green'
-                    ? 'border-emerald-400/50 bg-[#0f402c]'
-                    : 'border-cyan-400/50 bg-[#0f3f5f]'
-                }`}
-              >
-                {passStatuses['player-0'] ? (
-                  <div className="w-full h-full bg-gradient-to-br from-red-600 via-rose-600 to-red-800 text-white font-black text-[10px] sm:text-xs flex items-center justify-center animate-in zoom-in-75 duration-150">
-                    <span>{passStatuses['player-0'].text}</span>
+          {/* 1. 13张手牌扇形区: 向上收拢提升，点击选牌弹起顶部不切割，底部留出足够按键空间 */}
+          <div
+            className="w-full flex items-center justify-center overflow-x-auto overflow-y-visible pt-4 sm:pt-5 md:pt-6 pb-1 sm:pb-1.5 px-2 shrink-0 min-h-[130px] sm:min-h-[155px] md:min-h-[180px]"
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div className="flex -space-x-10 sm:-space-x-13 md:-space-x-16 lg:-space-x-18 shrink-0">
+              {displayedHumanCards.map((card, index) => {
+                const isSelected = selectedCardIds.includes(card.id);
+                return (
+                  <div
+                    key={card.id}
+                    data-card-id={card.id}
+                    onClick={(e) => handleCardClick(card.id, e)}
+                    onPointerDown={() => handleCardPointerDown(card.id)}
+                    onPointerEnter={() => handleCardPointerEnter(card.id)}
+                    onTouchStart={() => handleTouchStart(card.id)}
+                    style={{ zIndex: index + 1 }}
+                    className="shrink-0 select-none cursor-pointer relative"
+                  >
+                    <SvgCard
+                      card={card}
+                      isSelected={isSelected}
+                      size="lg"
+                    />
                   </div>
-                ) : (
-                  <User className="w-3.5 h-3.5 text-amber-300" />
-                )}
-              </div>
-              <span className="font-bold text-slate-100">{human.name} (南家)</span>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. 到我出牌的功能按钮横幅: 显示在扑克牌下面，整体随手牌上移，离屏幕底边有充足安全距离，绝对不被切割 */}
+          <div className="flex items-center justify-between w-full px-2 sm:px-6 h-9 sm:h-10 shrink-0 select-none mt-1">
+            {/* Left: 排序切换按钮 (按点数 / 按大小) */}
+            <div className="flex items-center min-w-[70px]">
               <button
                 onClick={() => {
                   sounds.playClick();
                   setSortByPattern(prev => !prev);
                 }}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full border cursor-pointer text-[10px] font-bold ml-1 shadow-sm ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full border cursor-pointer text-[10px] sm:text-xs font-bold shadow-sm transition-all ${
                   theme === 'deep-green'
                     ? 'bg-[#0f402c]/90 hover:bg-[#165a3d] text-amber-300 border-emerald-400/50'
                     : 'bg-[#0f3f5f]/90 hover:bg-[#165882] text-amber-300 border-cyan-400/50'
                 }`}
               >
-                <SlidersHorizontal className="w-2.5 h-2.5 text-amber-400" />
+                <SlidersHorizontal className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-amber-400" />
                 <span>{sortByPattern ? '按点数' : '按大小'}</span>
               </button>
             </div>
 
-            {/* Center: Action Buttons or Thinking Pill */}
-            <div className="flex items-center justify-center h-full">
+            {/* Center: 到我出牌的功能按钮 (出牌、不出、提示、重选、倒计时) */}
+            <div className="flex items-center justify-center">
               {isHumanCurrent && gameState.phase === 'PLAYING' ? (
                 <div className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in zoom-in-95 duration-150">
                   {/* Timer Circle */}
@@ -1151,47 +1333,9 @@ export const TabletopGameView: React.FC<TabletopGameViewProps> = ({
               )}
             </div>
 
-            {/* Right: Scores & Cards Count */}
-            <div className="flex items-center gap-2 text-[11px] text-emerald-50">
-              <span>
-                手牌 <strong className="text-white font-mono">{human.cards.length}</strong> 张
-              </span>
-              <span className="text-amber-300 font-bold bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-500/40">
-                累计 <strong className="font-mono">{human.accumulatedCards || 0}</strong>/100张
-              </span>
-              <span>
-                积分 <strong className="text-amber-300 font-mono">{human.score.toLocaleString()}</strong>
-              </span>
-            </div>
-          </div>
-
-          {/* 13 Overlapping Cards Fan: Completely visible with full top and bottom margins, never clipped */}
-          <div
-            className="w-full flex items-center justify-center overflow-x-auto overflow-y-visible pt-4 pb-2 px-2 shrink-0 min-h-[96px] sm:min-h-[115px]"
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            <div className="flex -space-x-7 sm:-space-x-9 md:-space-x-11 lg:-space-x-13 shrink-0">
-              {displayedHumanCards.map(card => {
-                const isSelected = selectedCardIds.includes(card.id);
-                return (
-                  <div
-                    key={card.id}
-                    data-card-id={card.id}
-                    onClick={(e) => handleCardClick(card.id, e)}
-                    onPointerDown={() => handleCardPointerDown(card.id)}
-                    onPointerEnter={() => handleCardPointerEnter(card.id)}
-                    onTouchStart={() => handleTouchStart(card.id)}
-                    className="shrink-0 select-none cursor-pointer"
-                  >
-                    <SvgCard
-                      card={card}
-                      isSelected={isSelected}
-                      size="lg"
-                    />
-                  </div>
-                );
-              })}
+            {/* Right: 积分 */}
+            <div className="flex items-center justify-end min-w-[70px] text-[11px] text-emerald-100 font-mono">
+              <span>积分 <strong className="text-amber-300 font-bold">{human.score.toLocaleString()}</strong></span>
             </div>
           </div>
         </div>

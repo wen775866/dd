@@ -77,36 +77,44 @@ source ~/.bashrc
 
 ---
 
-## 🚀 Termux 手机全服务极速部署与常驻指南
+## 🚀 Termux / Linux 极速启动指南（无需 Node.js / npm）
 
-### 🆕 重新安装 / 新机首次安装 Termux 快速上手 (1 分钟极速流程)
+### 🌟 方式一：纯 Go 模式（最简方案，免安装 Node.js/npm）
 
-如果您是**重新安装了 Termux** 或在**新手机上初次安装**，直接复制并运行以下命令即可完成全局环境安装、代码拉取与一键启动：
+本项目采用 **Go + React 架构**，前端 React 应用与全部牌面、音效静态资源已通过 Go 1.16+ `//go:embed` 技术内嵌于 Go 服务端。**拉取仓库代码后，无需在手机或系统中安装 Node.js 或 npm，甚至无需安装 node_modules，直接运行 `main.go` 即可启动游戏**：
 
 ```bash
-# 1. 更新软件源与软件包 (自动同意所有 y/n 提示)
-pkg update -y && yes | pkg upgrade -y
+# 1. 拉取仓库最新代码
+git pull
 
-# 2. 安装 git, nodejs, openssh, wget 等基础依赖
-pkg install -y git nodejs openssh wget net-tools termux-exec
+# 2. 直接运行 main.go（仅需 Go 环境，无需 Node.js/npm，无需编译 dist）
+go run main.go
 
-# 3. 自动下载安装 cloudflared 官方最新二进制文件 (解决 pkg install cloudflared 无法安装问题)
-ARCH=$(uname -m) && case "$ARCH" in aarch64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64";; armv7l|armv8l) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm";; x86_64) URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64";; *) echo "未识别的架构: $ARCH"; exit 1;; esac && wget -q --show-progress -O $PREFIX/bin/cloudflared "$URL" && chmod +x $PREFIX/bin/cloudflared && echo -e "\nCloudflared 安装成功！当前版本：" && cloudflared --version
+# 3. 或直接执行自带的预编译二进制（甚至无需安装 Go 编译器）：
+# Termux / Android 手机架构 (ARM64)：
+./bin/server-linux-arm64
 
-# 4. 激活 CPU 防休眠锁 (防止手机锁屏挂起后台)
-termux-wake-lock
+# Linux 服务器架构 (x86_64 / AMD64)：
+./bin/server-linux-amd64
+```
 
-# 5. 克隆 GitHub 仓库并进入项目目录
+启动后直接用手机浏览器访问 `http://localhost:8080`（或同局域网 `http://<手机IP>:8080`）即可秒进牌桌！
+
+---
+
+### 🆕 方式二：Termux 一键自动脚本运行 (`./start.sh`)
+
+如果需要结合 Cloudflared 隧道或开机常驻：
+
+```bash
+# 1. 克隆代码并进入目录
 git clone https://github.com/wen775866/dd.git
 cd dd
 
-# 6. 赋予启动脚本可执行权限并运行
+# 2. 一键启动 (start.sh 会自动识别 Go 预编译文件，秒级拉起服务)
 chmod +x start.sh
 ./start.sh
 ```
-
-> 💡 **自动部署说明**：
-> `start.sh` 启动脚本会自动检测并自动执行 `npm install --legacy-peer-deps`、自动运行 `npm run build` 预编译生成 `server.js`（彻底避开 tsx ARM64 崩溃）、自动检测补全 `cloudflared`、自动修复 Termux DNS 配置并拉起游戏服务！
 
 ---
 

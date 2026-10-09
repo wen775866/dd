@@ -47,11 +47,11 @@ const RANK_SPEECH: Record<string, string> = {
   '8': '8',
   '9': '9',
   '10': '10',
-  'J': '勾',
-  'Q': '圈',
+  'J': 'J',
+  'Q': 'Q',
   'K': 'K',
-  'A': '尖',
-  '2': '大老二',
+  'A': 'A',
+  '2': '2',
 };
 
 // Dialect-specific card call mappings for Big Two
@@ -213,7 +213,7 @@ class VoiceEngine {
   }
 
   // Spoken voice line for played hands in Big Two
-  public getHandVoiceLine(handType: string, cards: { rank: string; suit: string; displayRank: string }[], isBeat: boolean = false): string {
+  public getHandVoiceLine(handType: string, cards: { rank: string; suit: string; displayRank: string }[]): string {
     if (!cards || cards.length === 0) {
       const passLines = DIALECT_HAND_LINES[this.dialect]?.PASS || DIALECT_HAND_LINES.mandarin.PASS;
       return passLines[Math.floor(Math.random() * passLines.length)];
@@ -221,39 +221,33 @@ class VoiceEngine {
 
     const dict = DIALECT_HAND_LINES[this.dialect] || DIALECT_HAND_LINES.mandarin;
 
-    if (isBeat && Math.random() < 0.35 && handType !== 'FOUR_OF_A_KIND' && handType !== 'STRAIGHT_FLUSH') {
-      const beatPhrases = dict.BEAT || ['管上！', '大你！', '压死！'];
-      return beatPhrases[Math.floor(Math.random() * beatPhrases.length)];
-    }
-
     switch (handType) {
       case 'SINGLE': {
         const c = cards[0];
         const suitName = SUIT_SPEECH[c.suit] || '';
         const rankName = RANK_SPEECH[c.rank] || c.displayRank;
-        if (c.rank === '2') return '大老二！';
-        return `单张 ${suitName} ${rankName}`;
+        return `${suitName}${rankName}`;
       }
       case 'PAIR': {
         const c = cards[0];
         const rankName = RANK_SPEECH[c.rank] || c.displayRank;
-        return `对子 ${rankName}`;
+        return `对${rankName}`;
       }
       case 'TRIPLET': {
         const c = cards[0];
         const rankName = RANK_SPEECH[c.rank] || c.displayRank;
-        return `三条 ${rankName}`;
+        return `三个${rankName}`;
       }
       case 'STRAIGHT':
         return dict.STRAIGHT?.[0] || '顺子！';
       case 'FLUSH':
         return dict.FLUSH?.[0] || '同花！';
       case 'FULL_HOUSE':
-        return dict.FULL_HOUSE?.[0] || '葫芦！三带二！';
+        return dict.FULL_HOUSE?.[0] || '葫芦！';
       case 'FOUR_OF_A_KIND':
         return dict.FOUR_OF_A_KIND?.[0] || '铁支！';
       case 'STRAIGHT_FLUSH':
-        return dict.STRAIGHT_FLUSH?.[0] || '同花顺！💣';
+        return dict.STRAIGHT_FLUSH?.[0] || '同花顺！';
       default:
         return '出牌';
     }

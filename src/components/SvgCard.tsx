@@ -29,12 +29,12 @@ export const SvgCard: React.FC<SvgCardProps> = ({
   // mini: 28x40 -> 36x50
   // sm: 40x56 -> 48x68
   // md: 48x68 -> 60x84
-  // lg: (human hand) enlarged to w-18 h-26 sm:w-24 sm:h-34 md:w-28 md:h-40
+  // lg: (human hand) enlarged comfortably for easy viewing and tapping
   const sizeClasses = {
     mini: 'w-7 h-10 sm:w-9 sm:h-13',
     sm: 'w-10 h-14 sm:w-13 sm:h-18',
-    md: 'w-13 h-18 sm:w-16 sm:h-23',
-    lg: 'w-14 h-20 sm:w-17 sm:h-24 md:w-20 md:h-28',
+    md: 'w-16 h-23 sm:w-19 sm:h-27 md:w-22 md:h-31',
+    lg: 'w-20 h-29 sm:w-24 sm:h-35 md:w-28 md:h-41 lg:w-31 lg:h-45',
   }[size];
 
   if (showBack || !card) {
@@ -60,7 +60,7 @@ export const SvgCard: React.FC<SvgCardProps> = ({
       onClick={onClick}
       className={`relative rounded-[3px] overflow-hidden select-none transition-all duration-150 cursor-pointer ${sizeClasses} ${
         isSelected
-          ? '-translate-y-4 ring-2 ring-amber-400 shadow-xl shadow-amber-500/40 brightness-105 scale-105 z-20'
+          ? '-translate-y-5 ring-2 ring-amber-400 shadow-xl shadow-amber-500/30 brightness-105'
           : 'hover:-translate-y-1.5 shadow-md hover:shadow-lg'
       } ${className}`}
     >

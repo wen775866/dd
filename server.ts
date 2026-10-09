@@ -1,5 +1,5 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
+import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -988,17 +988,44 @@ app.post('/api/rooms/start', (req, res) => {
 
 // ---------------- START SERVER ----------------
 async function start() {
-  const PORT = Number(process.env.PORT) || 8080;
+  // Support PORT env var, --port argument, or default to 3000 in dev / 8080 in standalone
+  let defaultPort = process.env.NODE_ENV === 'production' ? 8080 : 3000;
+  let port = defaultPort;
+  if (process.env.PORT) {
+    port = Number(process.env.PORT);
+  } else {
+    const portArgIdx = process.argv.findIndex(arg => arg === '--port' || arg === '-p');
+    if (portArgIdx !== -1 && process.argv[portArgIdx + 1]) {
+      port = Number(process.argv[portArgIdx + 1]);
+    }
+  }
+  const PORT = port || defaultPort;
 
+  const isProduction = process.env.NODE_ENV === 'production';
   const distPath = path.resolve('dist');
-  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
+  const httpServer = http.createServer(app);
 
-  if (process.env.NODE_ENV !== 'production' && !hasDist) {
+  if (!isProduction) {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
+    app.use('*', async (req, res, next) => {
+      const url = req.originalUrl;
+      try {
+        let template = fs.readFileSync(path.resolve('index.html'), 'utf-8');
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e) {
+        if (vite.ssrFixStacktrace) vite.ssrFixStacktrace(e as Error);
+        next(e);
+      }
+    });
   } else {
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
@@ -1006,7 +1033,7 @@ async function start() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 锄大地游戏服务器已启动: http://0.0.0.0:${PORT}`);
     if (loadedEnvPath) {
       console.log(`📄 已载入 .env: ${loadedEnvPath}`);

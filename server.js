@@ -1,6 +1,6 @@
 // server.ts
 import express from "express";
-import { createServer as createViteServer } from "vite";
+import http from "http";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
@@ -743,17 +743,48 @@ app.post("/api/rooms/start", (req, res) => {
   return res.json({ success: true, room });
 });
 async function start() {
-  const PORT = Number(process.env.PORT) || 8080;
-  if (process.env.NODE_ENV !== "production") {
+  let defaultPort = process.env.NODE_ENV === "production" ? 8080 : 3e3;
+  let port = defaultPort;
+  if (process.env.PORT) {
+    port = Number(process.env.PORT);
+  } else {
+    const portArgIdx = process.argv.findIndex((arg) => arg === "--port" || arg === "-p");
+    if (portArgIdx !== -1 && process.argv[portArgIdx + 1]) {
+      port = Number(process.argv[portArgIdx + 1]);
+    }
+  }
+  const PORT = port || defaultPort;
+  const isProduction = process.env.NODE_ENV === "production";
+  const distPath = path.resolve("dist");
+  const httpServer = http.createServer(app);
+  if (!isProduction) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === "true" ? false : { server: httpServer }
+      },
       appType: "spa"
     });
     app.use(vite.middlewares);
+    app.use("*", async (req, res, next) => {
+      const url = req.originalUrl;
+      try {
+        let template = fs.readFileSync(path.resolve("index.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        if (vite.ssrFixStacktrace) vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else {
-    app.use(express.static("dist"));
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
   }
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`\u{1F680} \u9504\u5927\u5730\u6E38\u620F\u670D\u52A1\u5668\u5DF2\u542F\u52A8: http://0.0.0.0:${PORT}`);
     if (loadedEnvPath) {
       console.log(`\u{1F4C4} \u5DF2\u8F7D\u5165 .env: ${loadedEnvPath}`);

@@ -4,6 +4,7 @@ import { UserAccount } from '../utils/authStore';
 import { sounds } from '../utils/audio';
 import { voiceEngine, DIALECT_OPTIONS } from '../utils/voiceSystem';
 import { useAppTheme } from '../utils/themeContext';
+import { useLandscape } from './LandscapeWrapper';
 import { PWAInstallButton } from './PWAInstallButton';
 import {
   Flame,
@@ -34,6 +35,8 @@ import {
   Crown,
   Share2,
   Palette,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 export const CHUDADI_ROOM_PRESETS: RoomConfig[] = [
@@ -114,6 +117,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onOpenAuth,
 }) => {
   const { theme, toggleTheme, themeConfig } = useAppTheme();
+  const { isFullscreen, toggleFullscreen } = useLandscape();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showFreeBeansModal, setShowFreeBeansModal] = useState(false);
 
@@ -522,6 +526,27 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
         {/* Right Nav Controls: Unified Height (h-7 sm:h-8) & Consistent Amber/Theme Text Color */}
         <div className="flex items-center gap-1 sm:gap-1.5">
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={() => {
+              sounds.playClick();
+              toggleFullscreen();
+            }}
+            className={`h-7 sm:h-8 flex items-center gap-1 px-2.5 rounded-full border text-xs font-bold text-amber-300 shadow cursor-pointer transition-all ${
+              theme === 'deep-green'
+                ? 'bg-[#134d35]/90 hover:bg-[#185e42] border-emerald-400/50'
+                : 'bg-[#134d73]/90 hover:bg-[#185c8a] border-cyan-400/50'
+            }`}
+            title={isFullscreen ? '退出全屏' : '全屏显示'}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+            ) : (
+              <Maximize2 className="w-3.5 h-3.5 text-amber-400" />
+            )}
+            <span className="hidden sm:inline">{isFullscreen ? '退出全屏' : '全屏'}</span>
+          </button>
+
           {/* Eye-Friendly Theme Toggle */}
           <button
             onClick={() => {

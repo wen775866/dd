@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>锄大地 - 经典4人扑克对战 & 烟三</title>
+    <meta name="description" content="经典 4 人锄大地 & 烟三 Web 网页版，采用 ♠️ 黑桃主题，全局固定横屏，支持真人语音、实时对讲与离线 PWA 畅玩。" />
+    
+    <!-- PWA Primary Meta Tags -->
+    <meta name="theme-color" content="#114732" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="锄大地" />
+    <meta name="application-name" content="锄大地" />
+    <meta name="format-detection" content="telephone=no" />
+    
+    <!-- PWA Icons & Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="锄大地 - 经典4人扑克对战 & 烟三" />
+    <meta property="og:description" content="经典 4 人锄大地 & 烟三 Web 网页版，采用 ♠️ 黑桃主题，全局固定横屏，支持真人语音、实时对讲与离线 PWA 畅玩。" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Ignore benign HMR/WebSocket disconnect errors in preview environment -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.indexOf('WebSocket') !== -1 || e.message.indexOf('ws:') !== -1 || e.message.indexOf('wss:') !== -1)) {
+          e.stopImmediatePropagation();
+        }
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        if (e.reason && (String(e.reason.message || e.reason).indexOf('WebSocket') !== -1)) {
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      });
+    </script>
+    <script type="module" crossorigin src="/assets/index-C0lhWULo.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-B_7XW32k.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+

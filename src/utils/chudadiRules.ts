@@ -113,7 +113,6 @@ export function sortCardsByRank(cards: Card[]): Card[] {
 // 1. A-2-3-4-5 最大 (weight = 100)
 // 2. 9-10-J-Q-K 第二大 (weight = 90)
 // 3. 其它连续顺子：
-//    10-J-Q-K-A (85)
 //    8-9-10-J-Q (80)
 //    7-8-9-10-J (70)
 //    6-7-8-9-10 (60)
@@ -121,6 +120,7 @@ export function sortCardsByRank(cards: Card[]): Card[] {
 //    4-5-6-7-8 (40)
 //    3-4-5-6-7 (30)
 //    2-3-4-5-6 (20)
+//    * 注意：不允许出 10-J-Q-K-A 顺子！
 function checkStraight(cards: Card[]): { isStraight: boolean; highestCard: Card | null; straightWeight: number } {
   if (cards.length !== 5) return { isStraight: false, highestCard: null, straightWeight: 0 };
 
@@ -140,10 +140,9 @@ function checkStraight(cards: Card[]): { isStraight: boolean; highestCard: Card 
     return { isStraight: true, highestCard: cardK, straightWeight: 90 };
   }
 
-  // Case 3: 10-J-Q-K-A (ranks: [10, 11, 12, 13, 14])
+  // Case 3: 10-J-Q-K-A (ranks: [10, 11, 12, 13, 14]) -> 用户明确规则：不允许出 10 J Q K A 的顺子！
   if (ranks[0] === 10 && ranks[1] === 11 && ranks[2] === 12 && ranks[3] === 13 && ranks[4] === 14) {
-    const cardA = sorted.find(c => c.rankValue === 14)!;
-    return { isStraight: true, highestCard: cardA, straightWeight: 85 };
+    return { isStraight: false, highestCard: null, straightWeight: 0 };
   }
 
   // Normal consecutive (e.g. 2-3-4-5-6 up to 8-9-10-J-Q)
